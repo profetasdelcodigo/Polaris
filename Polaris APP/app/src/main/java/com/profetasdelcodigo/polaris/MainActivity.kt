@@ -3,6 +3,10 @@ package com.profetasdelcodigo.polaris
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -27,8 +31,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.jan.supabase.auth.auth
@@ -36,6 +44,14 @@ import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+
+private val PolarisMidnight = Color(0xFF070B14)
+private val PolarisSurface = Color(0xFF0D1422)
+private val PolarisSurface2 = Color(0xFF111B2C)
+private val PolarisCyan = Color(0xFF5DE6FF)
+private val PolarisBlue = Color(0xFF79A9FF)
+private val PolarisViolet = Color(0xFF9B82FF)
+private val PolarisMint = Color(0xFF6FF1C1)
 
 private data class ChatItem(val role: String, val content: String)
 
@@ -50,9 +66,12 @@ class MainActivity : ComponentActivity() {
 private fun PolarisApp() {
     MaterialTheme(
         colorScheme = androidx.compose.material3.darkColorScheme(
-            background = Color(0xFF080A10),
-            surface = Color(0xFF10131C),
-            primary = Color(0xFFBFD3FF)
+            background = PolarisMidnight,
+            surface = PolarisSurface,
+            surfaceVariant = PolarisSurface2,
+            primary = PolarisCyan,
+            secondary = PolarisViolet,
+            tertiary = PolarisMint
         )
     ) {
         Surface(modifier = Modifier.fillMaxSize()) {
@@ -206,6 +225,114 @@ private fun AuthScreen(onAuthenticated: () -> Unit) {
 }
 
 @Composable
+private fun PolarisMascotMini(
+    active: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val transition = rememberInfiniteTransition(label = "polaris-mini")
+    val floatOffset by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = if (active) 5f else 2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(if (active) 750 else 1800),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "float"
+    )
+    val rotateY by transition.animateFloat(
+        initialValue = -3f,
+        targetValue = 3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(if (active) 700 else 2200),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "rotate"
+    )
+
+    Box(
+        modifier = modifier
+            .size(118.dp)
+            .graphicsLayer {
+                translationY = -floatOffset
+                rotationY = rotateY
+                cameraDistance = 18f * density
+            }
+            .shadow(18.dp, RoundedCornerShape(28.dp), clip = false),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(96.dp)
+                .background(
+                    Brush.radialGradient(
+                        listOf(
+                            PolarisCyan.copy(alpha = .22f),
+                            PolarisViolet.copy(alpha = .10f),
+                            Color.Transparent
+                        )
+                    ),
+                    RoundedCornerShape(32.dp)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .offset(y = (-12).dp)
+                    .size(70.dp, 48.dp)
+                    .shadow(8.dp, RoundedCornerShape(16.dp))
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(PolarisCyan, PolarisBlue, PolarisViolet)
+                        ),
+                        RoundedCornerShape(16.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(9.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    repeat(2) {
+                        Box(
+                            modifier = Modifier
+                                .size(12.dp)
+                                .background(Color.White, RoundedCornerShape(50))
+                        )
+                    }
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .offset(y = 22.dp)
+                    .size(48.dp, 34.dp)
+                    .shadow(7.dp, RoundedCornerShape(11.dp))
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(PolarisSurface2, PolarisMidnight)
+                        ),
+                        RoundedCornerShape(11.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(14.dp)
+                        .background(PolarisCyan, RoundedCornerShape(50))
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .offset(y = (-39).dp)
+                    .size(8.dp, 13.dp)
+                    .background(PolarisCyan, RoundedCornerShape(6.dp))
+            )
+        }
+    }
+}
+
+@Composable
 private fun HomeScreen(onSignOut: () -> Unit) {
     val scope = rememberCoroutineScope()
     val supabase = remember { SupabaseProvider.client }
@@ -219,7 +346,7 @@ private fun HomeScreen(onSignOut: () -> Unit) {
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().background(Color(0xFF080A10))
+        modifier = Modifier.fillMaxSize().background(PolarisMidnight)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -232,13 +359,18 @@ private fun HomeScreen(onSignOut: () -> Unit) {
             TextButton(onClick = onSignOut) { Text("Salir") }
         }
 
+        PolarisMascotMini(
+            active = busy,
+            modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 8.dp)
+        )
+
         LazyColumn(
             modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             items(messages) { message ->
                 Surface(
-                    color = if (message.role == "user") Color(0xFF172033) else Color(0xFF111720),
+                    color = if (message.role == "user") PolarisSurface2 else Color(0xFF0B1220),
                     shape = MaterialTheme.shapes.large,
                     modifier = Modifier.fillMaxWidth()
                 ) {

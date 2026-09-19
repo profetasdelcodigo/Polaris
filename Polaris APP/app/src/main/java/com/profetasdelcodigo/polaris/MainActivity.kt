@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -358,7 +359,7 @@ private fun HomeScreen(onSignOut: () -> Unit) {
         ) {
             Column {
                 Text("POLARIS", fontWeight = FontWeight.Bold)
-                Text("Core conectado", color = Color(0xFF8DE0A7), style = MaterialTheme.typography.labelSmall)
+                Text("Core conectado", color = PolarisMint, style = MaterialTheme.typography.labelSmall)
             }
             TextButton(onClick = onSignOut) { Text("Salir") }
         }

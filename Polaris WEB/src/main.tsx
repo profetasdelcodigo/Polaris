@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 
 import { App } from './app/App';
 import './styles.css';
+import './polaris-theme.css';
 
 const root = document.getElementById('root');
 

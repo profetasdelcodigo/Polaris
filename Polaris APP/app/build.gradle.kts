@@ -8,7 +8,7 @@ android {
     namespace = "com.profetasdelcodigo.polaris"
     compileSdk = 37
     defaultConfig {
-        applicationId = "com.profetasdel.codigo.polaris"
+        applicationId = "com.profetasdelcodigo.polaris"
         minSdk = 26
         targetSdk = 37
         versionCode = 1

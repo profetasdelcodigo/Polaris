@@ -1,0 +1,36 @@
+{
+  "name": "@polaris/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The central Polaris Core HTTP API.",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@fastify/cors": "11.3.0",
+    "@fastify/rate-limit": "11.2.0",
+    "@polaris/contracts": "workspace:*",
+    "@supabase/supabase-js": "2.116.0",
+    "fastify": "5.12.5",
+    "openai": "7.19.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.3.0",
+    "eslint": "10.11.0",
+    "globals": "17.12.0",
+    "prettier": "3.9.8",
+    "tsx": "4.21.0",
+    "typescript": "7.0.2",
+    "typescript-eslint": "8.70.0",
+    "vitest": "5.0.1"
+  }
+}

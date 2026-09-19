@@ -1,0 +1,21 @@
+{
+  "name": "polaris-ia",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Polaris IA: one secure assistant core with independent web, Android, and desktop clients.",
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=22.12.0",
+    "pnpm": ">=11.0.0"
+  },
+  "scripts": {
+    "dev:api": "pnpm --dir \"Polaris API\" dev",
+    "dev:web": "pnpm --dir \"Polaris WEB\" dev",
+    "dev:desktop": "pnpm --dir \"Polaris Programa PC\" dev",
+    "build": "pnpm -r --if-present build",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "lint": "pnpm -r --if-present lint",
+    "test": "pnpm -r --if-present test",
+    "format:check": "pnpm -r --if-present format:check"
+  }
+}

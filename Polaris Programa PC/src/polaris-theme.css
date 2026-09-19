@@ -128,3 +128,199 @@ body {
     50% { filter: drop-shadow(0 0 14px rgba(93, 230, 255, .36)); }
   }
 }
+
+
+.polaris-mascot-stage {
+  position: relative;
+  width: 190px;
+  height: 180px;
+  margin: 0 0 1rem;
+  display: grid;
+  place-items: center;
+  perspective: 900px;
+}
+
+.polaris-mascot-aura {
+  position: absolute;
+  width: 135px;
+  height: 105px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(93,230,255,.18), rgba(155,130,255,.08) 45%, transparent 72%);
+  filter: blur(4px);
+  animation: polaris-aura 3s ease-in-out infinite;
+}
+
+.polaris-mascot {
+  position: relative;
+  width: 128px;
+  height: 140px;
+  transform-style: preserve-3d;
+  animation: polaris-float 4.2s ease-in-out infinite;
+}
+
+.mascot-antenna {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 5px;
+  height: 25px;
+  border-radius: 99px;
+  transform: translateX(-50%) translateZ(6px);
+  background: linear-gradient(#7e8faa, #4c668f);
+}
+
+.mascot-antenna span {
+  position: absolute;
+  left: 50%;
+  top: -11px;
+  width: 20px;
+  height: 20px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #dffbff, var(--polaris-cyan) 38%, var(--polaris-violet));
+  box-shadow: 0 0 18px rgba(93,230,255,.4);
+}
+
+.mascot-head {
+  position: absolute;
+  left: 50%;
+  top: 18px;
+  width: 104px;
+  height: 66px;
+  transform: translateX(-50%) translateZ(14px);
+  border: 1px solid rgba(224,248,255,.35);
+  border-radius: 22px;
+  background: linear-gradient(135deg, #162d47, #0c1728 55%, #1d1838);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.12),
+    0 10px 24px rgba(0,0,0,.35);
+}
+
+.mascot-head::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: 18px;
+  border: 1px solid rgba(93,230,255,.12);
+}
+
+.mascot-screen {
+  position: absolute;
+  inset: 12px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  border-radius: 15px;
+  background: linear-gradient(180deg, #c9fbff, #9de4ff 52%, #b8acff);
+  box-shadow: inset 0 -8px 18px rgba(75,120,185,.26), 0 0 16px rgba(93,230,255,.12);
+}
+
+.mascot-screen i {
+  width: 11px;
+  height: 16px;
+  border-radius: 50%;
+  background: #091321;
+  box-shadow: 3px 2px 0 rgba(255,255,255,.45) inset;
+}
+
+.mascot-smile {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  width: 30px;
+  height: 7px;
+  transform: translateX(-50%);
+  border-bottom: 2px solid #091321;
+  border-radius: 0 0 20px 20px;
+  opacity: .82;
+}
+
+.mascot-neck {
+  position: absolute;
+  left: 50%;
+  top: 83px;
+  width: 24px;
+  height: 11px;
+  transform: translateX(-50%) translateZ(5px);
+  border-radius: 7px;
+  background: linear-gradient(90deg, #415a80, #8aa1c9, #415a80);
+}
+
+.mascot-body {
+  position: absolute;
+  left: 50%;
+  top: 91px;
+  width: 74px;
+  height: 48px;
+  transform: translateX(-50%) translateZ(10px);
+  border: 1px solid rgba(224,248,255,.28);
+  border-radius: 17px;
+  background: linear-gradient(135deg, #17283e, #0b1422 58%, #1b1935);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 10px 20px rgba(0,0,0,.3);
+}
+
+.mascot-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  transform: translate(-50%, -50%) translateZ(9px);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #efffff, var(--polaris-cyan) 45%, var(--polaris-violet));
+  box-shadow: 0 0 18px rgba(93,230,255,.38);
+}
+
+.mascot-core-dot {
+  position: absolute;
+  left: 10px;
+  bottom: 7px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--polaris-mint);
+  box-shadow: 0 0 8px rgba(111,241,193,.7);
+}
+
+.mascot-arm {
+  position: absolute;
+  top: 97px;
+  width: 12px;
+  height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(#5a6f93, #253752 60%, #151f32);
+  box-shadow: 0 4px 10px rgba(0,0,0,.25);
+}
+
+.mascot-arm.left {
+  left: 21px;
+  transform: rotate(21deg) translateZ(2px);
+  transform-origin: top center;
+}
+
+.mascot-arm.right {
+  right: 21px;
+  transform: rotate(-18deg) translateZ(2px);
+  transform-origin: top center;
+}
+
+@keyframes polaris-float {
+  0%, 100% { transform: rotateX(2deg) rotateY(-4deg) translateY(1px); }
+  50% { transform: rotateX(-1deg) rotateY(4deg) translateY(-6px); }
+}
+
+@keyframes polaris-aura {
+  0%, 100% { opacity: .55; transform: scale(.94); }
+  50% { opacity: .9; transform: scale(1.05); }
+}
+
+@media (max-width: 760px) {
+  .polaris-mascot-stage {
+    width: 150px;
+    height: 146px;
+    transform: scale(.82);
+    transform-origin: left top;
+    margin-bottom: -.9rem;
+  }
+}

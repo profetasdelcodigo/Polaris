@@ -11,7 +11,7 @@ const environmentSchema = z.object({
   SUPABASE_PUBLISHABLE_KEY: optionalNonEmpty,
   SUPABASE_SERVICE_ROLE_KEY: optionalNonEmpty,
   AI_PROVIDER: z.enum(["openai", "gemini", "anthropic", "local"]).default("openai"),
-  AI_MODEL: z.string().trim().min(1).default("gpt-5.5"),
+  AI_MODEL: z.string().trim().min(1).default("gpt-5.6-terra"),
   OPENAI_API_KEY: optionalNonEmpty,
   REQUEST_RATE_LIMIT_MAX: z.coerce.number().int().min(1).max(500).default(30)
 });

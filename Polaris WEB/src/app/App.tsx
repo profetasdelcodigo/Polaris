@@ -74,6 +74,11 @@ export function App() {
   const [recoveryMode, setRecoveryMode] = useState(window.location.hash === '#recovery');
 
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setIsBooting(false);
+      return;
+    }
+
     let alive = true;
     void getCurrentSession()
       .then((current) => {

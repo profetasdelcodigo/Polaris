@@ -528,6 +528,31 @@ function NavigationItem({
   );
 }
 
+function PolarisMascot3D() {
+  return (
+    <div className="polaris-mascot-stage" aria-label="Mascota Polaris">
+      <div className="polaris-mascot-aura" />
+      <div className="polaris-mascot" aria-hidden="true">
+        <div className="mascot-antenna"><span /></div>
+        <div className="mascot-head">
+          <div className="mascot-screen">
+            <i />
+            <i />
+          </div>
+          <div className="mascot-smile" />
+        </div>
+        <div className="mascot-neck" />
+        <div className="mascot-body">
+          <div className="mascot-core" />
+          <span className="mascot-core-dot" />
+        </div>
+        <div className="mascot-arm left" />
+        <div className="mascot-arm right" />
+      </div>
+    </div>
+  );
+}
+
 function Home({
   onStart,
   onMemory,
@@ -546,6 +571,7 @@ function Home({
   return (
     <div className="page home-page">
       <header className="page-header">
+        <PolarisMascot3D />
         <span className="eyebrow">ASISTENTE PERSONAL · 0.1.0</span>
         <h1>Una sola brújula para tu mundo digital.</h1>
         <p>Polaris conserva la misma identidad, contexto y memoria donde sea que lo abras.</p>

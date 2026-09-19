@@ -1,0 +1,130 @@
+:root {
+  --polaris-midnight: #050914;
+  --polaris-panel: #0a1020;
+  --polaris-panel-2: #101a2e;
+  --polaris-cyan: #5de6ff;
+  --polaris-blue: #79a9ff;
+  --polaris-violet: #9b82ff;
+  --polaris-mint: #6ff1c1;
+  --polaris-pink: #ff8fb5;
+}
+
+body {
+  background:
+    radial-gradient(circle at 72% 8%, rgba(93, 230, 255, .10), transparent 25rem),
+    radial-gradient(circle at 12% 92%, rgba(155, 130, 255, .09), transparent 26rem),
+    #050914;
+}
+
+.desktop-shell {
+  background:
+    linear-gradient(rgba(93, 230, 255, .018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(155, 130, 255, .014) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.sidebar {
+  background: rgba(5, 9, 20, .93);
+  border-right-color: rgba(93, 230, 255, .13);
+}
+
+.brand-mark {
+  color: var(--polaris-cyan);
+  filter: drop-shadow(0 0 10px rgba(93, 230, 255, .25));
+}
+
+.identity-card,
+.device-card,
+.memory-form,
+.memory-library,
+.profile-card,
+.info-card,
+.settings-card {
+  border-color: rgba(93, 230, 255, .14);
+}
+
+.identity-card {
+  background: linear-gradient(135deg, rgba(93, 230, 255, .055), rgba(155, 130, 255, .045));
+}
+
+.nav-item.active {
+  color: #ecf8ff;
+  background: linear-gradient(105deg, rgba(93, 230, 255, .12), rgba(155, 130, 255, .08));
+  border-color: rgba(93, 230, 255, .16);
+}
+
+.connection-dot.online,
+.device-status.online {
+  background-color: var(--polaris-mint);
+  color: var(--polaris-mint);
+  box-shadow: 0 0 12px rgba(111, 241, 193, .62);
+}
+
+.button.primary {
+  background: linear-gradient(105deg, var(--polaris-cyan), var(--polaris-blue) 58%, var(--polaris-violet));
+  box-shadow: 0 10px 28px rgba(93, 230, 255, .13);
+}
+
+.button.secondary,
+.icon-button {
+  border-color: rgba(93, 230, 255, .18);
+}
+
+.icon-button {
+  color: var(--polaris-cyan);
+  background: rgba(93, 230, 255, .055);
+}
+
+.chat-header,
+.composer-wrap,
+.history-list,
+.conversation-rail {
+  border-color: rgba(93, 230, 255, .11);
+}
+
+.composer-wrap {
+  background: rgba(8, 15, 30, .88);
+}
+
+.composer-wrap:focus-within {
+  border-color: rgba(93, 230, 255, .55);
+  box-shadow: 0 0 0 3px rgba(93, 230, 255, .08);
+}
+
+.eyebrow,
+.history-star,
+.message-avatar,
+.retry-button {
+  color: var(--polaris-cyan);
+}
+
+.message.user .message-avatar {
+  color: #c0b2ff;
+}
+
+.message-body a,
+.message-body code {
+  color: #a9ecff;
+}
+
+.tag {
+  color: #8fefff;
+  border-color: rgba(93, 230, 255, .24);
+  background: rgba(93, 230, 255, .055);
+}
+
+.button.stop,
+.danger {
+  color: var(--polaris-pink);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .brand-mark {
+    animation: polaris-mark-breathe 4s ease-in-out infinite;
+  }
+
+  @keyframes polaris-mark-breathe {
+    0%, 100% { filter: drop-shadow(0 0 7px rgba(93, 230, 255, .18)); }
+    50% { filter: drop-shadow(0 0 14px rgba(93, 230, 255, .36)); }
+  }
+}

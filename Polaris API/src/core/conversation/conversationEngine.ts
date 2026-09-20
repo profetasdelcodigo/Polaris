@@ -77,11 +77,7 @@ export class ConversationEngine {
         if (!registered) {
           throw new Error("La herramienta solicitada no está registrada.");
         }
-        return this.toolEngine.execute(
-          context,
-          registered.name as RegisteredToolName,
-          rawInput
-        );
+        return this.toolEngine.executeModelCallable(context, registered.name, rawInput);
       }
     };
 

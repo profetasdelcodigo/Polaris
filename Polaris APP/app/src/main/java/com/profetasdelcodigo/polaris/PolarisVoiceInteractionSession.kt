@@ -81,6 +81,7 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
     private var speechRecognizer: SpeechRecognizer? = null
     private var tts: TextToSpeech? = null
     private var ttsReady = false
+    private var continuousVoice = false
 
     init {
         tts = TextToSpeech(context) { status ->
@@ -204,6 +205,19 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
         actions.addView(sendButton, LinearLayout.LayoutParams(0, dp(48), 1f).apply {
             leftMargin = dp(8)
         })
+
+        val continuous = Button(context).apply {
+            text = "Continuo: OFF"
+            setTextColor(Color.rgb(154, 172, 196))
+            setOnClickListener {
+                continuousVoice = !continuousVoice
+                text = if (continuousVoice) "Continuo: ON" else "Continuo: OFF"
+                if (continuousVoice) {
+                    status.text = "Modo conversación continua activado."
+                }
+            }
+        }
+        sheet.addView(continuous, lp())
 
         sheet.addView(actions, lp())
 
@@ -354,6 +368,10 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
                     val message = messages.joinToString("\n")
                     status.text = message
                     speak(message)
+                    if (continuousVoice) {
+                        kotlinx.coroutines.delay(450)
+                        startVoiceRecognition(input, status, button)
+                    }
                 } finally {
                     button.isEnabled = true
                     button.text = "Preguntar"
@@ -394,6 +412,10 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
                 val message = result.content.ifBlank { "El Core no devolvió contenido." }
                 status.text = message
                 speak(message)
+                if (continuousVoice) {
+                    kotlinx.coroutines.delay(450)
+                    startVoiceRecognition(findInputView(status), status, button)
+                }
             } catch (error: Throwable) {
                 status.text = "No pude conectar con Polaris Core: " + (error.message ?: "error de red")
             } finally {

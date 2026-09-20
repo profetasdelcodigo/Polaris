@@ -55,7 +55,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
-    implementation(platform("io.github.jan-tennert.supabase:bom:3.8.0"))
+    implementation(platform("io.github.jan-tennert.supabase:bom:3.2.6"))
     implementation("io.github.jan-tennert.supabase:auth-kt")
 
     implementation("io.ktor:ktor-client-android:3.3.0")

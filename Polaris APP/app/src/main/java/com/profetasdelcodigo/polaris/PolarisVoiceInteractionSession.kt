@@ -325,32 +325,28 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
         button.isEnabled = false
         button.text = "…"
 
-        val localAction = PolarisLocalAutomation.parse(query)
-        if (localAction != null) {
-            val result = PolarisAccessibilityService.execute(localAction)
-            status.text = result.message
-            button.isEnabled = true
-            button.text = "Preguntar"
+        val localPlan = PolarisLocalAutomation.parsePlan(query)
+        if (localPlan.isNotEmpty()) {
+            scope.launch {
+                try {
+                    val messages = mutableListOf<String>()
+                    for ((index, action) in localPlan.withIndex()) {
+                        status.text = "Ejecutando ${index + 1}/${localPlan.size}…"
+                        val result = PolarisAccessibilityService.execute(action)
+                        messages += result.message
+                        if (!result.success) break
+                        if (index < localPlan.lastIndex) kotlinx.coroutines.delay(300)
+                    }
+                    status.text = messages.joinToString("\n")
+                } finally {
+                    button.isEnabled = true
+                    button.text = "Preguntar"
+                }
+            }
             return
         }
 
         status.text = "Polaris está pensando…"
-        button.isEnabled = false
-        button.text = "…"
-        status.text = "Polaris está pensando…"
-
-        // Local Android actions are handled without sending the command to the cloud Core.
-        // This keeps low-risk device navigation fast and preserves the permission boundary.
-        if (PolarisAutomationController.isEnabled()) {
-            val local = PolarisAutomationController.executePlan(query)
-            if (local.success) {
-                status.text = local.message
-                button.isEnabled = true
-                button.text = "Preguntar"
-                return
-            }
-        }
-
         scope.launch {
             try {
                 val session = SupabaseProvider.client.auth.currentSessionOrNull()

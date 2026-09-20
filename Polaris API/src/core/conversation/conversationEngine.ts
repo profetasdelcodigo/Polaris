@@ -21,7 +21,7 @@ function inferredTool(message: string): { name: RegisteredToolName; input: unkno
   }
 
   if (/\b(qué|que) recuerdas\b|\bmu[eé]strame\s+(?:mis\s+)?memorias?\b|\bmis\s+memorias?\b/iu.test(lowered)) {
-    return { name: "search_memory", input: { query: message } };
+    return { name: "search_memory", input: { query: "" } };
   }
 
   const calculation = message.match(/^(?:calcula|resuelve)\s+(.+)$/iu);

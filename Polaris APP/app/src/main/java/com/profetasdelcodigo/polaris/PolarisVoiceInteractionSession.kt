@@ -192,7 +192,7 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
                     return@setOnClickListener
                 }
 
-                sendToCore(query, subtitle, sendButton)
+                sendToCore(query, input, subtitle, sendButton)
             }
             setTextColor(midnight)
             background = GradientDrawable(
@@ -311,7 +311,7 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
 
                 input.setText(spoken)
                 input.setSelection(spoken.length)
-                sendToCore(spoken, status, sendButton)
+                sendToCore(spoken, input, status, sendButton)
             }
 
             override fun onPartialResults(partialResults: Bundle?) {
@@ -349,7 +349,7 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
         speechRecognizer = null
     }
 
-    private fun sendToCore(query: String, status: TextView, button: Button) {
+    private fun sendToCore(query: String, input: EditText, status: TextView, button: Button) {
         button.isEnabled = false
         button.text = "…"
 
@@ -414,7 +414,7 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
                 speak(message)
                 if (continuousVoice) {
                     kotlinx.coroutines.delay(450)
-                    startVoiceRecognition(findInputView(status), status, button)
+                    startVoiceRecognition(input, status, button)
                 }
             } catch (error: Throwable) {
                 status.text = "No pude conectar con Polaris Core: " + (error.message ?: "error de red")

@@ -8,6 +8,8 @@ type FunctionCall = {
   arguments: string;
 };
 
+const MAX_TOOL_ROUNDS = 4;
+
 export class OpenAIProvider implements AIProvider {
   public readonly available = true;
   private readonly client: OpenAI;
@@ -29,102 +31,105 @@ export class OpenAIProvider implements AIProvider {
         strict: true
       }));
 
-      const first = await this.client.responses.create({
-        model: this.model,
-        instructions: input.system,
-        input: [
+      let inputItems: Array<Record<string, unknown>> = [
+        {
+          role: "user",
+          content: input.context + "\n\nMENSAJE_ACTUAL:\n" + input.user
+        }
+      ];
+
+      for (let round = 0; round <= MAX_TOOL_ROUNDS; round += 1) {
+        const responseStream = await this.client.responses.create(
           {
-            role: "user",
-            content: input.context + "\n\nMENSAJE_ACTUAL:\n" + input.user
+            model: this.model,
+            instructions: input.system,
+            input: inputItems,
+            ...(tools?.length ? { tools } : {}),
+            stream: true,
+            store: false
+          },
+          { signal: input.signal }
+        );
+
+        const callsByItemId = new Map<string, FunctionCall>();
+        const outputItems: Array<Record<string, unknown>> = [];
+        let responseId: string | undefined;
+
+        for await (const event of responseStream) {
+          if (event.type === "response.created") {
+            responseId = event.response.id;
           }
-        ],
-        ...(tools?.length ? { tools } : {}),
-        stream: true,
-        store: false
-      }, { signal: input.signal });
 
-      let responseId: string | undefined;
-      const calls = new Map<string, FunctionCall>();
+          if (event.type === "response.output_text.delta") {
+            yield { type: "text_delta", delta: event.delta };
+          }
 
-      for await (const event of first) {
-        if (event.type === "response.created") {
-          responseId = event.response.id;
+          if (event.type === "response.output_item.done") {
+            outputItems.push(event.item as unknown as Record<string, unknown>);
+
+            if (event.item.type === "function_call") {
+              const call = {
+                callId: event.item.call_id,
+                name: event.item.name,
+                arguments: event.item.arguments
+              } satisfies FunctionCall;
+              callsByItemId.set(event.item.id, call);
+            }
+          }
         }
-        if (event.type === "response.output_text.delta") {
-          yield { type: "text_delta", delta: event.delta };
+
+        const calls = [...callsByItemId.values()];
+        if (calls.length === 0) {
+          yield { type: "completed", ...(responseId ? { providerResponseId: responseId } : {}) };
+          return;
         }
-        if (event.type === "response.function_call_arguments.delta") {
-          const callId = event.item_id;
-          const current = calls.get(callId) ?? {
-            callId,
-            name: "",
-            arguments: ""
-          };
-          current.arguments += event.delta;
-          calls.set(callId, current);
+
+        if (!input.executeTool) {
+          throw new PolarisError(
+            "PROVIDER_ERROR",
+            "El modelo solicitó una herramienta, pero Polaris no tiene un ejecutor disponible.",
+            502
+          );
         }
-        if (event.type === "response.output_item.done" && event.item.type === "function_call") {
-          const call = calls.get(event.item.id) ?? {
-            callId: event.item.call_id,
-            name: event.item.name,
-            arguments: event.item.arguments
-          };
-          call.callId = event.item.call_id;
-          call.name = event.item.name;
-          call.arguments = event.item.arguments;
-          calls.set(event.item.id, call);
+
+        if (round === MAX_TOOL_ROUNDS) {
+          throw new PolarisError(
+            "TIMEOUT",
+            "La tarea requirió demasiadas llamadas de herramienta seguidas.",
+            508
+          );
         }
+
+        const toolOutputs: Array<Record<string, unknown>> = [];
+
+        for (const call of calls) {
+          yield { type: "tool_started", name: call.name };
+
+          let result: unknown;
+          try {
+            const parsedArguments = JSON.parse(call.arguments || "{}");
+            result = await input.executeTool(call.name, parsedArguments);
+          } catch (error) {
+            result = {
+              error: error instanceof Error
+                ? error.message
+                : "La herramienta no pudo ejecutarse."
+            };
+          }
+
+          yield { type: "tool_completed", name: call.name, result };
+
+          toolOutputs.push({
+            type: "function_call_output",
+            call_id: call.callId,
+            output: JSON.stringify(result)
+          });
+        }
+
+        // Con store=false no podemos usar previous_response_id. Responses requiere
+        // reenviar los output items del modelo junto con los resultados de las herramientas.
+        inputItems = [...inputItems, ...outputItems, ...toolOutputs];
       }
-
-      if (!calls.size || !input.executeTool || !responseId) {
-        yield { type: "completed", ...(responseId ? { providerResponseId: responseId } : {}) };
-        return;
-      }
-
-      const outputs: Array<{
-        type: "function_call_output";
-        call_id: string;
-        output: string;
-      }> = [];
-
-      for (const call of calls.values()) {
-        yield { type: "tool_started", name: call.name };
-        let result: unknown;
-        try {
-          result = await input.executeTool(call.name, JSON.parse(call.arguments || "{}"));
-        } catch (error) {
-          result = {
-            error: error instanceof Error ? error.message : "La herramienta no pudo ejecutarse."
-          };
-        }
-        yield { type: "tool_completed", name: call.name, result };
-        outputs.push({
-          type: "function_call_output",
-          call_id: call.callId,
-          output: JSON.stringify(result)
-        });
-      }
-
-      const followUp = await this.client.responses.create({
-        model: this.model,
-        instructions: input.system,
-        previous_response_id: responseId,
-        input: outputs,
-        ...(tools?.length ? { tools } : {}),
-        stream: true,
-        store: false
-      }, { signal: input.signal });
-
-      for await (const event of followUp) {
-        if (event.type === "response.created") {
-          responseId = event.response.id;
-        }
-        if (event.type === "response.output_text.delta") {
-          yield { type: "text_delta", delta: event.delta };
-        }
-      }
-
-      yield { type: "completed", ...(responseId ? { providerResponseId: responseId } : {}) };
     } catch (error) {
       if (input.signal.aborted) {
         throw new PolarisError("TIMEOUT", "La generación fue cancelada.", 499);

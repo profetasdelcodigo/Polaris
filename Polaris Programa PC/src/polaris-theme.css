@@ -324,3 +324,34 @@ body {
     margin-bottom: -.9rem;
   }
 }
+
+
+.shortcut-note {
+  display: block;
+  margin-top: .8rem;
+  color: #7f93ad;
+  font-size: .72rem;
+  letter-spacing: .02em;
+}
+
+.profile-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.profile-summary {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: .35rem;
+}
+
+.profile-summary .profile-avatar {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 760px) {
+  .shortcut-note {
+    font-size: .68rem;
+  }
+}

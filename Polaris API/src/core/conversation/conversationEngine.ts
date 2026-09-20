@@ -60,7 +60,7 @@ export class ConversationEngine {
 
     if (tool) {
       yield { type: "tool.started", name: tool.name };
-      const result = await this.toolEngine.execute(context, tool.name, tool.input);
+      const result = await this.toolEngine.execute(context, tool.name, tool.input, input.signal);
       verifiedToolContext = toolResultContext(tool.name, result);
       yield { type: "tool.completed", name: tool.name, result };
     }
@@ -72,12 +72,12 @@ export class ConversationEngine {
       context: contextWindow + verifiedToolContext,
       signal: input.signal,
       tools: tool ? [] : this.toolEngine.aiDefinitions(),
-      executeTool: async (name: string, rawInput: unknown) => {
+      executeTool: async (name: string, rawInput: unknown, signal: AbortSignal) => {
         const registered = this.toolEngine.list().find((candidate) => candidate.name === name);
         if (!registered) {
           throw new Error("La herramienta solicitada no está registrada.");
         }
-        return this.toolEngine.executeModelCallable(context, registered.name, rawInput);
+        return this.toolEngine.executeModelCallable(context, registered.name, rawInput, signal);
       }
     };
 

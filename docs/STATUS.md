@@ -50,17 +50,19 @@ Pendiente:
 - modelo 3D real compartido en lugar de las aproximaciones actuales
 - configuración avanzada de personalidad
 
-### Fase 4 — Automatización segura: 25%
+### Fase 4 — Automatización segura: 40%
 
 Implementado:
 - capa local de automatización separada del Core
 - AccessibilityService con permiso explícito
 - ejecución verificable de acciones de navegación de bajo riesgo
 - fallback al Core cuando la orden no es una acción local reconocida
+- AccessibilityService con descubrimiento de texto visible y elementos desplazables
+- acciones locales reales: atrás, inicio, notificaciones, ajustes rápidos, Ajustes, scroll y pulsación de elementos visibles
+- planificador local acotado a cinco pasos, con parada ante el primer fallo
 
 Pendiente:
-- planificador de tareas multi-paso
-- observar → localizar → ejecutar → verificar → recuperar
+- observar → localizar → ejecutar → verificar → recuperar como ciclo formal
 - conexión segura Android ↔ Core para automatizaciones aprobadas
 - visión/OCR como fallback
 - automatización avanzada de PC con confirmaciones explícitas

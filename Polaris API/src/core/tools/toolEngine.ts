@@ -7,6 +7,7 @@ import {
 } from "../../data/polarisRepository.js";
 import type { AuthenticatedContext } from "../../auth.js";
 import { PolarisError } from "../../errors.js";
+import type { AIToolDefinition } from "../ai/types.js";
 
 export type RiskLevel = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 export type ToolCategory =
@@ -138,6 +139,14 @@ export type RegisteredToolName = (typeof tools)[number]["name"];
 export class ToolEngine {
   public list(): readonly ToolDefinition<z.ZodType, unknown>[] {
     return tools;
+  }
+
+  public aiDefinitions(): readonly AIToolDefinition[] {
+    return tools.map((tool) => ({
+      name: tool.name,
+      description: tool.description,
+      parameters: z.toJSONSchema(tool.inputSchema) as Record<string, unknown>
+    }));
   }
 
   public async execute(

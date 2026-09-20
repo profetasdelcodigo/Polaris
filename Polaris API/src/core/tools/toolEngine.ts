@@ -60,7 +60,7 @@ const tools = [
     timeoutMs: 1_000,
     modelCallable: true,
     inputSchema: getTimeSchema,
-    async execute(_context, input) {
+    async execute(_context: ToolExecutionContext, input: z.infer<typeof getTimeSchema>) {
       try {
         const now = new Date();
         return {
@@ -85,7 +85,7 @@ const tools = [
     timeoutMs: 1_000,
     modelCallable: true,
     inputSchema: calculatorSchema,
-    async execute(_context, input) {
+    async execute(_context: ToolExecutionContext, input: z.infer<typeof calculatorSchema>) {
       return { expression: input.expression, result: calculateExpression(input.expression) };
     }
   },
@@ -97,7 +97,7 @@ const tools = [
     timeoutMs: 5_000,
     modelCallable: false,
     inputSchema: saveMemorySchema,
-    async execute(context, input) {
+    async execute(context: ToolExecutionContext, input: z.infer<typeof saveMemorySchema>) {
       const memory = await createMemory(context, {
         content: input.content,
         category: input.category,
@@ -115,7 +115,7 @@ const tools = [
     timeoutMs: 5_000,
     modelCallable: true,
     inputSchema: searchMemorySchema,
-    async execute(context, input) {
+    async execute(context: ToolExecutionContext, input: z.infer<typeof searchMemorySchema>) {
       const memories = await listRelevantMemories(context, input.query, 8);
       return memories.map((memory) => ({
         id: memory.id,
@@ -133,7 +133,7 @@ const tools = [
     timeoutMs: 5_000,
     modelCallable: true,
     inputSchema: listConversationsSchema,
-    async execute(context) {
+    async execute(context: ToolExecutionContext, _input: z.infer<typeof listConversationsSchema>) {
       const conversations = await listConversations(context);
       return conversations.map((conversation) => ({
         id: conversation.id,

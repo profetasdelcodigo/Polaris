@@ -326,6 +326,18 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
         button.text = "…"
         status.text = "Polaris está pensando…"
 
+        // Local Android actions are handled without sending the command to the cloud Core.
+        // This keeps low-risk device navigation fast and preserves the permission boundary.
+        if (PolarisAutomationController.isEnabled()) {
+            val local = PolarisAutomationController.execute(query)
+            if (local.success) {
+                status.text = local.message
+                button.isEnabled = true
+                button.text = "Preguntar"
+                return
+            }
+        }
+
         scope.launch {
             try {
                 val session = SupabaseProvider.client.auth.currentSessionOrNull()

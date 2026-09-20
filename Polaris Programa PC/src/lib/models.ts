@@ -66,8 +66,8 @@ export interface Profile {
   id: string;
   display_name: string;
   avatar_url: string | null;
+  language: "es" | "en";
   timezone: string;
-  locale: string;
   created_at: string;
   updated_at: string;
 }

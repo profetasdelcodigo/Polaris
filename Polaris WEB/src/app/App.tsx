@@ -101,6 +101,23 @@ export function App() {
     });
   }, []);
 
+  useEffect(() => {
+    const onShortcut = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey)) return;
+      const key = event.key.toLowerCase();
+      if (key === 'k') {
+        event.preventDefault();
+        setView('chat');
+      } else if (key >= '1' && key <= '7') {
+        event.preventDefault();
+        const views: View[] = ['home', 'chat', 'history', 'memories', 'devices', 'profile', 'settings'];
+        setView(views[Number(key) - 1]);
+      }
+    };
+    window.addEventListener('keydown', onShortcut);
+    return () => window.removeEventListener('keydown', onShortcut);
+  }, []);
+
   if (isBooting) {
     return <div className="boot"><span className="orbital-star">✦</span><p>Iniciando Polaris…</p></div>;
   }
@@ -404,7 +421,7 @@ function Sidebar({
   return (
     <aside className="workspace-sidebar">
       {brand()}
-      <button className="new-chat" type="button" onClick={onNew}>+ Nueva conversación</button>
+      <button className="new-chat" type="button" onClick={onNew}>+ Nueva conversación <kbd>Ctrl/Cmd + K</kbd></button>
       <nav aria-label="Navegación de Polaris">
         {items.map(([key, label, icon]) => <button key={key} type="button" className={view === key ? 'selected' : ''} onClick={() => onView(key)}><span>{icon}</span>{label}</button>)}
       </nav>

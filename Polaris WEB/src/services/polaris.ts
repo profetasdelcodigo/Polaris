@@ -112,7 +112,17 @@ export const polarisApi = {
       body: JSON.stringify(input),
     }),
   listDevices: (session: Session) => apiRequest<Device[]>('/devices', token(session)),
-  registerDevice: (session: Session, input: Omit<Device, 'id' | 'created_at' | 'last_seen'> & { clientId: string }) =>
+  registerDevice: (
+    session: Session,
+    input: {
+      clientId: string;
+      name: string;
+      type: Device['type'];
+      platform: string;
+      status: Device['status'];
+      metadata?: Record<string, unknown>;
+    },
+  ) =>
     apiRequest<Device>('/devices', token(session), {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

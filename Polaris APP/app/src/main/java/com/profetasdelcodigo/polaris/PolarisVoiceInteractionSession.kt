@@ -324,6 +324,19 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
     private fun sendToCore(query: String, status: TextView, button: Button) {
         button.isEnabled = false
         button.text = "…"
+
+        val localAction = PolarisLocalAutomation.parse(query)
+        if (localAction != null) {
+            val result = PolarisAccessibilityService.execute(localAction)
+            status.text = result.message
+            button.isEnabled = true
+            button.text = "Preguntar"
+            return
+        }
+
+        status.text = "Polaris está pensando…"
+        button.isEnabled = false
+        button.text = "…"
         status.text = "Polaris está pensando…"
 
         // Local Android actions are handled without sending the command to the cloud Core.

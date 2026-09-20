@@ -40,9 +40,10 @@ Implementado:
 - punto de entrada como asistente del sistema en Android mediante ROLE_ASSISTANT + VoiceInteractionService
 - sesión flotante del asistente sobre la aplicación actual, con tema translúcido y oscurecimiento del fondo
 - sesión de asistente capaz de enviar texto autenticado al endpoint /v1/chat del Core
+- captura de voz de una sola orden mediante SpeechRecognizer, priorizando reconocimiento en dispositivo cuando está disponible
 
 Pendiente:
-- voz real con permisos de micrófono
+- experiencia de voz conversacional continua
 - modelo 3D real compartido en lugar de las aproximaciones actuales
 - configuración avanzada de personalidad
 
@@ -64,9 +65,11 @@ Implementado:
 - sincronización mediante backend compartido
 - edición real de perfil en Web y PC contra /v1/profile
 - navegación rápida Web/PC por teclado
+- historial real en Android
+- memoria real en Android, con creación y eliminación
+- cliente Core Android ampliado para conversaciones y memorias
 
 Pendiente:
-- memoria/historial completos en Android
 - prueba real de sincronización Web → Android → PC
 - memoria semántica/vectorial
 - exportación/borrado de datos
@@ -92,4 +95,4 @@ Render:
 
 ## Próximo objetivo
 
-Cerrar Fase 1 con una prueba real del proveedor de IA y contratos/tests finales. Después, completar Android como cliente multidispositivo: historial + memoria + voz del asistente. Luego cerrar el módulo de automatización segura y, al final, empaquetar y publicar cuando la infraestructura de build esté disponible. Las capacidades de sistema/automatización inspiradas en ARTEMIS quedan separadas como módulo posterior y requieren permisos explícitos.
+Cerrar Fase 1 con una prueba real del proveedor de IA y contratos/tests finales. Después, ejecutar la prueba real Web → Android → PC y verificar expiración/refresh de sesión. Luego cerrar el módulo de automatización segura y, al final, empaquetar y publicar cuando la infraestructura de build esté disponible. Las capacidades de sistema/automatización inspiradas en ARTEMIS quedan separadas como módulo posterior y requieren permisos explícitos.

@@ -4,7 +4,7 @@ packages:
   - "Polaris Programa PC"
   - "packages/*"
 allowBuilds:
-  esbuild: set this to true or false
+  esbuild: true
 minimumReleaseAgeExclude:
   - eslint@10.11.0
   - openai@7.19.0

@@ -23,6 +23,25 @@ const context = {
   db: { from: () => new FakeQuery() }
 } as never;
 
+describe("ToolEngine OpenAI schema boundary", () => {
+  it("emits strict-compatible JSON schemas for every model-callable tool", () => {
+    const definitions = new ToolEngine().aiDefinitions();
+
+    for (const definition of definitions) {
+      const schema = definition.parameters as {
+        type?: string;
+        properties?: Record<string, unknown>;
+        required?: string[];
+        additionalProperties?: boolean;
+      };
+
+      expect(schema.type).toBe("object");
+      expect(schema.additionalProperties).toBe(false);
+      expect(schema.required ?? []).toEqual(Object.keys(schema.properties ?? {}));
+    }
+  });
+});
+
 describe("ToolEngine safety boundary", () => {
   it("does not allow the model to execute state-changing memory tools", async () => {
     const engine = new ToolEngine();

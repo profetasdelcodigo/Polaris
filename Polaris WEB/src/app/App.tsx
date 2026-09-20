@@ -384,7 +384,7 @@ function Workspace({
         {view === 'history' && <History conversations={conversations} onOpen={openConversation} onNew={() => void createConversation()} />}
         {view === 'memories' && <MemoriesView session={session} memories={memories} setMemories={setMemories} onProblem={setProblem} onNotice={setNotice} />}
         {view === 'profile' && <ProfileView session={session} profile={profile} setProfile={setProfile} onProblem={setProblem} onNotice={setNotice} />}
-        {view === 'settings' && <SettingsView session={session} preferences={preferences} setPreferences={setPreferences} onProblem={setProblem} onNotice={setNotice} />}
+        {view === 'settings' && <SettingsView preferences={preferences} setPreferences={setPreferences} onProblem={setProblem} onNotice={setNotice} />}
         {view === 'devices' && <DevicesView devices={devices} onRefresh={() => void refresh()} />}
       </section>
     </main>
@@ -780,13 +780,11 @@ function ProfileView({
 }
 
 function SettingsView({
-  session,
   preferences,
   setPreferences,
   onProblem,
   onNotice,
 }: {
-  session: Session;
   preferences: Preferences | null;
   setPreferences(preferences: Preferences): void;
   onProblem(message: string): void;

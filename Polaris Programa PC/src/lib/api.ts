@@ -218,7 +218,7 @@ export async function streamChat(
       body: JSON.stringify({ conversationId, content })
     });
   } catch (error) {
-    if ((error as Error).name === "AbortError") return;
+    if ((error as Error).name === "AbortError") throw error;
     throw new ApiError("No se pudo conectar con Polaris API.", "NETWORK_ERROR", 0);
   }
 
@@ -228,6 +228,7 @@ export async function streamChat(
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let pending = "";
+  let sawDone = false;
 
   try {
     while (true) {
@@ -236,14 +237,33 @@ export async function streamChat(
       const blocks = pending.split(/\r?\n\r?\n/);
       pending = blocks.pop() ?? "";
       for (const block of blocks) {
-        const error = dispatchSseBlock(block, callbacks);
+        const error = dispatchSseBlock(block, {
+          ...callbacks,
+          onDone: () => {
+            sawDone = true;
+            callbacks.onDone();
+          }
+        });
         if (error) throw error;
       }
       if (done) break;
     }
     if (pending.trim()) {
-      const error = dispatchSseBlock(pending, callbacks);
+      const error = dispatchSseBlock(pending, {
+        ...callbacks,
+        onDone: () => {
+          sawDone = true;
+          callbacks.onDone();
+        }
+      });
       if (error) throw error;
+    }
+    if (!sawDone) {
+      throw new ApiError(
+        "El servidor cerró el flujo antes de completar la respuesta.",
+        "STREAM_PROTOCOL_ERROR",
+        502
+      );
     }
   } finally {
     reader.releaseLock();

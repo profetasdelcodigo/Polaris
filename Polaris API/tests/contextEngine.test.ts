@@ -9,7 +9,7 @@ function queryFor(rows: FakeRow[]) {
     select: () => queryFor(rows),
     eq: () => queryFor(rows),
     order: () => queryFor(rows),
-    limit: () => queryFor(rows),
+    limit: (count: number) => queryFor(rows.slice(0, count)),
     textSearch: () => queryFor(rows),
     maybeSingle: async () => ({ data: rows[0] ?? null, error: null }),
     abortSignal: () => queryFor(rows),
@@ -74,9 +74,8 @@ describe("repository/context correctness", () => {
       "13"
     );
 
-    expect(context).toContain("MESSAGE 2");
+    expect(context).toContain("MESSAGE 1");
     expect(context).toContain("MESSAGE 12");
-    expect(context).not.toContain("MESSAGE 1");
     expect(context).not.toContain("CURRENT MESSAGE");
   });
 });

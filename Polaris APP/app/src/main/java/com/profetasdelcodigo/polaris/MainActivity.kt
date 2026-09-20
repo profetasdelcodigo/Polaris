@@ -74,6 +74,7 @@ class MainActivity : ComponentActivity() {
     private val assistantRoleLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             assistantRoleEnabled = isDefaultAssistant()
+            if (assistantRoleEnabled) requestMicrophonePermission()
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -4,7 +4,7 @@ Fecha de referencia: 2026-09-20
 
 ## Fases
 
-### Fase 1 — Polaris Core: 70%
+### Fase 1 — Polaris Core: 75%
 
 Implementado:
 - API Fastify
@@ -23,7 +23,7 @@ Implementado:
 
 Pendiente para cerrar la fase:
 - prueba real end-to-end con una API key válida
-- verificación de builds
+- verificación de builds de Node/Web/PC mediante CI
 - prueba real del function calling contra una API key válida
 - endurecimiento final de contratos y tests
 
@@ -50,7 +50,7 @@ Pendiente:
 - modelo 3D real compartido en lugar de las aproximaciones actuales
 - configuración avanzada de personalidad
 
-### Fase 4 — Automatización segura: 40%
+### Fase 4 — Automatización segura: 55%
 
 Implementado:
 - capa local de automatización separada del Core
@@ -62,15 +62,14 @@ Implementado:
 - desplazamiento de contenedores visibles
 - pulsación de elementos visibles por texto/descripción
 - fallback al Core cuando la orden no es una acción local reconocida
-- AccessibilityService con descubrimiento de texto visible y elementos desplazables
-- acciones locales reales: atrás, inicio, notificaciones, ajustes rápidos, Ajustes, scroll y pulsación de elementos visibles
-- planificador local acotado a cinco pasos, con parada ante el primer fallo
+- ciclo local de ejecución con resultado verificable por acción
 
 Pendiente:
 - observar → localizar → ejecutar → verificar → recuperar como ciclo formal
 - conexión segura Android ↔ Core para automatizaciones aprobadas
 - visión/OCR como fallback
 - automatización avanzada de PC con confirmaciones explícitas
+- pruebas instrumentadas en dispositivo real
 
 ### Fase 3 — Cuenta + Memoria: avance funcional
 
@@ -121,6 +120,12 @@ Render:
 CI:
 - workflow GitHub para typecheck/test/build de Core + Web + PC
 - workflow Android para assembleDebug
+
+## Verificación reciente
+
+- CI Node/Core: SUCCESS en el commit que ajustó los fixtures de contexto.
+- CI Android: SUCCESS en el commit que reparó la automatización; `:app:assembleDebug` completó correctamente.
+- Se corrigieron errores reales detectados por CI: servicio de automatización duplicado, referencias obsoletas, atributos de tema, declaración de botones de la sesión y acceso a Supabase Auth.
 
 ## Próximo objetivo
 

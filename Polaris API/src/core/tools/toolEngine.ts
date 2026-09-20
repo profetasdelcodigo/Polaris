@@ -2,7 +2,10 @@ import { z } from "zod";
 import { calculateExpression } from "./calculator.js";
 import {
   createMemory,
+  getPreferences,
+  getProfile,
   listConversations,
+  listDevices,
   listRelevantMemories
 } from "../../data/polarisRepository.js";
 import type { AuthenticatedContext } from "../../auth.js";
@@ -50,6 +53,9 @@ const saveMemorySchema = z.object({
 });
 const searchMemorySchema = z.object({ query: z.string().trim().max(180) });
 const listConversationsSchema = z.object({});
+const getProfileSchema = z.object({});
+const getPreferencesSchema = z.object({});
+const listDevicesSchema = z.object({});
 
 const tools = [
   {
@@ -139,6 +145,62 @@ const tools = [
         id: conversation.id,
         title: conversation.title,
         updatedAt: conversation.updated_at
+      }));
+    }
+  }
+,  {
+    name: "get_profile",
+    description: "Obtiene los datos de perfil no sensibles del usuario actual.",
+    category: "INFORMATION",
+    riskLevel: "LOW",
+    timeoutMs: 3_000,
+    modelCallable: true,
+    inputSchema: getProfileSchema,
+    async execute(context: ToolExecutionContext, _input: z.infer<typeof getProfileSchema>, _signal: AbortSignal) {
+      const profile = await getProfile(context);
+      return {
+        displayName: profile.display_name,
+        language: profile.language,
+        timezone: profile.timezone,
+        avatarUrl: profile.avatar_url
+      };
+    }
+  },
+  {
+    name: "get_preferences",
+    description: "Obtiene las preferencias actuales del usuario para adaptar la experiencia.",
+    category: "INFORMATION",
+    riskLevel: "LOW",
+    timeoutMs: 3_000,
+    modelCallable: true,
+    inputSchema: getPreferencesSchema,
+    async execute(context: ToolExecutionContext, _input: z.infer<typeof getPreferencesSchema>, _signal: AbortSignal) {
+      const preferences = await getPreferences(context);
+      return {
+        language: preferences.language,
+        theme: preferences.theme,
+        tone: preferences.tone,
+        responseStyle: preferences.response_style
+      };
+    }
+  },
+  {
+    name: "list_devices",
+    description: "Lista los dispositivos Polaris asociados al usuario actual sin exponer secretos.",
+    category: "INFORMATION",
+    riskLevel: "LOW",
+    timeoutMs: 3_000,
+    modelCallable: true,
+    inputSchema: listDevicesSchema,
+    async execute(context: ToolExecutionContext, _input: z.infer<typeof listDevicesSchema>, _signal: AbortSignal) {
+      const devices = await listDevices(context);
+      return devices.map((device) => ({
+        id: device.id,
+        name: device.name,
+        type: device.type,
+        platform: device.platform,
+        status: device.status,
+        lastSeen: device.last_seen
       }));
     }
   }

@@ -324,6 +324,7 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
       for await (const event of conversations.stream(context, {
         conversationId: conversation.id,
         message,
+        currentMessageId: userMessage.id,
         signal: requestAbortController.signal
       })) {
         if (event.type === "message.delta") assistantContent += event.delta;
@@ -369,20 +370,24 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
       content: message
     });
 
-    if (!provider.available) {
-      throw new PolarisError(
-        "PROVIDER_ERROR",
-        "La IA no está configurada en el servidor. El mensaje se conservó en el historial, pero no se generó una respuesta.",
-        503
-      );
-    }
-
     const assistantMessage = await createMessage(context, {
       conversationId: conversation.id,
       role: "assistant",
       content: "",
       status: "streaming"
     });
+
+    if (!provider.available) {
+      await updateMessage(context, assistantMessage.id, {
+        status: "failed",
+        metadata: { reason: "provider_unconfigured" }
+      }).catch(() => undefined);
+      throw new PolarisError(
+        "PROVIDER_ERROR",
+        "La IA no está configurada en el servidor. El mensaje se conservó en el historial, pero no se generó una respuesta.",
+        503
+      );
+    }
 
     reply.hijack();
     reply.raw.writeHead(200, {

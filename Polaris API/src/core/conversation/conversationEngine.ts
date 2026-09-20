@@ -53,7 +53,7 @@ export class ConversationEngine {
 
   public async *stream(
     context: Pick<AuthenticatedContext, "db" | "user">,
-    input: { conversationId: string; message: string; signal: AbortSignal }
+    input: { conversationId: string; message: string; currentMessageId?: string; signal: AbortSignal }
   ): AsyncGenerator<ConversationEvent> {
     const tool = inferredTool(input.message);
     let verifiedToolContext = "";
@@ -65,7 +65,13 @@ export class ConversationEngine {
       yield { type: "tool.completed", name: tool.name, result };
     }
 
-    const contextWindow = await buildContext(context, input.conversationId, input.message);
+    const contextWindow = await buildContext(
+      context,
+      input.conversationId,
+      input.message,
+      input.currentMessageId,
+      input.signal
+    );
     const providerInput = {
       system: PolarisIdentity.systemPrompt,
       user: input.message,

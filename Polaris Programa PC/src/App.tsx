@@ -158,7 +158,6 @@ function App() {
       return;
     }
     void refreshWorkspace();
-    void api.registerDesktop().catch(() => undefined);
   }, [session]);
 
   useEffect(() => {
@@ -183,16 +182,21 @@ function App() {
     setLoadingWorkspace(true);
     setError(null);
     try {
-      const [nextConversations, nextMemories, nextDevices, nextPreferences, nextProfile] = await Promise.all([
+      const [nextConversations, nextMemories, nextDevices, nextPreferences, nextProfile, registered] = await Promise.all([
         api.listConversations(),
         api.listMemories(),
         api.listDevices(),
         api.getPreferences(),
-        api.getProfile()
+        api.getProfile(),
+        api.registerDesktop().catch(() => null)
       ]);
       setConversations(nextConversations);
       setMemories(nextMemories);
-      setDevices(nextDevices);
+      setDevices(
+        registered
+          ? [registered, ...nextDevices.filter((device) => device.id !== registered.id)]
+          : nextDevices
+      );
       setPreferences(nextPreferences);
       setProfile(nextProfile);
     } catch (cause) {
@@ -381,6 +385,7 @@ function App() {
 
   useEffect(() => {
     let cancelled = false;
+    if (!session) return () => undefined;
     const timer = window.setTimeout(() => {
       void (async () => {
         try {

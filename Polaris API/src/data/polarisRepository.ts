@@ -75,16 +75,24 @@ export async function deleteConversation(context: DbContext, conversationId: str
   requireData(data, error);
 }
 
-export async function listMessages(context: DbContext, conversationId: string, limit = 100) {
+export async function listMessages(
+  context: DbContext,
+  conversationId: string,
+  limit = 100,
+  signal?: AbortSignal
+) {
   await getConversation(context, conversationId);
-  const { data, error } = await context.db
+  let request = context.db
     .from("messages")
     .select("id,conversation_id,role,content,status,metadata,created_at")
     .eq("conversation_id", conversationId)
-    .order("created_at", { ascending: true })
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
     .limit(limit);
+  if (signal) request = request.abortSignal(signal);
+  const { data, error } = await request;
   if (error) throw databaseError(error);
-  return data ?? [];
+  return [...(data ?? [])].reverse();
 }
 
 export async function createMessage(

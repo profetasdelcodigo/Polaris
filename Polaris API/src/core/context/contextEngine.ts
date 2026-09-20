@@ -4,14 +4,18 @@ import { listMessages, listRelevantMemories } from "../../data/polarisRepository
 export async function buildContext(
   context: Pick<AuthenticatedContext, "db" | "user">,
   conversationId: string,
-  currentMessage: string
+  currentMessage: string,
+  currentMessageId?: string,
+  signal?: AbortSignal
 ): Promise<string> {
+  const messageLimit = currentMessageId ? 13 : 12;
   const [messages, memories] = await Promise.all([
-    listMessages(context, conversationId, 12),
-    listRelevantMemories(context, currentMessage, 6)
+    listMessages(context, conversationId, messageLimit, signal),
+    listRelevantMemories(context, currentMessage, 6, signal)
   ]);
 
   const recent = messages
+    .filter((message) => message.id !== currentMessageId)
     .slice(-12)
     .map((message) => `[${message.role}] ${message.content}`)
     .join("\n");

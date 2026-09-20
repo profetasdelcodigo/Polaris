@@ -26,6 +26,7 @@ import {
   type Profile,
 } from '../services/polaris';
 import { PolarisApiError, type SseEvent } from '../services/api';
+import { getSupabaseClient } from '../services/supabase';
 
 type View = 'home' | 'chat' | 'history' | 'memories' | 'profile' | 'settings' | 'devices';
 type AuthView = 'sign-in' | 'sign-up' | 'recover' | 'update-password';
@@ -342,6 +343,33 @@ function Workspace({
   };
 
   useEffect(() => { void refresh(); }, [session.access_token]);
+
+  useEffect(() => {
+    const client = getSupabaseClient();
+    const userId = session.user.id;
+    const channel = client
+      .channel(`polaris-sync:${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations', filter: `user_id=eq.${userId}` }, () => {
+        void refresh();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'memories', filter: `user_id=eq.${userId}` }, () => {
+        void refresh();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'devices', filter: `user_id=eq.${userId}` }, () => {
+        void refresh();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` }, () => {
+        void refresh();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_preferences', filter: `user_id=eq.${userId}` }, () => {
+        void refresh();
+      })
+      .subscribe();
+
+    return () => {
+      void client.removeChannel(channel);
+    };
+  }, [session.user.id]);
 
   const openConversation = async (id: string) => {
     setSelectedConversationId(id);

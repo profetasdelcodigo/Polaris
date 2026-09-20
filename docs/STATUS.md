@@ -42,11 +42,28 @@ Implementado:
 - sesión de asistente capaz de enviar texto autenticado al endpoint /v1/chat del Core
 - captura de voz de una sola orden mediante SpeechRecognizer, priorizando reconocimiento en dispositivo cuando está disponible
 - feedback visual de invocación del asistente mediante la API oficial de Android
+- automatización local Android inicial, con Accesibilidad explícitamente activada por el usuario
+- acciones locales reales y acotadas: volver, inicio, notificaciones, Ajustes, desplazamiento y pulsación de elementos visibles
 
 Pendiente:
 - experiencia de voz conversacional continua
 - modelo 3D real compartido en lugar de las aproximaciones actuales
 - configuración avanzada de personalidad
+
+### Fase 4 — Automatización segura: 25%
+
+Implementado:
+- capa local de automatización separada del Core
+- AccessibilityService con permiso explícito
+- ejecución verificable de acciones de navegación de bajo riesgo
+- fallback al Core cuando la orden no es una acción local reconocida
+
+Pendiente:
+- planificador de tareas multi-paso
+- observar → localizar → ejecutar → verificar → recuperar
+- conexión segura Android ↔ Core para automatizaciones aprobadas
+- visión/OCR como fallback
+- automatización avanzada de PC con confirmaciones explícitas
 
 ### Fase 3 — Cuenta + Memoria: avance funcional
 
@@ -100,4 +117,4 @@ CI:
 
 ## Próximo objetivo
 
-Cerrar Fase 1 con una prueba real del proveedor de IA y contratos/tests finales. Después, ejecutar la prueba real Web → Android → PC y verificar expiración/refresh de sesión. Luego cerrar el módulo de automatización segura y, al final, empaquetar y publicar cuando la infraestructura de build esté disponible. Las capacidades de sistema/automatización inspiradas en ARTEMIS quedan separadas como módulo posterior y requieren permisos explícitos.
+Cerrar Fase 1 con una prueba real del proveedor de IA y contratos/tests finales. Después, ejecutar la prueba real Web → Android → PC y verificar expiración/refresh de sesión. Luego completar el módulo de automatización segura, cerrar sincronización/voz/visión y hacer una pasada final de diseño, accesibilidad, rendimiento, pruebas y empaquetado antes de declarar 100%. Las capacidades de sistema/automatización inspiradas en ARTEMIS quedan separadas como módulo posterior y requieren permisos explícitos.

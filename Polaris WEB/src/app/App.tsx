@@ -324,7 +324,6 @@ function Workspace({
       setPreferences(nextPreferences);
       const registered = await polarisApi.registerDevice(session, {
         clientId: getOrCreateWebClientId(),
-        client_id: null,
         name: 'Polaris Web',
         type: 'WEB',
         platform: navigator.userAgent.slice(0, 110),

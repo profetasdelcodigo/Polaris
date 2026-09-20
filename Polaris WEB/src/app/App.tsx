@@ -744,19 +744,47 @@ function ProfileView({
 }) {
   const [name, setName] = useState(profile?.display_name ?? '');
   const [timezone, setTimezone] = useState(profile?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const [language, setLanguage] = useState<Profile['language']>(profile?.language ?? 'es');
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url ?? '');
 
-  useEffect(() => { if (profile) { setName(profile.display_name); setTimezone(profile.timezone); } }, [profile]);
+  useEffect(() => {
+    if (profile) {
+      setName(profile.display_name);
+      setTimezone(profile.timezone);
+      setLanguage(profile.language);
+      setAvatarUrl(profile.avatar_url ?? '');
+    }
+  }, [profile]);
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     try {
-      const updated = await polarisApi.updateProfile(session, { display_name: name, timezone });
+      const updated = await polarisApi.updateProfile(session, {
+        display_name: name.trim(),
+        timezone: timezone.trim(),
+        language,
+        avatar_url: avatarUrl.trim() || null,
+      });
       setProfile(updated);
       onNotice('Perfil actualizado.');
     } catch (cause) { onProblem(errorText(cause)); }
   }
 
-  return <div className="page narrow"><header className="section-heading"><div><span className="eyebrow">IDENTIDAD</span><h1>Perfil</h1><p>La misma identidad viaja contigo en web, Android y PC.</p></div></header><form className="detail-card" onSubmit={(event) => void save(event)}><div className="profile-top"><span>{(profile?.display_name ?? session.user.email ?? '?').slice(0, 1).toUpperCase()}</span><div><h2>{profile?.display_name || 'Usuario Polaris'}</h2><p>{session.user.email}</p></div></div><label>Nombre<input value={name} onChange={(event) => setName(event.target.value)} minLength={1} maxLength={120} required /></label><label>Zona horaria<input value={timezone} onChange={(event) => setTimezone(event.target.value)} required /></label><button className="primary-button" type="submit">Guardar perfil</button></form></div>;
+  return (
+    <div className="page narrow">
+      <header className="section-heading">
+        <div><span className="eyebrow">IDENTIDAD</span><h1>Perfil</h1><p>La misma identidad viaja contigo en web, Android y PC.</p></div>
+      </header>
+      <form className="detail-card" onSubmit={(event) => void save(event)}>
+        <div className="profile-top"><span>{(name || session.user.email || '?').slice(0, 1).toUpperCase()}</span><div><h2>{name || 'Usuario Polaris'}</h2><p>{session.user.email}</p></div></div>
+        <label>Nombre<input value={name} onChange={(event) => setName(event.target.value)} minLength={1} maxLength={120} required /></label>
+        <label>Idioma<select value={language} onChange={(event) => setLanguage(event.target.value as Profile['language'])}><option value="es">Español</option><option value="en">English</option></select></label>
+        <label>Zona horaria<input value={timezone} onChange={(event) => setTimezone(event.target.value)} maxLength={100} required /></label>
+        <label>Avatar (URL)<input type="url" value={avatarUrl} onChange={(event) => setAvatarUrl(event.target.value)} placeholder="https://…" maxLength={2048} /></label>
+        <button className="primary-button" type="submit" disabled={!name.trim() || !timezone.trim()}>Guardar perfil</button>
+      </form>
+    </div>
+  );
 }
 
 function SettingsView({

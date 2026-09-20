@@ -38,7 +38,7 @@ export interface ToolDefinition<TInput extends z.ZodType, TResult> {
 }
 
 const getTimeSchema = z.object({
-  timezone: z.string().trim().min(1).max(100).default("America/Lima")
+  timezone: z.string().trim().min(1).max(100)
 });
 const calculatorSchema = z.object({ expression: z.string().trim().min(1).max(200) });
 const saveMemorySchema = z.object({
@@ -48,7 +48,7 @@ const saveMemorySchema = z.object({
     .default("CONTEXT"),
   importance: z.number().int().min(1).max(5).default(3)
 });
-const searchMemorySchema = z.object({ query: z.string().trim().max(180).default("") });
+const searchMemorySchema = z.object({ query: z.string().trim().max(180) });
 const listConversationsSchema = z.object({});
 
 const tools = [

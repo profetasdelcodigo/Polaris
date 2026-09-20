@@ -16,7 +16,7 @@ export interface AICompletionInput {
   context: string;
   signal: AbortSignal;
   tools?: readonly AIToolDefinition[];
-  executeTool?: (name: string, input: unknown) => Promise<unknown>;
+  executeTool?: (name: string, input: unknown, signal: AbortSignal) => Promise<unknown>;
 }
 
 export interface AIProvider {

@@ -1,2 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources><string name="app_name">Polaris</string></resources>
+<resources>
+    <string name="app_name">Polaris</string>
+    <string name="polaris_accessibility_description">Permite a Polaris ejecutar acciones de navegación explícitamente autorizadas por el usuario.</string>
+</resources>

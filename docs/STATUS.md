@@ -54,8 +54,12 @@ Pendiente:
 
 Implementado:
 - capa local de automatización separada del Core
-- AccessibilityService con permiso explícito
-- ejecución verificable de acciones de navegación de bajo riesgo
+- AccessibilityService con permiso explícito del usuario
+- parser determinista de órdenes Android de bajo riesgo
+- navegación real: atrás, inicio, recientes, notificaciones y ajustes rápidos
+- apertura de Ajustes, Wi-Fi y Bluetooth
+- desplazamiento de contenedores visibles
+- pulsación de elementos visibles por texto/descripción
 - fallback al Core cuando la orden no es una acción local reconocida
 - AccessibilityService con descubrimiento de texto visible y elementos desplazables
 - acciones locales reales: atrás, inicio, notificaciones, ajustes rápidos, Ajustes, scroll y pulsación de elementos visibles
@@ -119,4 +123,4 @@ CI:
 
 ## Próximo objetivo
 
-Cerrar Fase 1 con una prueba real del proveedor de IA y contratos/tests finales. Después, ejecutar la prueba real Web → Android → PC y verificar expiración/refresh de sesión. Luego completar el módulo de automatización segura, cerrar sincronización/voz/visión y hacer una pasada final de diseño, accesibilidad, rendimiento, pruebas y empaquetado antes de declarar 100%. Las capacidades de sistema/automatización inspiradas en ARTEMIS quedan separadas como módulo posterior y requieren permisos explícitos.
+Cerrar Fase 1 con una prueba real del proveedor de IA y contratos/tests finales. Después, ejecutar la prueba real Web → Android → PC y verificar expiración/refresh de sesión. Luego completar el planificador de automatización multi-paso, observación/localización/verificación/recuperación y el puente seguro Android ↔ Core. Después: voz continua/TTS, memoria semántica, visión/OCR, automatización PC con permisos, sincronización realtime cuando aporte valor y una pasada final de diseño, accesibilidad, rendimiento, pruebas y empaquetado. No se declarará 100% hasta que cada bloque tenga implementación y verificación real. Las capacidades de sistema/automatización inspiradas en ARTEMIS quedan separadas como módulo posterior y requieren permisos explícitos.

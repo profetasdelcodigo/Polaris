@@ -28,7 +28,7 @@ export async function listConversations(
 ) {
   let request = context.db
     .from("conversations")
-    .select("*")
+    .select("id,title,created_at,updated_at")
     .order("updated_at", { ascending: false })
     .limit(limit);
   if (signal) request = request.abortSignal(signal);
@@ -49,7 +49,7 @@ export async function createConversation(context: DbContext, title: string) {
 export async function getConversation(context: DbContext, conversationId: string) {
   const { data, error } = await context.db
     .from("conversations")
-    .select("*")
+    .select("id,title,created_at,updated_at")
     .eq("id", conversationId)
     .maybeSingle();
   return requireData(data, error);
@@ -79,7 +79,7 @@ export async function listMessages(context: DbContext, conversationId: string, l
   await getConversation(context, conversationId);
   const { data, error } = await context.db
     .from("messages")
-    .select("*")
+    .select("id,conversation_id,role,content,status,metadata,created_at")
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true })
     .limit(limit);
@@ -134,7 +134,7 @@ export async function listRelevantMemories(
   const sanitized = query.replace(/[%_]/g, " ").trim().slice(0, 180);
   let request = context.db
     .from("memories")
-    .select("*")
+    .select("id,category,content,importance,source,metadata,created_at,updated_at")
     .order("importance", { ascending: false })
     .order("updated_at", { ascending: false })
     .limit(limit);
@@ -275,7 +275,7 @@ export async function updateProfile(
 export async function listDevices(context: DbContext) {
   const { data, error } = await context.db
     .from("devices")
-    .select("*")
+    .select("id,user_id,client_id,name,type,platform,status,last_seen,metadata,created_at")
     .order("last_seen", { ascending: false, nullsFirst: false })
     .limit(100);
   if (error) throw databaseError(error);

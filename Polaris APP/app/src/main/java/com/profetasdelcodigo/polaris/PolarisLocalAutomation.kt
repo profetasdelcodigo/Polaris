@@ -6,6 +6,18 @@ package com.profetasdelcodigo.polaris
  * Everything else remains a normal Core/AI request.
  */
 object PolarisLocalAutomation {
+    fun parsePlan(raw: String): List<LocalAutomationAction> {
+        val parts = raw.trim()
+            .split(Regex("\\s+(?:y luego|luego|después|despues|y)\\s+|\\s*[;,]\\s*"))
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+
+        if (parts.isEmpty()) return emptyList()
+
+        val actions = parts.map { parse(it) ?: return emptyList() }
+        return actions.takeIf { it.size <= 8 } ?: emptyList()
+    }
+
     fun parse(raw: String): LocalAutomationAction? {
         val text = raw.trim().lowercase().replace(Regex("\\s+"), " ")
         return when {

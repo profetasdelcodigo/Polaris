@@ -57,7 +57,7 @@ describe("ConversationEngine model tool boundary", () => {
       available: true,
       async *stream(input) {
         expect(input.executeTool).toBeDefined();
-        await expect(input.executeTool!("save_memory", { content: "no" })).rejects.toBeInstanceOf(PolarisError);
+        await expect(input.executeTool!("save_memory", { content: "no" }, new AbortController().signal)).rejects.toBeInstanceOf(PolarisError);
         yield { type: "text_delta", delta: "No ejecutado." };
         yield { type: "completed" };
       }

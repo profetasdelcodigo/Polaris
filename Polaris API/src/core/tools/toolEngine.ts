@@ -166,24 +166,54 @@ export class ToolEngine {
     name: RegisteredToolName,
     rawInput: unknown
   ): Promise<unknown> {
+    return this.executeInternal(context, name, rawInput, false);
+  }
+
+  public async executeModelCallable(
+    context: ToolExecutionContext,
+    name: string,
+    rawInput: unknown
+  ): Promise<unknown> {
+    const tool = tools.find((candidate) => candidate.name === name);
+    if (!tool || !tool.modelCallable) {
+      throw new PolarisError(
+        "PERMISSION_DENIED",
+        "Polaris no puede ejecutar esta herramienta automáticamente.",
+        403
+      );
+    }
+
+    return this.executeInternal(context, tool.name, rawInput, true);
+  }
+
+  private async executeInternal(
+    context: ToolExecutionContext,
+    name: RegisteredToolName,
+    rawInput: unknown,
+    _modelSelected: boolean
+  ): Promise<unknown> {
     const tool = tools.find((candidate) => candidate.name === name);
     if (!tool) {
       throw new PolarisError("NOT_FOUND", "La herramienta solicitada no existe.", 404);
     }
-    const input = tool.inputSchema.parse(rawInput);
-    const deadline = AbortSignal.timeout(tool.timeoutMs);
 
-    return await Promise.race([
-      tool.execute(context, input),
-      new Promise<never>((_, reject) => {
-        deadline.addEventListener(
-          "abort",
-          () => {
-            reject(new PolarisError("TIMEOUT", "La herramienta excedió el tiempo permitido.", 504));
-          },
-          { once: true }
-        );
-      })
-    ]);
+    const input = tool.inputSchema.parse(rawInput);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), tool.timeoutMs);
+
+    try {
+      return await Promise.race([
+        tool.execute(context, input),
+        new Promise<never>((_, reject) => {
+          controller.signal.addEventListener(
+            "abort",
+            () => reject(new PolarisError("TIMEOUT", "La herramienta excedió el tiempo permitido.", 504)),
+            { once: true }
+          );
+        })
+      ]);
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 }

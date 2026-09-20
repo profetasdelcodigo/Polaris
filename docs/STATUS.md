@@ -39,10 +39,11 @@ Implementado:
 - mascota animada en Web/PC/Android
 - punto de entrada como asistente del sistema en Android mediante ROLE_ASSISTANT + VoiceInteractionService
 - sesión flotante del asistente sobre la aplicación actual, con tema translúcido y oscurecimiento del fondo
+- sesión de asistente capaz de enviar texto autenticado al endpoint /v1/chat del Core
 
 Pendiente:
 - voz real con permisos de micrófono
-- conectar la sesión de asistente al Core autenticado
+- voz real con permisos de micrófono
 - modelo 3D real compartido en lugar de las aproximaciones actuales
 - configuración avanzada de personalidad
 

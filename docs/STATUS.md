@@ -1,6 +1,6 @@
 # Polaris — Estado técnico
 
-Fecha de referencia: 2026-09-19
+Fecha de referencia: 2026-09-20
 
 ## Fases
 
@@ -27,25 +27,26 @@ Pendiente para cerrar la fase:
 - tool/function calling nativo del proveedor en lugar de depender únicamente de inferencia determinista
 - endurecimiento final de contratos y tests
 
-### Fase 2 — Identidad: 65%
+### Fase 2 — Identidad: avance funcional
 
 Implementado:
 - PolarisIdentity
 - personalidad base
 - estados del asistente
-- identidad visual inicial en Web
-- avatar/símbolo
-- dark premium
-- base visual en PC
-- arquitectura inicial para voz
+- identidad visual en Web
+- identidad visual en PC
+- paleta Polaris unificada
+- mascota animada en Web/PC/Android
+- punto de entrada como asistente del sistema en Android mediante ROLE_ASSISTANT + VoiceInteractionService
+- sesión flotante del asistente sobre la aplicación actual, con tema translúcido y oscurecimiento del fondo
 
 Pendiente:
-- sistema visual unificado más completo
-- voz real
-- estados visuales refinados en Android/PC
+- voz real con permisos de micrófono
+- conectar la sesión de asistente al Core autenticado
+- modelo 3D real compartido en lugar de las aproximaciones actuales
 - configuración avanzada de personalidad
 
-### Fase 3 — Cuenta + Memoria: 65%
+### Fase 3 — Cuenta + Memoria: avance funcional
 
 Implementado:
 - Supabase Auth
@@ -61,12 +62,13 @@ Implementado:
 - búsqueda textual básica de memoria
 - historial Web/PC
 - sincronización mediante backend compartido
+- edición real de perfil en Web y PC contra /v1/profile
+- navegación rápida Web/PC por teclado
 
 Pendiente:
 - memoria/historial completos en Android
 - prueba real de sincronización Web → Android → PC
 - memoria semántica/vectorial
-- edición completa de perfil
 - exportación/borrado de datos
 - sincronización realtime donde aporte valor
 
@@ -90,4 +92,4 @@ Render:
 
 ## Próximo objetivo
 
-Cerrar Fase 1 funcionalmente y llevar Fase 3 a una prueba multidispositivo real antes de añadir capacidades avanzadas.
+Cerrar Fase 1 con una prueba real del proveedor de IA y contratos/tests finales. Después, completar Android como cliente multidispositivo: historial + memoria + sesión de asistente conectada al Core. Las capacidades de sistema/automatización inspiradas en ARTEMIS quedan separadas como módulo posterior y requieren permisos explícitos.

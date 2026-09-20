@@ -36,7 +36,11 @@ async function parseProblem(response: Response): Promise<ApiProblem> {
         title: typeof candidate.title === 'string' ? candidate.title : undefined,
         status: typeof candidate.status === 'number' ? candidate.status : response.status,
         code: typeof candidate.code === 'string' ? candidate.code : undefined,
-        detail: typeof candidate.detail === 'string' ? candidate.detail : undefined,
+        detail: typeof candidate.detail === 'string'
+          ? candidate.detail
+          : typeof candidate.message === 'string'
+            ? candidate.message
+            : undefined,
         requestId: typeof candidate.requestId === 'string' ? candidate.requestId : undefined,
       };
     }

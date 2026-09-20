@@ -24,7 +24,7 @@ Implementado:
 Pendiente para cerrar la fase:
 - prueba real end-to-end con una API key válida
 - verificación de builds
-- tool/function calling nativo del proveedor en lugar de depender únicamente de inferencia determinista
+- prueba real del function calling contra una API key válida
 - endurecimiento final de contratos y tests
 
 ### Fase 2 — Identidad: avance funcional
@@ -41,6 +41,7 @@ Implementado:
 - sesión flotante del asistente sobre la aplicación actual, con tema translúcido y oscurecimiento del fondo
 - sesión de asistente capaz de enviar texto autenticado al endpoint /v1/chat del Core
 - captura de voz de una sola orden mediante SpeechRecognizer, priorizando reconocimiento en dispositivo cuando está disponible
+- feedback visual de invocación del asistente mediante la API oficial de Android
 
 Pendiente:
 - experiencia de voz conversacional continua
@@ -92,6 +93,10 @@ Render:
 - ambos en free
 - último deploy bloqueado antes del build porque el workspace agotó los minutos de build del período
 - queda pendiente configurar el secreto OPENAI_API_KEY
+
+CI:
+- workflow GitHub para typecheck/test/build de Core + Web + PC
+- workflow Android para assembleDebug
 
 ## Próximo objetivo
 

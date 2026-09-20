@@ -3,14 +3,34 @@ name: Polaris CI
 on:
   push:
     branches: [main]
+    paths:
+      - "Polaris API/**"
+      - "Polaris WEB/**"
+      - "Polaris Programa PC/**"
+      - "packages/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/ci.yml"
+      - ".github/workflows/android.yml"
   pull_request:
     branches: [main]
+    paths:
+      - "Polaris API/**"
+      - "Polaris WEB/**"
+      - "Polaris Programa PC/**"
+      - "packages/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/ci.yml"
+      - ".github/workflows/android.yml"
 
 permissions:
   contents: read
 
 concurrency:
-  group: polaris-ci-${{ github.ref }}
+  group: polaris-node-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -43,27 +63,3 @@ jobs:
 
       - name: Build
         run: pnpm build
-
-  android:
-    name: Android debug build
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: "Polaris APP"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          java-version: "17"
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
-        with:
-          gradle-version: "9.6.0"
-
-      - name: Assemble debug
-        run: gradle :app:assembleDebug --no-daemon

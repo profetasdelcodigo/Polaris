@@ -1,0 +1,45 @@
+name: Polaris Android
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Polaris APP/**"
+      - ".github/workflows/android.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "Polaris APP/**"
+      - ".github/workflows/android.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: polaris-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Android debug build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: "Polaris APP"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: "9.6.0"
+
+      - name: Assemble debug
+        run: gradle :app:assembleDebug --no-daemon

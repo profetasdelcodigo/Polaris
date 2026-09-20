@@ -43,7 +43,6 @@ Implementado:
 
 Pendiente:
 - voz real con permisos de micrófono
-- voz real con permisos de micrófono
 - modelo 3D real compartido en lugar de las aproximaciones actuales
 - configuración avanzada de personalidad
 
@@ -93,4 +92,4 @@ Render:
 
 ## Próximo objetivo
 
-Cerrar Fase 1 con una prueba real del proveedor de IA y contratos/tests finales. Después, completar Android como cliente multidispositivo: historial + memoria + sesión de asistente conectada al Core. Las capacidades de sistema/automatización inspiradas en ARTEMIS quedan separadas como módulo posterior y requieren permisos explícitos.
+Cerrar Fase 1 con una prueba real del proveedor de IA y contratos/tests finales. Después, completar Android como cliente multidispositivo: historial + memoria + voz del asistente. Luego cerrar el módulo de automatización segura y, al final, empaquetar y publicar cuando la infraestructura de build esté disponible. Las capacidades de sistema/automatización inspiradas en ARTEMIS quedan separadas como módulo posterior y requieren permisos explícitos.

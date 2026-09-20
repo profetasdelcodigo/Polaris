@@ -11,5 +11,6 @@ import android.service.voice.VoiceInteractionService
 class PolarisVoiceInteractionService : VoiceInteractionService() {
     override fun onReady() {
         super.onReady()
+        setInvocationEffectEnabled(true)
     }
 }

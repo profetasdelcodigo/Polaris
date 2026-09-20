@@ -547,7 +547,9 @@ function App() {
         {screen === "settings" && (
           <Settings preferences={preferences} onTheme={(theme) => void updateTheme(theme)} />
         )}
-        {screen === "devices" && <Devices devices={devices} onRefresh={() => void refreshWorkspace()} />}
+        {screen === "devices" && <Devices devices={devices} onRefresh={() => {
+          void refreshWorkspace();
+        }} />}
       </section>
     </main>
   );
@@ -770,7 +772,9 @@ function Chat({
                   <p className="failed-copy">Generación detenida por ti.</p>
                 ) : null}
                 {message.role === "assistant" && message.content && (
-                  <button type="button" className="copy-button" onClick={() => void navigator.clipboard.writeText(message.content)}>Copiar</button>
+                  <button type="button" className="copy-button" onClick={() => {
+                    void navigator.clipboard.writeText(message.content).catch(() => undefined);
+                  }}>Copiar</button>
                 )}
               </div>
             </article>

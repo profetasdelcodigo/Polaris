@@ -1,9 +1,17 @@
 package com.profetasdelcodigo.polaris
 
+import android.Manifest
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
+import android.os.Bundle
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import android.service.voice.VoiceInteractionSession
 import android.view.Gravity
 import android.view.View
@@ -66,6 +74,7 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
     }
 
     private var conversationId: String? = null
+    private var speechRecognizer: SpeechRecognizer? = null
 
     override fun onCreateContentView(): View {
         val root = LinearLayout(context).apply {
@@ -150,7 +159,7 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
             text = "Voz"
             setTextColor(cyan)
             setOnClickListener {
-                subtitle.text = "La invocación de voz del sistema está preparada; la captura de micrófono queda pendiente del permiso de audio."
+                startVoiceRecognition(input, subtitle, sendButton)
             }
         }
         actions.addView(listen, LinearLayout.LayoutParams(0, dp(48), 1f).apply {
@@ -204,6 +213,113 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
         return root
     }
 
+    private fun startVoiceRecognition(input: EditText, status: TextView, sendButton: Button) {
+        if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            status.text = "Activa el permiso de micrófono en la aplicación Polaris para usar voz."
+            return
+        }
+
+        if (!SpeechRecognizer.isRecognitionAvailable(context)) {
+            status.text = "Este dispositivo no tiene un servicio de reconocimiento de voz disponible."
+            return
+        }
+
+        destroySpeechRecognizer()
+        speechRecognizer = if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            SpeechRecognizer.isOnDeviceRecognitionAvailable(context)
+        ) {
+            SpeechRecognizer.createOnDeviceSpeechRecognizer(context)
+        } else {
+            SpeechRecognizer.createSpeechRecognizer(context)
+        }
+
+        val recognizer = speechRecognizer ?: return
+        recognizer.setRecognitionListener(object : RecognitionListener {
+            override fun onReadyForSpeech(params: Bundle?) {
+                status.text = "Te escucho…"
+                sendButton.isEnabled = false
+            }
+
+            override fun onBeginningOfSpeech() {
+                status.text = "Escuchando…"
+            }
+
+            override fun onRmsChanged(rmsdB: Float) = Unit
+            override fun onBufferReceived(buffer: ByteArray?) = Unit
+
+            override fun onEndOfSpeech() {
+                status.text = "Procesando voz…"
+            }
+
+            override fun onError(error: Int) {
+                sendButton.isEnabled = true
+                status.text = when (error) {
+                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Falta permiso de micrófono."
+                    SpeechRecognizer.ERROR_NETWORK,
+                    SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "La red no está disponible para reconocimiento de voz."
+                    SpeechRecognizer.ERROR_NO_MATCH -> "No entendí lo que dijiste. Inténtalo de nuevo."
+                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No detecté voz."
+                    else -> "No pude procesar la voz (código $error)."
+                }
+                destroySpeechRecognizer()
+            }
+
+            override fun onResults(results: Bundle?) {
+                val spoken = results
+                    ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    ?.firstOrNull()
+                    ?.trim()
+                    .orEmpty()
+
+                destroySpeechRecognizer()
+
+                if (spoken.isBlank()) {
+                    sendButton.isEnabled = true
+                    status.text = "No se obtuvo una frase. Inténtalo de nuevo."
+                    return
+                }
+
+                input.setText(spoken)
+                input.setSelection(spoken.length)
+                sendToCore(spoken, status, sendButton)
+            }
+
+            override fun onPartialResults(partialResults: Bundle?) {
+                val spoken = partialResults
+                    ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    ?.firstOrNull()
+                    ?.trim()
+                    .orEmpty()
+
+                if (spoken.isNotBlank()) {
+                    input.setText(spoken)
+                    input.setSelection(spoken.length)
+                }
+            }
+
+            override fun onEvent(eventType: Int, params: Bundle?) = Unit
+        })
+
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+            )
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "es-PE")
+            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
+        }
+
+        recognizer.startListening(intent)
+    }
+
+    private fun destroySpeechRecognizer() {
+        speechRecognizer?.cancel()
+        speechRecognizer?.destroy()
+        speechRecognizer = null
+    }
+
     private fun sendToCore(query: String, status: TextView, button: Button) {
         button.isEnabled = false
         button.text = "…"
@@ -248,6 +364,7 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
     }
 
     override fun onDestroy() {
+        destroySpeechRecognizer()
         scope.cancel()
         http.close()
         super.onDestroy()

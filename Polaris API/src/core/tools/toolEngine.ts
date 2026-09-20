@@ -34,7 +34,7 @@ export interface ToolDefinition<TInput extends z.ZodType, TResult> {
   timeoutMs: number;
   modelCallable: boolean;
   inputSchema: TInput;
-  execute(context: ToolExecutionContext, input: z.infer<TInput>): Promise<TResult>;
+  execute(context: ToolExecutionContext, input: z.infer<TInput>, signal: AbortSignal): Promise<TResult>;
 }
 
 const getTimeSchema = z.object({
@@ -60,7 +60,7 @@ const tools = [
     timeoutMs: 1_000,
     modelCallable: true,
     inputSchema: getTimeSchema,
-    async execute(_context: ToolExecutionContext, input: z.infer<typeof getTimeSchema>) {
+    async execute(_context: ToolExecutionContext, input: z.infer<typeof getTimeSchema>, _signal: AbortSignal) {
       try {
         const now = new Date();
         return {
@@ -85,7 +85,7 @@ const tools = [
     timeoutMs: 1_000,
     modelCallable: true,
     inputSchema: calculatorSchema,
-    async execute(_context: ToolExecutionContext, input: z.infer<typeof calculatorSchema>) {
+    async execute(_context: ToolExecutionContext, input: z.infer<typeof calculatorSchema>, _signal: AbortSignal) {
       return { expression: input.expression, result: calculateExpression(input.expression) };
     }
   },
@@ -97,7 +97,7 @@ const tools = [
     timeoutMs: 5_000,
     modelCallable: false,
     inputSchema: saveMemorySchema,
-    async execute(context: ToolExecutionContext, input: z.infer<typeof saveMemorySchema>) {
+    async execute(context: ToolExecutionContext, input: z.infer<typeof saveMemorySchema>, _signal: AbortSignal) {
       const memory = await createMemory(context, {
         content: input.content,
         category: input.category,
@@ -115,7 +115,7 @@ const tools = [
     timeoutMs: 5_000,
     modelCallable: true,
     inputSchema: searchMemorySchema,
-    async execute(context: ToolExecutionContext, input: z.infer<typeof searchMemorySchema>) {
+    async execute(context: ToolExecutionContext, input: z.infer<typeof searchMemorySchema>, _signal: AbortSignal) {
       const memories = await listRelevantMemories(context, input.query, 8);
       return memories.map((memory) => ({
         id: memory.id,
@@ -133,7 +133,7 @@ const tools = [
     timeoutMs: 5_000,
     modelCallable: true,
     inputSchema: listConversationsSchema,
-    async execute(context: ToolExecutionContext, _input: z.infer<typeof listConversationsSchema>) {
+    async execute(context: ToolExecutionContext, _input: z.infer<typeof listConversationsSchema>, _signal: AbortSignal) {
       const conversations = await listConversations(context);
       return conversations.map((conversation) => ({
         id: conversation.id,
@@ -164,15 +164,17 @@ export class ToolEngine {
   public async execute(
     context: ToolExecutionContext,
     name: RegisteredToolName,
-    rawInput: unknown
+    rawInput: unknown,
+    parentSignal?: AbortSignal
   ): Promise<unknown> {
-    return this.executeInternal(context, name, rawInput);
+    return this.executeInternal(context, name, rawInput, parentSignal);
   }
 
   public async executeModelCallable(
     context: ToolExecutionContext,
     name: string,
-    rawInput: unknown
+    rawInput: unknown,
+    parentSignal?: AbortSignal
   ): Promise<unknown> {
     const tool = tools.find((candidate) => candidate.name === name);
     if (!tool || !tool.modelCallable) {
@@ -183,13 +185,14 @@ export class ToolEngine {
       );
     }
 
-    return this.executeInternal(context, tool.name, rawInput);
+    return this.executeInternal(context, tool.name, rawInput, parentSignal);
   }
 
   private async executeInternal(
     context: ToolExecutionContext,
     name: RegisteredToolName,
-    rawInput: unknown
+    rawInput: unknown,
+    parentSignal?: AbortSignal
   ): Promise<unknown> {
     const tool = tools.find((candidate) => candidate.name === name);
     if (!tool) {
@@ -198,21 +201,39 @@ export class ToolEngine {
 
     const input = tool.inputSchema.parse(rawInput);
     const controller = new AbortController();
+    const onParentAbort = () => controller.abort();
+    if (parentSignal?.aborted) {
+      controller.abort();
+    } else {
+      parentSignal?.addEventListener("abort", onParentAbort, { once: true });
+    }
+
     const timeoutId = setTimeout(() => controller.abort(), tool.timeoutMs);
+    let abortedByTimeout = false;
+    const onAbort = () => {
+      if (!parentSignal?.aborted) abortedByTimeout = true;
+    };
+    controller.signal.addEventListener("abort", onAbort, { once: true });
 
     try {
       return await Promise.race([
-        tool.execute(context, input as never),
+        tool.execute(context, input as never, controller.signal),
         new Promise<never>((_, reject) => {
           controller.signal.addEventListener(
             "abort",
-            () => reject(new PolarisError("TIMEOUT", "La herramienta excedió el tiempo permitido.", 504)),
+            () => reject(
+              parentSignal?.aborted && !abortedByTimeout
+                ? new PolarisError("TIMEOUT", "La herramienta fue cancelada.", 499)
+                : new PolarisError("TIMEOUT", "La herramienta excedió el tiempo permitido.", 504)
+            ),
             { once: true }
           );
         })
       ]);
     } finally {
       clearTimeout(timeoutId);
+      controller.signal.removeEventListener("abort", onAbort);
+      parentSignal?.removeEventListener("abort", onParentAbort);
     }
   }
 }

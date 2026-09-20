@@ -379,7 +379,7 @@ function Workspace({
         {view === 'chat' && <ChatView session={session} conversations={conversations} selected={selected} messages={messages} setMessages={setMessages} onNew={() => void createConversation()} onOpen={openConversation} onRefreshConversations={() => {
           void polarisApi.listConversations(session)
             .then(setConversations)
-            .catch((cause) => onSetProblem(setProblem, cause));
+            .catch((cause) => setProblem(errorText(cause)));
         }} onProblem={setProblem} onNotice={setNotice} />}
         {view === 'history' && <History conversations={conversations} onOpen={openConversation} onNew={() => void createConversation()} />}
         {view === 'memories' && <MemoriesView session={session} memories={memories} setMemories={setMemories} onProblem={setProblem} onNotice={setNotice} />}
@@ -807,9 +807,6 @@ function DevicesView({ devices, onRefresh }: { devices: Device[]; onRefresh(): v
   return <div className="page"><header className="section-heading"><div><span className="eyebrow">PRESENCIA</span><h1>Dispositivos</h1><p>Tu identidad se sincroniza solo con dispositivos que se registran de forma real.</p></div><button type="button" className="secondary-button" onClick={onRefresh}>Actualizar</button></header><div className="device-list">{devices.length === 0 ? <Empty title="Aún no hay dispositivos" description="Esta web se registrará cuando Polaris API esté conectada." /> : devices.map((device) => <article key={device.id}><span className="device-symbol">{device.type === 'WEB' ? '◫' : device.type === 'ANDROID' ? '▥' : '▣'}</span><div><span className="memory-type">{device.type}</span><h2>{device.name}</h2><p>{device.platform}</p><small>Última actividad: {dateTime(device.last_seen)}</small></div><strong className={device.status === 'ONLINE' ? 'online-status' : ''}>{device.status}</strong></article>)}</div></div>;
 }
 
-function onSetProblem(setProblem: (message: string) => void, cause: unknown): void {
-  setProblem(errorText(cause));
-}
 
 function Empty({ title, description }: { title: string; description: string }) {
   return <div className="empty"><span>✦</span><h2>{title}</h2><p>{description}</p></div>;

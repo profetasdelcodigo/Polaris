@@ -113,7 +113,12 @@ export const api = {
     return request("/v1/profile");
   },
 
-  updateProfile(input: { display_name: string; timezone: string }): Promise<Profile> {
+  updateProfile(input: {
+    display_name: string;
+    timezone: string;
+    language?: Profile["language"];
+    avatar_url?: string | null;
+  }): Promise<Profile> {
     return request("/v1/profile", {
       method: "PATCH",
       body: JSON.stringify(input)

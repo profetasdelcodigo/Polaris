@@ -180,9 +180,13 @@ export async function streamChat(
   const decoder = new TextDecoder();
   let buffer = '';
   let streamError: PolarisApiError | null = null;
+  let sawMessageDone = false;
 
   const emit = (event: SseEvent) => {
     onEvent(event);
+    if (event.event === 'message.done') {
+      sawMessageDone = true;
+    }
     if (event.event === 'error') {
       const data = isRecord(event.data) ? event.data : {};
       streamError = new PolarisApiError(
@@ -215,6 +219,18 @@ export async function streamChat(
       const parsed = parseSseFrames(buffer + tail + '\n\n');
       parsed.events.forEach(emit);
       if (streamError) throw streamError;
+    }
+
+    if (!sawMessageDone) {
+      throw new PolarisApiError(
+        {
+          code: 'STREAM_PROTOCOL_ERROR',
+          title: 'Flujo incompleto',
+          detail: 'El servidor cerró el flujo antes de confirmar la finalización de la respuesta.',
+          status: 502,
+        },
+        502,
+      );
     }
   } finally {
     reader.releaseLock();

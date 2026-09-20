@@ -36,6 +36,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -405,6 +406,12 @@ private fun PolarisMascotMini(
     }
 }
 
+private enum class AndroidSection {
+    CHAT,
+    HISTORY,
+    MEMORY
+}
+
 @Composable
 private fun HomeScreen(
     assistantRoleEnabled: Boolean,
@@ -414,89 +421,386 @@ private fun HomeScreen(
     val scope = rememberCoroutineScope()
     val supabase = remember { SupabaseProvider.client }
     val api = remember { PolarisApiClient(supabase) }
+
+    var section by remember { mutableStateOf(AndroidSection.CHAT) }
     var draft by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var loading by remember { mutableStateOf(false) }
+
     var conversationId by remember { mutableStateOf<String?>(null) }
     var messages by remember {
-        mutableStateOf(listOf(ChatItem("assistant", "Hola. Soy Polaris. El cliente Android ya está conectado a tu mismo Core.")))
+        mutableStateOf(
+            listOf(
+                ChatItem(
+                    "assistant",
+                    "Hola. Soy Polaris. Ya estamos conectados al mismo Core."
+                )
+            )
+        )
+    }
+    var conversations by remember { mutableStateOf<List<ConversationSummary>>(emptyList()) }
+    var memories by remember { mutableStateOf<List<MemoryRecord>>(emptyList()) }
+    var memoryDraft by remember { mutableStateOf("") }
+    var memoryBusy by remember { mutableStateOf(false) }
+
+    LaunchedEffect(section) {
+        error = null
+        when (section) {
+            AndroidSection.HISTORY -> {
+                loading = true
+                try {
+                    conversations = api.listConversations()
+                } catch (t: Throwable) {
+                    error = t.message ?: "No fue posible cargar el historial."
+                } finally {
+                    loading = false
+                }
+            }
+            AndroidSection.MEMORY -> {
+                loading = true
+                try {
+                    memories = api.listMemories()
+                } catch (t: Throwable) {
+                    error = t.message ?: "No fue posible cargar la memoria."
+                } finally {
+                    loading = false
+                }
+            }
+            AndroidSection.CHAT -> Unit
+        }
+    }
+
+    fun openConversation(id: String) {
+        loading = true
+        error = null
+        scope.launch {
+            try {
+                val next = api.listMessages(id)
+                conversationId = id
+                messages = next.map { ChatItem(it.role, it.content) }
+                section = AndroidSection.CHAT
+            } catch (t: Throwable) {
+                error = t.message ?: "No fue posible abrir la conversación."
+            } finally {
+                loading = false
+            }
+        }
+    }
+
+    fun sendMessage(content: String) {
+        val clean = content.trim()
+        if (clean.isBlank() || busy) return
+
+        draft = ""
+        error = null
+        messages = messages + ChatItem("user", clean)
+        busy = true
+        scope.launch {
+            try {
+                val result = api.chat(clean, conversationId)
+                conversationId = result.conversationId
+                messages = messages + ChatItem("assistant", result.content)
+            } catch (t: Throwable) {
+                error = t.message ?: "No fue posible contactar con Polaris API."
+            } finally {
+                busy = false
+            }
+        }
     }
 
     Column(
         modifier = Modifier.fillMaxSize().background(PolarisMidnight)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
                 Text("POLARIS", fontWeight = FontWeight.Bold)
-                Text("Core conectado", color = PolarisMint, style = MaterialTheme.typography.labelSmall)
+                Text(
+                    when (section) {
+                        AndroidSection.CHAT -> "Asistente"
+                        AndroidSection.HISTORY -> "Historial"
+                        AndroidSection.MEMORY -> "Memoria"
+                    },
+                    color = PolarisMint,
+                    style = MaterialTheme.typography.labelSmall
+                )
             }
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (!assistantRoleEnabled) {
                     TextButton(onClick = onRequestAssistantRole) {
                         Text("Usar como asistente")
                     }
                 } else {
-                    Text("Asistente activo", color = PolarisMint, style = MaterialTheme.typography.labelMedium)
+                    Text(
+                        "Asistente activo",
+                        color = PolarisMint,
+                        style = MaterialTheme.typography.labelMedium
+                    )
                 }
                 TextButton(onClick = onSignOut) { Text("Salir") }
             }
         }
 
-        PolarisMascotMini(
-            active = busy,
-            modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 8.dp)
-        )
+        when (section) {
+            AndroidSection.CHAT -> {
+                PolarisMascotMini(
+                    active = busy,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(bottom = 8.dp)
+                )
 
-        LazyColumn(
-            modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            items(messages) { message ->
-                Surface(
-                    color = if (message.role == "user") PolarisSurface2 else Color(0xFF0B1220),
-                    shape = MaterialTheme.shapes.large,
-                    modifier = Modifier.fillMaxWidth()
+                LazyColumn(
+                    modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Text(message.content, modifier = Modifier.padding(14.dp))
-                }
-            }
-            error?.let { item { Text(it, color = MaterialTheme.colorScheme.error) } }
-        }
-
-        Row(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
-            OutlinedTextField(
-                value = draft,
-                onValueChange = { draft = it },
-                modifier = Modifier.weight(1f),
-                placeholder = { Text("Habla con Polaris…") },
-                enabled = !busy
-            )
-            Button(
-                enabled = !busy && draft.isNotBlank(),
-                onClick = {
-                    val content = draft.trim()
-                    draft = ""
-                    error = null
-                    messages = messages + ChatItem("user", content)
-                    busy = true
-                    scope.launch {
-                        try {
-                            val result = api.chat(content, conversationId)
-                            conversationId = result.conversationId
-                            messages = messages + ChatItem("assistant", result.content)
-                        } catch (t: Throwable) {
-                            error = t.message ?: "No fue posible contactar con Polaris API."
-                        } finally {
-                            busy = false
+                    items(messages) { message ->
+                        Surface(
+                            color = if (message.role == "user") PolarisSurface2 else Color(0xFF0B1220),
+                            shape = MaterialTheme.shapes.large,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(message.content, modifier = Modifier.padding(14.dp))
+                        }
+                    }
+                    error?.let {
+                        item {
+                            Text(it, color = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
-            ) {
-                Text(if (busy) "…" else "Enviar")
+
+                Row(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+                    OutlinedTextField(
+                        value = draft,
+                        onValueChange = { draft = it },
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text("Habla con Polaris…") },
+                        enabled = !busy
+                    )
+                    Button(
+                        enabled = !busy && draft.isNotBlank(),
+                        onClick = { sendMessage(draft) }
+                    ) {
+                        Text(if (busy) "…" else "Enviar")
+                    }
+                }
+            }
+
+            AndroidSection.HISTORY -> {
+                if (loading) {
+                    Box(
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Cargando historial…", color = PolarisCyan)
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        if (conversations.isEmpty()) {
+                            item {
+                                Surface(
+                                    color = PolarisSurface,
+                                    shape = RoundedCornerShape(22.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        "Todavía no hay conversaciones.",
+                                        modifier = Modifier.padding(20.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        items(conversations) { conversation ->
+                            Surface(
+                                color = PolarisSurface,
+                                shape = RoundedCornerShape(20.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                TextButton(
+                                    onClick = { openConversation(conversation.id) },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth().padding(6.dp)
+                                    ) {
+                                        Text(
+                                            conversation.title ?: "Sin título",
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Text(
+                                            conversation.updated_at.take(16).replace("T", " · "),
+                                            color = PolarisBlue,
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        error?.let {
+                            item { Text(it, color = MaterialTheme.colorScheme.error) }
+                        }
+                    }
+                }
+            }
+
+            AndroidSection.MEMORY -> {
+                Column(
+                    modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Surface(
+                        color = PolarisSurface,
+                        shape = RoundedCornerShape(22.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text("Guardar memoria", fontWeight = FontWeight.SemiBold)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedTextField(
+                                value = memoryDraft,
+                                onValueChange = { memoryDraft = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text("Ej.: Polaris es mi proyecto principal.") },
+                                enabled = !memoryBusy
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(
+                                enabled = !memoryBusy && memoryDraft.isNotBlank(),
+                                onClick = {
+                                    val clean = memoryDraft.trim()
+                                    memoryBusy = true
+                                    error = null
+                                    scope.launch {
+                                        try {
+                                            api.createMemory(clean)
+                                            memoryDraft = ""
+                                            memories = api.listMemories()
+                                        } catch (t: Throwable) {
+                                            error = t.message ?: "No se pudo guardar la memoria."
+                                        } finally {
+                                            memoryBusy = false
+                                        }
+                                    }
+                                }
+                            ) {
+                                Text(if (memoryBusy) "Guardando…" else "Guardar")
+                            }
+                        }
+                    }
+
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        if (loading) {
+                            item {
+                                Text("Cargando memoria…", color = PolarisCyan)
+                            }
+                        }
+
+                        if (!loading && memories.isEmpty()) {
+                            item {
+                                Text(
+                                    "No hay memorias guardadas todavía.",
+                                    color = PolarisBlue
+                                )
+                            }
+                        }
+
+                        items(memories) { memory ->
+                            Surface(
+                                color = PolarisSurface,
+                                shape = RoundedCornerShape(20.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text(memory.content)
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            memory.category,
+                                            color = PolarisCyan,
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
+                                        TextButton(
+                                            onClick = {
+                                                scope.launch {
+                                                    try {
+                                                        api.deleteMemory(memory.id)
+                                                        memories = api.listMemories()
+                                                    } catch (t: Throwable) {
+                                                        error = t.message ?: "No se pudo eliminar la memoria."
+                                                    }
+                                                }
+                                            }
+                                        ) {
+                                            Text("Eliminar")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        error?.let {
+                            item { Text(it, color = MaterialTheme.colorScheme.error) }
+                        }
+                    }
+                }
             }
         }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(PolarisSurface)
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            AndroidNavButton(
+                selected = section == AndroidSection.CHAT,
+                label = "Polaris",
+                onClick = { section = AndroidSection.CHAT }
+            )
+            AndroidNavButton(
+                selected = section == AndroidSection.HISTORY,
+                label = "Historial",
+                onClick = { section = AndroidSection.HISTORY }
+            )
+            AndroidNavButton(
+                selected = section == AndroidSection.MEMORY,
+                label = "Memoria",
+                onClick = { section = AndroidSection.MEMORY }
+            )
+        }
+    }
+}
+
+@Composable
+private fun AndroidNavButton(
+    selected: Boolean,
+    label: String,
+    onClick: () -> Unit
+) {
+    TextButton(onClick = onClick) {
+        Text(
+            label,
+            color = if (selected) PolarisCyan else PolarisBlue,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+        )
     }
 }

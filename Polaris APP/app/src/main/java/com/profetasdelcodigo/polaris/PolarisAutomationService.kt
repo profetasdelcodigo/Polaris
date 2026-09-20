@@ -51,6 +51,37 @@ object PolarisAutomationController {
     fun isEnabled(): Boolean = service != null
 
     /**
+     * Executes a short, deterministic plan. We intentionally cap it at five local actions,
+     * stop on the first failure, and never interpret arbitrary code or shell commands.
+     */
+    fun executePlan(command: String): AutomationPlanResult {
+        val steps = command
+            .split(Regex("\\s+(?:y luego|después|despues|y)\\s+"))
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .take(5)
+
+        if (steps.isEmpty()) {
+            return AutomationPlanResult(false, emptyList(), "No encontré acciones para ejecutar.")
+        }
+
+        val results = mutableListOf<AutomationResult>()
+        for (step in steps) {
+            val result = execute(step)
+            results += result
+            if (!result.success) {
+                return AutomationPlanResult(
+                    false,
+                    results,
+                    "La automatización se detuvo: " + result.message
+                )
+            }
+        }
+
+        return AutomationPlanResult(true, results, results.lastOrNull()?.message ?: "Tarea completada.")
+    }
+
+    /**
      * Returns a deterministic result so callers can show the user what actually happened.
      */
     fun execute(command: String): AutomationResult {
@@ -126,5 +157,12 @@ object PolarisAutomationController {
 
 data class AutomationResult(
     val success: Boolean,
+    val message: String
+)
+
+
+data class AutomationPlanResult(
+    val success: Boolean,
+    val steps: List<AutomationResult>,
     val message: String
 )

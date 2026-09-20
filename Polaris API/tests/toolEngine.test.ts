@@ -10,6 +10,9 @@ class FakeQuery {
   order() { return this; }
   limit() { return this; }
   ilike() { return this; }
+  textSearch() { return this; }
+  abortSignal() { return this; }
+  maybeSingle() { return Promise.resolve({ data: { id: "conversation-test" }, error: null }); }
   then<TResult1 = { data: never[]; error: null }, TResult2 = never>(
     onfulfilled?: ((value: { data: never[]; error: null }) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null

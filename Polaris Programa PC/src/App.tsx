@@ -401,7 +401,7 @@ function App() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [memoryQuery]);
+  }, [memoryQuery, session]);
 
   async function deleteSelectedConversation(): Promise<void> {
     if (!selectedConversation || !window.confirm("¿Eliminar esta conversación y su historial?")) return;

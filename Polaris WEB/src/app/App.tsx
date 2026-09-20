@@ -376,7 +376,11 @@ function Workspace({
         {problem && <div className="inline-alert error" role="alert">{problem}<button type="button" onClick={() => setProblem(null)}>×</button></div>}
         {notice && <div className="inline-alert success" role="status">{notice}<button type="button" onClick={() => setNotice(null)}>×</button></div>}
         {view === 'home' && <Dashboard conversations={conversations} memories={memories} devices={devices} loading={loading} onChat={() => setView('chat')} onMemories={() => setView('memories')} />}
-        {view === 'chat' && <ChatView session={session} conversations={conversations} selected={selected} messages={messages} setMessages={setMessages} onNew={() => void createConversation()} onOpen={openConversation} onRefreshConversations={() => void polarisApi.listConversations(session).then(setConversations)} onProblem={setProblem} onNotice={setNotice} />}
+        {view === 'chat' && <ChatView session={session} conversations={conversations} selected={selected} messages={messages} setMessages={setMessages} onNew={() => void createConversation()} onOpen={openConversation} onRefreshConversations={() => {
+          void polarisApi.listConversations(session)
+            .then(setConversations)
+            .catch((cause) => onSetProblem(setProblem, cause));
+        }} onProblem={setProblem} onNotice={setNotice} />}
         {view === 'history' && <History conversations={conversations} onOpen={openConversation} onNew={() => void createConversation()} />}
         {view === 'memories' && <MemoriesView session={session} memories={memories} setMemories={setMemories} onProblem={setProblem} onNotice={setNotice} />}
         {view === 'profile' && <ProfileView session={session} profile={profile} setProfile={setProfile} onProblem={setProblem} onNotice={setNotice} />}
@@ -625,7 +629,9 @@ function MessageBubble({ message }: { message: Message }) {
       <span className="message-origin">{message.role === 'user' ? 'TÚ' : 'P'}</span>
       <div><header><strong>{message.role === 'user' ? 'Tú' : 'Polaris'}</strong><time>{dateTime(message.created_at)}</time></header>
         {message.content ? <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>{message.content}</ReactMarkdown> : message.status === 'streaming' ? <span className="typing-dots"><i /><i /><i /></span> : message.status === 'failed' ? <p className="failed">No se pudo generar una respuesta verificable.</p> : message.status === 'cancelled' ? <p className="failed">Generación detenida.</p> : null}
-        {message.role === 'assistant' && message.content && <button type="button" className="copy-message" onClick={() => void navigator.clipboard.writeText(message.content)}>Copiar</button>}
+        {message.role === 'assistant' && message.content && <button type="button" className="copy-message" onClick={() => {
+          void navigator.clipboard.writeText(message.content).catch(() => undefined);
+        }}>Copiar</button>}
       </div>
     </article>
   );
@@ -799,6 +805,10 @@ function SettingsView({
 
 function DevicesView({ devices, onRefresh }: { devices: Device[]; onRefresh(): void }) {
   return <div className="page"><header className="section-heading"><div><span className="eyebrow">PRESENCIA</span><h1>Dispositivos</h1><p>Tu identidad se sincroniza solo con dispositivos que se registran de forma real.</p></div><button type="button" className="secondary-button" onClick={onRefresh}>Actualizar</button></header><div className="device-list">{devices.length === 0 ? <Empty title="Aún no hay dispositivos" description="Esta web se registrará cuando Polaris API esté conectada." /> : devices.map((device) => <article key={device.id}><span className="device-symbol">{device.type === 'WEB' ? '◫' : device.type === 'ANDROID' ? '▥' : '▣'}</span><div><span className="memory-type">{device.type}</span><h2>{device.name}</h2><p>{device.platform}</p><small>Última actividad: {dateTime(device.last_seen)}</small></div><strong className={device.status === 'ONLINE' ? 'online-status' : ''}>{device.status}</strong></article>)}</div></div>;
+}
+
+function onSetProblem(setProblem: (message: string) => void, cause: unknown): void {
+  setProblem(errorText(cause));
 }
 
 function Empty({ title, description }: { title: string; description: string }) {

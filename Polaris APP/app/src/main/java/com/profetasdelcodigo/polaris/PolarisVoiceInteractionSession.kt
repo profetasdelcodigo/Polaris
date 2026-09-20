@@ -20,6 +20,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
+import io.github.jan.supabase.auth.auth
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.android.Android
@@ -137,7 +138,7 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
             hint = "¿En qué te ayudo?"
             setTextColor(Color.WHITE)
             setHintTextColor(Color.rgb(128, 146, 168))
-            singleLine = false
+            setSingleLine(false)
             minLines = 1
             maxLines = 4
             setPadding(dp(14), dp(12), dp(14), dp(12))
@@ -156,6 +157,7 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
             gravity = Gravity.CENTER_VERTICAL
         }
 
+        lateinit var sendButton: Button
         val listen = Button(context).apply {
             text = "Voz"
             setTextColor(cyan)
@@ -167,7 +169,6 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
             rightMargin = dp(8)
         })
 
-        lateinit var sendButton: Button
         sendButton = Button(context).apply {
             text = "Preguntar"
             setOnClickListener {

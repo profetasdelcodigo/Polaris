@@ -158,6 +158,23 @@ function App() {
     void api.registerDesktop().catch(() => undefined);
   }, [session]);
 
+  useEffect(() => {
+    const onShortcut = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey)) return;
+      const key = event.key.toLowerCase();
+      if (key === "k") {
+        event.preventDefault();
+        setScreen("chat");
+      } else if (key >= "1" && key <= "7") {
+        event.preventDefault();
+        const screens: Screen[] = ["home", "chat", "history", "memories", "profile", "settings", "devices"];
+        setScreen(screens[Number(key) - 1]);
+      }
+    };
+    window.addEventListener("keydown", onShortcut);
+    return () => window.removeEventListener("keydown", onShortcut);
+  }, []);
+
   async function refreshWorkspace(): Promise<void> {
     if (!session) return;
     setLoadingWorkspace(true);
@@ -578,6 +595,7 @@ function Home({
         <div className="hero-actions">
           <button className="button primary" type="button" onClick={onStart}>Iniciar conversación <span>→</span></button>
           <button className="button secondary" type="button" onClick={onMemory}>Explorar memorias</button>
+          <small className="shortcut-note">Ctrl/Cmd + K abre Conversar · Ctrl/Cmd + 1–7 cambia de sección.</small>
         </div>
       </header>
       <div className="metric-grid" aria-label="Resumen de Polaris">

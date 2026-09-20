@@ -12,6 +12,7 @@ import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.speech.tts.TextToSpeech
 import android.service.voice.VoiceInteractionSession
 import android.view.Gravity
 import android.view.View
@@ -39,6 +40,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.util.Locale
 
 @Serializable
 private data class AssistantChatRequest(
@@ -77,6 +79,17 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
 
     private var conversationId: String? = null
     private var speechRecognizer: SpeechRecognizer? = null
+    private var tts: TextToSpeech? = null
+    private var ttsReady = false
+
+    init {
+        tts = TextToSpeech(context) { status ->
+            ttsReady = status == TextToSpeech.SUCCESS
+            if (ttsReady) {
+                tts?.language = Locale.forLanguageTag("es-PE")
+            }
+        }
+    }
 
     override fun onCreateContentView(): View {
         val root = LinearLayout(context).apply {
@@ -338,7 +351,9 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
                         if (!result.success) break
                         if (index < localPlan.lastIndex) kotlinx.coroutines.delay(300)
                     }
-                    status.text = messages.joinToString("\n")
+                    val message = messages.joinToString("\n")
+                    status.text = message
+                    speak(message)
                 } finally {
                     button.isEnabled = true
                     button.text = "Preguntar"
@@ -376,7 +391,9 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
 
                 val result = response.body<AssistantChatResponse>()
                 conversationId = result.conversationId
-                status.text = result.content.ifBlank { "El Core no devolvió contenido." }
+                val message = result.content.ifBlank { "El Core no devolvió contenido." }
+                status.text = message
+                speak(message)
             } catch (error: Throwable) {
                 status.text = "No pude conectar con Polaris Core: " + (error.message ?: "error de red")
             } finally {
@@ -390,7 +407,14 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
         destroySpeechRecognizer()
         scope.cancel()
         http.close()
+        tts?.stop()
+        tts?.shutdown()
         super.onDestroy()
+    }
+
+    private fun speak(text: String) {
+        if (!ttsReady || text.isBlank()) return
+        tts?.speak(text.take(1_500), TextToSpeech.QUEUE_FLUSH, null, "polaris-response")
     }
 
     private fun lp(): LinearLayout.LayoutParams =

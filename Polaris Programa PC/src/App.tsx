@@ -375,14 +375,28 @@ function App() {
     }
   }
 
-  async function searchMemories(query: string): Promise<void> {
+  function searchMemories(query: string): void {
     setMemoryQuery(query);
-    try {
-      setMemories(await api.listMemories(query));
-    } catch (cause) {
-      setError(toUserMessage(cause));
-    }
   }
+
+  useEffect(() => {
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const next = await api.listMemories(memoryQuery);
+          if (!cancelled) setMemories(next);
+        } catch (cause) {
+          if (!cancelled) setError(toUserMessage(cause));
+        }
+      })();
+    }, memoryQuery ? 220 : 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [memoryQuery]);
 
   async function deleteSelectedConversation(): Promise<void> {
     if (!selectedConversation || !window.confirm("¿Eliminar esta conversación y su historial?")) return;

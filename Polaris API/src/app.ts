@@ -295,8 +295,23 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
       content: message
     });
 
+    const assistantMessage = await createMessage(context, {
+      conversationId: conversation.id,
+      role: "assistant",
+      content: "",
+      status: "streaming"
+    });
+
     if (!provider.available) {
-      throw new PolarisError("PROVIDER_ERROR", "La IA no está configurada en el servidor.", 503);
+      await updateMessage(context, assistantMessage.id, {
+        status: "failed",
+        metadata: { reason: "provider_unconfigured" }
+      }).catch(() => undefined);
+      throw new PolarisError(
+        "PROVIDER_ERROR",
+        "La IA no está configurada en el servidor.",
+        503
+      );
     }
 
     let assistantContent = "";
@@ -304,6 +319,7 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
     const requestAbortController = new AbortController();
     const onRequestClose = () => requestAbortController.abort();
     request.raw.once("close", onRequestClose);
+
     try {
       for await (const event of conversations.stream(context, {
         conversationId: conversation.id,
@@ -313,16 +329,21 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
         if (event.type === "message.delta") assistantContent += event.delta;
         if (event.type === "message.done") providerResponseId = event.providerResponseId;
       }
+
+      await updateMessage(context, assistantMessage.id, {
+        content: assistantContent,
+        status: "completed",
+        metadata: providerResponseId ? { providerResponseId } : {}
+      });
+    } catch (error) {
+      await updateMessage(context, assistantMessage.id, {
+        content: assistantContent,
+        status: requestAbortController.signal.aborted ? "cancelled" : "failed"
+      }).catch(() => undefined);
+      throw error;
     } finally {
       request.raw.off("close", onRequestClose);
     }
-
-    const assistantMessage = await createMessage(context, {
-      conversationId: conversation.id,
-      role: "assistant",
-      content: assistantContent,
-      metadata: providerResponseId ? { providerResponseId } : {}
-    });
 
     return {
       conversationId: conversation.id,

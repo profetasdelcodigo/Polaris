@@ -200,14 +200,6 @@ export class ToolEngine {
     }
 
     const input = tool.inputSchema.parse(rawInput);
-    const controller = new AbortController();
-    const onParentAbort = () => controller.abort();
-    if (parentSignal?.aborted) {
-      controller.abort();
-    } else {
-      parentSignal?.addEventListener("abort", onParentAbort, { once: true });
-    }
-
     let timeoutTriggered = false;
     const controller = new AbortController();
     const onParentAbort = () => controller.abort();
@@ -248,5 +240,6 @@ export class ToolEngine {
     } finally {
       clearTimeout(timeoutId);
       parentSignal?.removeEventListener("abort", onParentAbort);
-    }  }
+    }
+  }
 }

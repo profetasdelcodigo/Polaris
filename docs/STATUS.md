@@ -42,6 +42,7 @@ Implementado:
 - sesión de asistente capaz de enviar texto autenticado al endpoint /v1/chat del Core
 - captura de voz mediante SpeechRecognizer, priorizando reconocimiento en dispositivo cuando está disponible
 - respuestas habladas en español mediante Android TextToSpeech
+- modo de conversación continua con escucha posterior a cada respuesta
 - feedback visual de invocación del asistente mediante la API oficial de Android
 - automatización local Android inicial, con Accesibilidad explícitamente activada por el usuario
 - acciones locales reales y acotadas: volver, inicio, notificaciones, Ajustes, desplazamiento y pulsación de elementos visibles
@@ -130,4 +131,4 @@ CI:
 
 ## Próximo objetivo
 
-Cerrar Fase 1 con una prueba real del proveedor de IA y contratos/tests finales. Después, ejecutar la prueba real Web → Android → PC y verificar expiración/refresh de sesión. Luego completar el planificador de automatización multi-paso, observación/localización/verificación/recuperación y el puente seguro Android ↔ Core. Después: voz continua/TTS, memoria semántica, visión/OCR, automatización PC con permisos, sincronización realtime cuando aporte valor y una pasada final de diseño, accesibilidad, rendimiento, pruebas y empaquetado. No se declarará 100% hasta que cada bloque tenga implementación y verificación real. CI Android volvió a confirmar `:app:assembleDebug` después de añadir TTS. Las capacidades de sistema/automatización inspiradas en ARTEMIS quedan separadas como módulo posterior y requieren permisos explícitos.
+Cerrar Fase 1 con una prueba real del proveedor de IA y contratos/tests finales. Después, ejecutar la prueba real Web → Android → PC y verificar expiración/refresh de sesión. Luego completar el planificador de automatización multi-paso, observación/localización/verificación/recuperación y el puente seguro Android ↔ Core. Después: voz continua/TTS, memoria semántica, visión/OCR, automatización PC con permisos, sincronización realtime cuando aporte valor y una pasada final de diseño, accesibilidad, rendimiento, pruebas y empaquetado. No se declarará 100% hasta que cada bloque tenga implementación y verificación real. CI Android volvió a confirmar `:app:assembleDebug` después de TTS y modo continuo. Las capacidades de sistema/automatización inspiradas en ARTEMIS quedan separadas como módulo posterior y requieren permisos explícitos.

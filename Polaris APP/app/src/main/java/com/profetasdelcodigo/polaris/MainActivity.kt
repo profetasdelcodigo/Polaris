@@ -553,6 +553,9 @@ private fun HomeScreen(
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
+                TextButton(onClick = onOpenAutomationSettings) {
+                    Text(if (PolarisAccessibilityService.isEnabled()) "Automatización activa" else "Automatización")
+                }
                 TextButton(onClick = onSignOut) { Text("Salir") }
             }
         }

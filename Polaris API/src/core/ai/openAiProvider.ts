@@ -14,6 +14,21 @@ type FunctionCall = {
 };
 
 const MAX_TOOL_ROUNDS = 4;
+const MAX_TOOL_OUTPUT_CHARS = 20_000;
+
+function serializeToolOutput(result: unknown): string {
+  let serialized: string;
+  try {
+    serialized = JSON.stringify(result);
+  } catch {
+    serialized = JSON.stringify({ error: "La herramienta devolvió un resultado no serializable." });
+  }
+  if (serialized.length <= MAX_TOOL_OUTPUT_CHARS) return serialized;
+  return JSON.stringify({
+    truncated: true,
+    preview: serialized.slice(0, MAX_TOOL_OUTPUT_CHARS)
+  });
+}
 
 export class OpenAIProvider implements AIProvider {
   public readonly name = "openai";
@@ -114,7 +129,7 @@ export class OpenAIProvider implements AIProvider {
           let result: unknown;
           try {
             const parsedArguments = JSON.parse(call.arguments || "{}");
-            result = await input.executeTool(call.name, parsedArguments);
+            result = await input.executeTool(call.name, parsedArguments, input.signal);
           } catch (error) {
             result = {
               error: error instanceof Error
@@ -128,7 +143,7 @@ export class OpenAIProvider implements AIProvider {
           toolOutputs.push({
             type: "function_call_output",
             call_id: call.callId,
-            output: JSON.stringify(result)
+            output: serializeToolOutput(result)
           });
         }
 

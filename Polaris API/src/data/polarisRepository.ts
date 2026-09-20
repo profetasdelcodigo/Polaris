@@ -128,7 +128,12 @@ export async function listRelevantMemories(context: DbContext, query: string, li
     .order("updated_at", { ascending: false })
     .limit(limit);
 
-  if (sanitized) request = request.ilike("content", `%${sanitized}%`);
+  if (sanitized) {
+    request = request.textSearch("content", sanitized, {
+      config: "simple",
+      type: "plain"
+    });
+  }
   const { data, error } = await request;
   if (error) throw databaseError(error);
   return data ?? [];

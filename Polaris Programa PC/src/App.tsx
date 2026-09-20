@@ -680,7 +680,15 @@ function Chat({
   const messagePaneRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagePaneRef.current?.scrollTo({ top: messagePaneRef.current.scrollHeight, behavior: "smooth" });
+    const frame = window.requestAnimationFrame(() => {
+      const element = messagePaneRef.current;
+      if (!element) return;
+      const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
+      if (distanceFromBottom < 180) {
+        element.scrollTo({ top: element.scrollHeight, behavior: "auto" });
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [messages]);
 
   function keyboardSubmit(event: React.KeyboardEvent<HTMLTextAreaElement>) {

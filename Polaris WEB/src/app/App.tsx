@@ -686,13 +686,22 @@ function MemoriesView({
     }
   }
 
-  async function search(value: string) {
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          setMemories(await polarisApi.listMemories(session, query));
+        } catch (cause) {
+          onProblem(errorText(cause));
+        }
+      })();
+    }, query ? 220 : 0);
+
+    return () => window.clearTimeout(timer);
+  }, [session.access_token, query]);
+
+  function search(value: string) {
     setQuery(value);
-    try {
-      setMemories(await polarisApi.listMemories(session, value));
-    } catch (cause) {
-      onProblem(errorText(cause));
-    }
   }
 
   async function remove(id: string) {

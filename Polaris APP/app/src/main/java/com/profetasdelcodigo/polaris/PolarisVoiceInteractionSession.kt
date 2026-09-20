@@ -213,7 +213,7 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
                 continuousVoice = !continuousVoice
                 text = if (continuousVoice) "Continuo: ON" else "Continuo: OFF"
                 if (continuousVoice) {
-                    status.text = "Modo conversación continua activado."
+                    subtitle.text = "Modo conversación continua activado."
                 }
             }
         }

@@ -1,7 +1,11 @@
 package com.profetasdelcodigo.polaris
 
+import android.app.role.RoleManager
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -61,14 +65,49 @@ private val PolarisMint = Color(0xFF6FF1C1)
 private data class ChatItem(val role: String, val content: String)
 
 class MainActivity : ComponentActivity() {
+    private var assistantRoleEnabled by mutableStateOf(false)
+
+    private val assistantRoleLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            assistantRoleEnabled = isDefaultAssistant()
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { PolarisApp() }
+        assistantRoleEnabled = isDefaultAssistant()
+        setContent {
+            PolarisApp(
+                assistantRoleEnabled = assistantRoleEnabled,
+                onRequestAssistantRole = ::requestAssistantRole
+            )
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        assistantRoleEnabled = isDefaultAssistant()
+    }
+
+    private fun isDefaultAssistant(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false
+        val roleManager = getSystemService(RoleManager::class.java) ?: return false
+        return roleManager.isRoleAvailable(RoleManager.ROLE_ASSISTANT) &&
+            roleManager.isRoleHeld(RoleManager.ROLE_ASSISTANT)
+    }
+
+    private fun requestAssistantRole() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+        val roleManager = getSystemService(RoleManager::class.java) ?: return
+        if (!roleManager.isRoleAvailable(RoleManager.ROLE_ASSISTANT)) return
+        assistantRoleLauncher.launch(roleManager.createRequestRoleIntent(RoleManager.ROLE_ASSISTANT))
     }
 }
 
 @Composable
-private fun PolarisApp() {
+private fun PolarisApp(
+    assistantRoleEnabled: Boolean,
+    onRequestAssistantRole: () -> Unit
+) {
     MaterialTheme(
         colorScheme = androidx.compose.material3.darkColorScheme(
             background = PolarisMidnight,
@@ -83,7 +122,10 @@ private fun PolarisApp() {
             if (BuildConfig.SUPABASE_URL.isBlank() || BuildConfig.SUPABASE_PUBLISHABLE_KEY.isBlank()) {
                 ConfigurationScreen()
             } else {
-                AuthenticatedShell()
+                AuthenticatedShell(
+                    assistantRoleEnabled = assistantRoleEnabled,
+                    onRequestAssistantRole = onRequestAssistantRole
+                )
             }
         }
     }
@@ -104,13 +146,18 @@ private fun ConfigurationScreen() {
 }
 
 @Composable
-private fun AuthenticatedShell() {
+private fun AuthenticatedShell(
+    assistantRoleEnabled: Boolean,
+    onRequestAssistantRole: () -> Unit
+) {
     val scope = rememberCoroutineScope()
     val supabase = remember { SupabaseProvider.client }
     var authenticated by remember { mutableStateOf(supabase.auth.currentSessionOrNull() != null) }
 
     if (authenticated) {
         HomeScreen(
+            assistantRoleEnabled = assistantRoleEnabled,
+            onRequestAssistantRole = onRequestAssistantRole,
             onSignOut = {
                 scope.launch {
                     supabase.auth.signOut()
@@ -338,7 +385,11 @@ private fun PolarisMascotMini(
 }
 
 @Composable
-private fun HomeScreen(onSignOut: () -> Unit) {
+private fun HomeScreen(
+    assistantRoleEnabled: Boolean,
+    onRequestAssistantRole: () -> Unit,
+    onSignOut: () -> Unit
+) {
     val scope = rememberCoroutineScope()
     val supabase = remember { SupabaseProvider.client }
     val api = remember { PolarisApiClient(supabase) }
@@ -361,7 +412,16 @@ private fun HomeScreen(onSignOut: () -> Unit) {
                 Text("POLARIS", fontWeight = FontWeight.Bold)
                 Text("Core conectado", color = PolarisMint, style = MaterialTheme.typography.labelSmall)
             }
-            TextButton(onClick = onSignOut) { Text("Salir") }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (!assistantRoleEnabled) {
+                    TextButton(onClick = onRequestAssistantRole) {
+                        Text("Usar como asistente")
+                    }
+                } else {
+                    Text("Asistente activo", color = PolarisMint, style = MaterialTheme.typography.labelMedium)
+                }
+                TextButton(onClick = onSignOut) { Text("Salir") }
+            }
         }
 
         PolarisMascotMini(

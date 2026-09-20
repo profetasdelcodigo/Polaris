@@ -903,6 +903,8 @@ function Profile({
 }) {
   const [name, setName] = useState(profile?.display_name ?? "");
   const [timezone, setTimezone] = useState(profile?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const [language, setLanguage] = useState<PolarisProfile["language"]>(profile?.language ?? "es");
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -911,6 +913,8 @@ function Profile({
     if (profile) {
       setName(profile.display_name);
       setTimezone(profile.timezone);
+      setLanguage(profile.language);
+      setAvatarUrl(profile.avatar_url ?? "");
     }
   }, [profile]);
 
@@ -922,7 +926,9 @@ function Profile({
     try {
       const next = await api.updateProfile({
         display_name: name.trim(),
-        timezone: timezone.trim()
+        timezone: timezone.trim(),
+        language,
+        avatar_url: avatarUrl.trim() || null
       });
       onSaved(next);
       setNotice("Perfil sincronizado con tu cuenta Polaris.");
@@ -948,7 +954,14 @@ function Profile({
           <div><h2>{name || "Usuario Polaris"}</h2><p>{email}</p></div>
         </div>
         <label>Nombre para Polaris<input value={name} onChange={(event) => setName(event.target.value)} minLength={1} maxLength={120} required /></label>
+        <label>Idioma
+          <select value={language} onChange={(event) => setLanguage(event.target.value as PolarisProfile["language"])}>
+            <option value="es">Español</option>
+            <option value="en">English</option>
+          </select>
+        </label>
         <label>Zona horaria<input value={timezone} onChange={(event) => setTimezone(event.target.value)} minLength={1} maxLength={120} required /></label>
+        <label>Avatar (URL)<input type="url" value={avatarUrl} onChange={(event) => setAvatarUrl(event.target.value)} maxLength={2048} placeholder="https://…" /></label>
         {error && <p className="form-error">{error}</p>}
         {notice && <p className="form-success">{notice}</p>}
         <button className="button primary" type="submit" disabled={busy || !name.trim() || !timezone.trim()}>{busy ? "Guardando…" : "Guardar perfil"}</button>

@@ -12,12 +12,41 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.engine.android.Android
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.contentType
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+
+@Serializable
+private data class AssistantChatRequest(
+    val message: String,
+    val conversationId: String? = null
+)
+
+@Serializable
+private data class AssistantChatResponse(
+    val conversationId: String,
+    val content: String
+)
 
 /**
- * Lightweight floating assistant surface.
+ * Floating Polaris assistant surface shown by the Android system assistant invocation.
  *
- * The system supplies the current foreground app behind this session. The UI is deliberately
- * independent from the main Activity so the assistant can appear over another app.
+ * Text commands are sent to the same Polaris Core API used by the main Android client,
+ * using the current Supabase session held by the app process.
  */
 class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession(context) {
 
@@ -29,6 +58,14 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
     private val violet = Color.rgb(155, 130, 255)
     private val midnight = Color.rgb(7, 11, 20)
     private val surface = Color.rgb(13, 20, 34)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val http = HttpClient(Android) {
+        install(ContentNegotiation) {
+            json(Json { ignoreUnknownKeys = true })
+        }
+    }
+
+    private var conversationId: String? = null
 
     override fun onCreateContentView(): View {
         val root = LinearLayout(context).apply {
@@ -59,7 +96,10 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
             gravity = Gravity.CENTER
             setTextColor(cyan)
             typeface = Typeface.DEFAULT_BOLD
-            setBackgroundColor(Color.TRANSPARENT)
+            alpha = .78f
+        }
+        mascot.setOnClickListener {
+            mascot.alpha = if (mascot.alpha < .9f) 1f else .72f
         }
         sheet.addView(mascot, LinearLayout.LayoutParams(dp(64), dp(64)).apply {
             gravity = Gravity.CENTER_HORIZONTAL
@@ -75,7 +115,7 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
         sheet.addView(title, lp())
 
         val subtitle = TextView(context).apply {
-            text = "Polaris está listo. Escribe una instrucción y luego conectaremos voz y acciones del sistema."
+            text = "Polaris está listo. Escribe una instrucción y la enviaré al mismo Core de Web, Android y PC."
             textSize = 14f
             setTextColor(Color.rgb(154, 172, 196))
             gravity = Gravity.CENTER_HORIZONTAL
@@ -107,25 +147,27 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
         }
 
         val listen = Button(context).apply {
-            text = "Escuchar"
+            text = "Voz"
             setTextColor(cyan)
             setOnClickListener {
-                subtitle.text = "La interfaz de voz se habilitará en el siguiente incremento."
+                subtitle.text = "La invocación de voz del sistema está preparada; la captura de micrófono queda pendiente del permiso de audio."
             }
         }
         actions.addView(listen, LinearLayout.LayoutParams(0, dp(48), 1f).apply {
             rightMargin = dp(8)
         })
 
-        val send = Button(context).apply {
-            text = "Continuar"
+        lateinit var sendButton: Button
+        sendButton = Button(context).apply {
+            text = "Preguntar"
             setOnClickListener {
                 val query = input.text?.toString()?.trim().orEmpty()
-                subtitle.text = if (query.isBlank()) {
-                    "Dime qué necesitas y Polaris preparará la acción."
-                } else {
-                    "Recibido: “$query”"
+                if (query.isBlank()) {
+                    subtitle.text = "Dime qué necesitas y Polaris lo enviará al Core."
+                    return@setOnClickListener
                 }
+
+                sendToCore(query, subtitle, sendButton)
             }
             setTextColor(midnight)
             background = GradientDrawable(
@@ -135,7 +177,7 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
                 cornerRadius = dp(18).toFloat()
             }
         }
-        actions.addView(send, LinearLayout.LayoutParams(0, dp(48), 1f).apply {
+        actions.addView(sendButton, LinearLayout.LayoutParams(0, dp(48), 1f).apply {
             leftMargin = dp(8)
         })
 
@@ -151,20 +193,71 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
         }
         sheet.addView(close, lp())
 
-        root.addView(sheet, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        ))
+        root.addView(
+            sheet,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        )
 
         return root
     }
 
-    private fun lp(): LinearLayout.LayoutParams {
-        return LinearLayout.LayoutParams(
+    private fun sendToCore(query: String, status: TextView, button: Button) {
+        button.isEnabled = false
+        button.text = "…"
+        status.text = "Polaris está pensando…"
+
+        scope.launch {
+            try {
+                val session = SupabaseProvider.client.auth.currentSessionOrNull()
+                val token = session?.accessToken
+                if (token.isNullOrBlank()) {
+                    status.text = "La sesión de Polaris no está disponible. Abre la app y vuelve a iniciar sesión."
+                    return@launch
+                }
+
+                val baseUrl = BuildConfig.POLARIS_API_URL.trimEnd('/')
+                val response = http.post(baseUrl + "/v1/chat") {
+                    header(HttpHeaders.Authorization, "Bearer " + token)
+                    contentType(ContentType.Application.Json)
+                    setBody(
+                        AssistantChatRequest(
+                            message = query,
+                            conversationId = conversationId
+                        )
+                    )
+                }
+
+                if (response.status.value !in 200..299) {
+                    status.text = "El Core respondió " + response.status.value + ". Revisa la conexión."
+                    return@launch
+                }
+
+                val result = response.body<AssistantChatResponse>()
+                conversationId = result.conversationId
+                status.text = result.content.ifBlank { "El Core no devolvió contenido." }
+            } catch (error: Throwable) {
+                status.text = "No pude conectar con Polaris Core: " + (error.message ?: "error de red")
+            } finally {
+                button.isEnabled = true
+                button.text = "Preguntar"
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        scope.cancel()
+        http.close()
+        super.onDestroy()
+    }
+
+    private fun lp(): LinearLayout.LayoutParams =
+        LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         )
-    }
 
     private fun dp(value: Int): Int =
         (value * context.resources.displayMetrics.density).toInt()

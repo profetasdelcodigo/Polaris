@@ -261,7 +261,53 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
     return { name, result };
   });
 
-  app.post("/v1/chat", async (request) => {\n    const context = await contextFor(request, config);\n    const body = chatRequestSchema.parse(request.body);\n    const message = body.content ?? body.message;\n    if (!message) throw new PolarisError("VALIDATION_ERROR", "Se requiere un mensaje.", 400);\n\n    const conversation = body.conversationId\n      ? await getConversation(context, body.conversationId)\n      : await createConversation(context, safeTitle(message));\n\n    const userMessage = await createMessage(context, {\n      conversationId: conversation.id,\n      role: "user",\n      content: message\n    });\n\n    if (!provider.available) {\n      throw new PolarisError("PROVIDER_ERROR", "La IA no está configurada en el servidor.", 503);\n    }\n\n    let assistantContent = "";\n    let providerResponseId: string | undefined;\n    for await (const event of conversations.stream(context, {\n      conversationId: conversation.id,\n      message,\n      signal: request.raw.signal\n    })) {\n      if (event.type === "message.delta") assistantContent += event.delta;\n      if (event.type === "message.done") providerResponseId = event.providerResponseId;\n    }\n\n    const assistantMessage = await createMessage(context, {\n      conversationId: conversation.id,\n      role: "assistant",\n      content: assistantContent,\n      metadata: providerResponseId ? { providerResponseId } : {}\n    });\n\n    return {\n      conversationId: conversation.id,\n      userMessageId: userMessage.id,\n      assistantMessageId: assistantMessage.id,\n      content: assistantContent\n    };\n  });\n\n  app.post("/v1/chat/stream", async (request, reply) => {
+  app.post("/v1/chat", async (request) => {
+    const context = await contextFor(request, config);
+    const body = chatRequestSchema.parse(request.body);
+    const message = body.content ?? body.message;
+    if (!message) throw new PolarisError("VALIDATION_ERROR", "Se requiere un mensaje.", 400);
+
+    const conversation = body.conversationId
+      ? await getConversation(context, body.conversationId)
+      : await createConversation(context, safeTitle(message));
+
+    const userMessage = await createMessage(context, {
+      conversationId: conversation.id,
+      role: "user",
+      content: message
+    });
+
+    if (!provider.available) {
+      throw new PolarisError("PROVIDER_ERROR", "La IA no está configurada en el servidor.", 503);
+    }
+
+    let assistantContent = "";
+    let providerResponseId: string | undefined;
+    for await (const event of conversations.stream(context, {
+      conversationId: conversation.id,
+      message,
+      signal: request.raw.signal
+    })) {
+      if (event.type === "message.delta") assistantContent += event.delta;
+      if (event.type === "message.done") providerResponseId = event.providerResponseId;
+    }
+
+    const assistantMessage = await createMessage(context, {
+      conversationId: conversation.id,
+      role: "assistant",
+      content: assistantContent,
+      metadata: providerResponseId ? { providerResponseId } : {}
+    });
+
+    return {
+      conversationId: conversation.id,
+      userMessageId: userMessage.id,
+      assistantMessageId: assistantMessage.id,
+      content: assistantContent
+    };
+  });
+
+  app.post("/v1/chat/stream", async (request, reply) => {
     const context = await contextFor(request, config);
     const body = chatRequestSchema.parse(request.body);
     const message = body.content ?? body.message;

@@ -11,7 +11,8 @@ import type {
   MemoryCategory,
   PolarisMessage,
   PolarisState,
-  Preferences
+  Preferences,
+  Profile as PolarisProfile
 } from "./lib/models";
 import { clearSecureSession, loadSecureSession, saveSecureSession } from "./lib/secureSession";
 import { supabase } from "./lib/supabase";
@@ -76,6 +77,7 @@ function App() {
   const [memories, setMemories] = useState<Memory[]>([]);
   const [devices, setDevices] = useState<Device[]>([]);
   const [preferences, setPreferences] = useState<Preferences | null>(null);
+  const [profile, setProfile] = useState<PolarisProfile | null>(null);
   const [composer, setComposer] = useState("");
   const [memoryDraft, setMemoryDraft] = useState("");
   const [memoryCategory, setMemoryCategory] = useState<MemoryCategory>("PROJECT");
@@ -152,6 +154,7 @@ function App() {
       setMessages([]);
       setDevices([]);
       setPreferences(null);
+      setProfile(null);
       return;
     }
     void refreshWorkspace();
@@ -180,16 +183,18 @@ function App() {
     setLoadingWorkspace(true);
     setError(null);
     try {
-      const [nextConversations, nextMemories, nextDevices, nextPreferences] = await Promise.all([
+      const [nextConversations, nextMemories, nextDevices, nextPreferences, nextProfile] = await Promise.all([
         api.listConversations(),
         api.listMemories(),
         api.listDevices(),
-        api.getPreferences()
+        api.getPreferences(),
+        api.getProfile()
       ]);
       setConversations(nextConversations);
       setMemories(nextMemories);
       setDevices(nextDevices);
       setPreferences(nextPreferences);
+      setProfile(nextProfile);
     } catch (cause) {
       setError(toUserMessage(cause));
       setPolarisState(online ? "WARNING" : "OFFLINE");
@@ -517,7 +522,13 @@ function App() {
             onDelete={(id) => void deleteMemory(id)}
           />
         )}
-        {screen === "profile" && <Profile session={session} />}
+        {screen === "profile" && (
+          <Profile
+            profile={profile}
+            email={session.user.email ?? ""}
+            onSaved={(next) => setProfile(next)}
+          />
+        )}
         {screen === "settings" && (
           <Settings preferences={preferences} onTheme={(theme) => void updateTheme(theme)} />
         )}
@@ -856,19 +867,67 @@ function Memories({
   );
 }
 
-function Profile({ session }: { session: Session }) {
+function Profile({
+  profile,
+  email,
+  onSaved
+}: {
+  profile: PolarisProfile | null;
+  email: string;
+  onSaved(next: PolarisProfile): void;
+}) {
+  const [name, setName] = useState(profile?.display_name ?? "");
+  const [timezone, setTimezone] = useState(profile?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (profile) {
+      setName(profile.display_name);
+      setTimezone(profile.timezone);
+    }
+  }, [profile]);
+
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const next = await api.updateProfile({
+        display_name: name.trim(),
+        timezone: timezone.trim()
+      });
+      onSaved(next);
+      setNotice("Perfil sincronizado con tu cuenta Polaris.");
+    } catch (cause) {
+      setError(toUserMessage(cause));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="page narrow">
-      <header className="section-header"><div><span className="eyebrow">IDENTIDAD</span><h1>Perfil</h1><p>Tu cuenta es la misma en web, Android y escritorio.</p></div></header>
-      <section className="profile-card">
-        <span className="profile-avatar">{(session.user.email ?? "?").slice(0, 1).toUpperCase()}</span>
-        <div><h2>{session.user.user_metadata.display_name || "Usuario Polaris"}</h2><p>{session.user.email}</p><small>Cuenta creada {formatDate(session.user.created_at)}</small></div>
-      </section>
-      <section className="info-card">
-        <h2>Gestión de perfil</h2>
-        <p>La edición de nombre y avatar se habilitará cuando el flujo de perfil sincronizado esté disponible. No se muestran controles que no hagan una acción real.</p>
-        <button type="button" className="button disabled" disabled>Próximamente</button>
-      </section>
+      <header className="section-header">
+        <div>
+          <span className="eyebrow">IDENTIDAD</span>
+          <h1>Perfil</h1>
+          <p>Un solo nombre y una sola configuración de identidad para Web, Android y PC.</p>
+        </div>
+      </header>
+      <form className="profile-card profile-form" onSubmit={(event) => void save(event)}>
+        <div className="profile-summary">
+          <span className="profile-avatar">{(name || email || "?").slice(0, 1).toUpperCase()}</span>
+          <div><h2>{name || "Usuario Polaris"}</h2><p>{email}</p></div>
+        </div>
+        <label>Nombre para Polaris<input value={name} onChange={(event) => setName(event.target.value)} minLength={1} maxLength={120} required /></label>
+        <label>Zona horaria<input value={timezone} onChange={(event) => setTimezone(event.target.value)} minLength={1} maxLength={120} required /></label>
+        {error && <p className="form-error">{error}</p>}
+        {notice && <p className="form-success">{notice}</p>}
+        <button className="button primary" type="submit" disabled={busy || !name.trim() || !timezone.trim()}>{busy ? "Guardando…" : "Guardar perfil"}</button>
+      </form>
     </div>
   );
 }

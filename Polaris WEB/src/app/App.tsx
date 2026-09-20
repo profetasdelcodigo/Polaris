@@ -506,7 +506,17 @@ function ChatView({
   const pane = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setActiveId(selected?.id ?? null); }, [selected?.id]);
-  useEffect(() => { pane.current?.scrollTo({ top: pane.current.scrollHeight, behavior: 'smooth' }); }, [messages]);
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      const element = pane.current;
+      if (!element) return;
+      const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
+      if (distanceFromBottom < 180) {
+        element.scrollTo({ top: element.scrollHeight, behavior: 'auto' });
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [messages]);
 
   const currentId = activeId ?? selected?.id ?? null;
 
@@ -568,8 +578,6 @@ function ChatView({
         setMessages((current) => current.map((message) => message.id === assistantId ? { ...message, status: 'completed' } : message));
       }
       if (event.event === 'error') {
-        const detail = typeof data.message === 'string' ? data.message : 'No se pudo generar una respuesta.';
-        onProblem(detail);
         setMessages((current) => current.map((message) => message.id === assistantId ? { ...message, status: 'failed' } : message));
       }
     };

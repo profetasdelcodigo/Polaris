@@ -281,6 +281,7 @@ export async function registerDevice(
   const existing = await context.db
     .from("devices")
     .select("id")
+    .eq("user_id", context.user.id)
     .eq("platform", input.platform)
     .eq("client_id", input.clientId)
     .maybeSingle();

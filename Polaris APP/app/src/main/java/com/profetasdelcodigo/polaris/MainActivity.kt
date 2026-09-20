@@ -3,6 +3,7 @@ package com.profetasdelcodigo.polaris
 import android.Manifest
 import android.app.role.RoleManager
 import android.content.Intent
+import android.provider.Settings
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -84,7 +85,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             PolarisApp(
                 assistantRoleEnabled = assistantRoleEnabled,
-                onRequestAssistantRole = ::requestAssistantRole
+                onRequestAssistantRole = ::requestAssistantRole,
+                onOpenAutomationSettings = ::openAutomationSettings
             )
         }
     }
@@ -118,6 +120,10 @@ class MainActivity : ComponentActivity() {
         assistantRoleLauncher.launch(roleManager.createRequestRoleIntent(RoleManager.ROLE_ASSISTANT))
     }
 
+    private fun openAutomationSettings() {
+        startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+    }
+
     private fun requestMicrophonePermission() {
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
             microphonePermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
@@ -128,7 +134,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun PolarisApp(
     assistantRoleEnabled: Boolean,
-    onRequestAssistantRole: () -> Unit
+    onRequestAssistantRole: () -> Unit,
+    onOpenAutomationSettings: () -> Unit
 ) {
     MaterialTheme(
         colorScheme = androidx.compose.material3.darkColorScheme(
@@ -146,7 +153,8 @@ private fun PolarisApp(
             } else {
                 AuthenticatedShell(
                     assistantRoleEnabled = assistantRoleEnabled,
-                    onRequestAssistantRole = onRequestAssistantRole
+                    onRequestAssistantRole = onRequestAssistantRole,
+                    onOpenAutomationSettings = onOpenAutomationSettings
                 )
             }
         }
@@ -416,6 +424,7 @@ private enum class AndroidSection {
 private fun HomeScreen(
     assistantRoleEnabled: Boolean,
     onRequestAssistantRole: () -> Unit,
+    onOpenAutomationSettings: () -> Unit,
     onSignOut: () -> Unit
 ) {
     val scope = rememberCoroutineScope()

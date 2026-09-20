@@ -479,6 +479,7 @@ function App() {
             memories={memories}
             devices={devices}
             loading={loadingWorkspace}
+            polarisState={polarisState}
           />
         )}
         {screen === "chat" && (
@@ -587,7 +588,8 @@ function Home({
   conversations,
   memories,
   devices,
-  loading
+  loading,
+  polarisState
 }: {
   onStart(): void;
   onMemory(): void;
@@ -595,6 +597,7 @@ function Home({
   memories: Memory[];
   devices: Device[];
   loading: boolean;
+  polarisState: PolarisState;
 }) {
   return (
     <div className="page home-page">

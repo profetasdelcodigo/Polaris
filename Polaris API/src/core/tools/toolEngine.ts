@@ -32,15 +32,20 @@ export interface ToolDefinition<TInput extends z.ZodType, TResult> {
   category: ToolCategory;
   riskLevel: RiskLevel;
   timeoutMs: number;
+  modelCallable: boolean;
   inputSchema: TInput;
   execute(context: ToolExecutionContext, input: z.infer<TInput>): Promise<TResult>;
 }
 
-const getTimeSchema = z.object({ timezone: z.string().trim().min(1).max(100).default("America/Lima") });
+const getTimeSchema = z.object({
+  timezone: z.string().trim().min(1).max(100).default("America/Lima")
+});
 const calculatorSchema = z.object({ expression: z.string().trim().min(1).max(200) });
 const saveMemorySchema = z.object({
   content: z.string().trim().min(1).max(10_000),
-  category: z.enum(["PERSONAL", "PREFERENCE", "PROJECT", "CONTEXT", "FACT", "GOAL"]).default("CONTEXT"),
+  category: z
+    .enum(["PERSONAL", "PREFERENCE", "PROJECT", "CONTEXT", "FACT", "GOAL"])
+    .default("CONTEXT"),
   importance: z.number().int().min(1).max(5).default(3)
 });
 const searchMemorySchema = z.object({ query: z.string().trim().max(180).default("") });
@@ -53,6 +58,7 @@ const tools = [
     category: "INFORMATION",
     riskLevel: "LOW",
     timeoutMs: 1_000,
+    modelCallable: true,
     inputSchema: getTimeSchema,
     async execute(_context, input) {
       try {
@@ -77,6 +83,7 @@ const tools = [
     category: "INFORMATION",
     riskLevel: "LOW",
     timeoutMs: 1_000,
+    modelCallable: true,
     inputSchema: calculatorSchema,
     async execute(_context, input) {
       return { expression: input.expression, result: calculateExpression(input.expression) };
@@ -86,8 +93,9 @@ const tools = [
     name: "save_memory",
     description: "Guarda una memoria explícita y controlable del usuario.",
     category: "PRODUCTIVITY",
-    riskLevel: "LOW",
+    riskLevel: "MEDIUM",
     timeoutMs: 5_000,
+    modelCallable: false,
     inputSchema: saveMemorySchema,
     async execute(context, input) {
       const memory = await createMemory(context, {
@@ -105,6 +113,7 @@ const tools = [
     category: "INFORMATION",
     riskLevel: "LOW",
     timeoutMs: 5_000,
+    modelCallable: true,
     inputSchema: searchMemorySchema,
     async execute(context, input) {
       const memories = await listRelevantMemories(context, input.query, 8);
@@ -122,6 +131,7 @@ const tools = [
     category: "INFORMATION",
     riskLevel: "LOW",
     timeoutMs: 5_000,
+    modelCallable: true,
     inputSchema: listConversationsSchema,
     async execute(context) {
       const conversations = await listConversations(context);
@@ -142,11 +152,13 @@ export class ToolEngine {
   }
 
   public aiDefinitions(): readonly AIToolDefinition[] {
-    return tools.map((tool) => ({
-      name: tool.name,
-      description: tool.description,
-      parameters: z.toJSONSchema(tool.inputSchema) as Record<string, unknown>
-    }));
+    return tools
+      .filter((tool) => tool.modelCallable)
+      .map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+        parameters: z.toJSONSchema(tool.inputSchema) as Record<string, unknown>
+      }));
   }
 
   public async execute(
@@ -164,9 +176,13 @@ export class ToolEngine {
     return await Promise.race([
       tool.execute(context, input),
       new Promise<never>((_, reject) => {
-        deadline.addEventListener("abort", () => {
-          reject(new PolarisError("TIMEOUT", "La herramienta excedió el tiempo permitido.", 504));
-        }, { once: true });
+        deadline.addEventListener(
+          "abort",
+          () => {
+            reject(new PolarisError("TIMEOUT", "La herramienta excedió el tiempo permitido.", 504));
+          },
+          { once: true }
+        );
       })
     ]);
   }

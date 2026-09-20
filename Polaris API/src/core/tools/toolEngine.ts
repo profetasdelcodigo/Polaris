@@ -103,7 +103,7 @@ const tools = [
         category: input.category,
         importance: input.importance,
         source: "tool"
-      });
+      }, _signal);
       return { id: memory.id, category: memory.category, content: memory.content };
     }
   },
@@ -116,7 +116,7 @@ const tools = [
     modelCallable: true,
     inputSchema: searchMemorySchema,
     async execute(context: ToolExecutionContext, input: z.infer<typeof searchMemorySchema>, _signal: AbortSignal) {
-      const memories = await listRelevantMemories(context, input.query, 8);
+      const memories = await listRelevantMemories(context, input.query, 8, _signal);
       return memories.map((memory) => ({
         id: memory.id,
         category: memory.category,
@@ -134,7 +134,7 @@ const tools = [
     modelCallable: true,
     inputSchema: listConversationsSchema,
     async execute(context: ToolExecutionContext, _input: z.infer<typeof listConversationsSchema>, _signal: AbortSignal) {
-      const conversations = await listConversations(context);
+      const conversations = await listConversations(context, 100, _signal);
       return conversations.map((conversation) => ({
         id: conversation.id,
         title: conversation.title,
@@ -208,32 +208,45 @@ export class ToolEngine {
       parentSignal?.addEventListener("abort", onParentAbort, { once: true });
     }
 
-    const timeoutId = setTimeout(() => controller.abort(), tool.timeoutMs);
-    let abortedByTimeout = false;
-    const onAbort = () => {
-      if (!parentSignal?.aborted) abortedByTimeout = true;
-    };
-    controller.signal.addEventListener("abort", onAbort, { once: true });
+    let timeoutTriggered = false;
+    const controller = new AbortController();
+    const onParentAbort = () => controller.abort();
+
+    if (parentSignal?.aborted) {
+      controller.abort();
+    } else {
+      parentSignal?.addEventListener("abort", onParentAbort, { once: true });
+    }
+
+    const timeoutId = setTimeout(() => {
+      timeoutTriggered = true;
+      controller.abort();
+    }, tool.timeoutMs);
+
+    const abortPromise = new Promise<never>((_, reject) => {
+      const rejectAborted = () => {
+        reject(
+          timeoutTriggered
+            ? new PolarisError("TIMEOUT", "La herramienta excedió el tiempo permitido.", 504)
+            : new PolarisError("TIMEOUT", "La herramienta fue cancelada.", 499)
+        );
+      };
+
+      if (controller.signal.aborted) {
+        rejectAborted();
+        return;
+      }
+
+      controller.signal.addEventListener("abort", rejectAborted, { once: true });
+    });
 
     try {
       return await Promise.race([
         tool.execute(context, input as never, controller.signal),
-        new Promise<never>((_, reject) => {
-          controller.signal.addEventListener(
-            "abort",
-            () => reject(
-              parentSignal?.aborted && !abortedByTimeout
-                ? new PolarisError("TIMEOUT", "La herramienta fue cancelada.", 499)
-                : new PolarisError("TIMEOUT", "La herramienta excedió el tiempo permitido.", 504)
-            ),
-            { once: true }
-          );
-        })
+        abortPromise
       ]);
     } finally {
       clearTimeout(timeoutId);
-      controller.signal.removeEventListener("abort", onAbort);
       parentSignal?.removeEventListener("abort", onParentAbort);
-    }
-  }
+    }  }
 }

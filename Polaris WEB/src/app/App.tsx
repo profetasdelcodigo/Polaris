@@ -1,4 +1,4 @@
-import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -102,7 +102,7 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    const onShortcut = (event: KeyboardEvent) => {
+    const onShortcut = (event: globalThis.KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey)) return;
       const key = event.key.toLowerCase();
       if (key === 'k') {
@@ -365,20 +365,6 @@ function Workspace({
     } catch (cause) {
       setProblem(errorText(cause));
       return null;
-    }
-  };
-
-  const deleteConversation = async () => {
-    if (!selected || !window.confirm('¿Eliminar esta conversación y todo su historial?')) return;
-    try {
-      await polarisApi.deleteConversation(session, selected.id);
-      setConversations((current) => current.filter((conversation) => conversation.id !== selected.id));
-      setSelectedConversationId(null);
-      setMessages([]);
-      setView('history');
-      setNotice('Conversación eliminada.');
-    } catch (cause) {
-      setProblem(errorText(cause));
     }
   };
 

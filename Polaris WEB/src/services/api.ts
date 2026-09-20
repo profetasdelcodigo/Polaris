@@ -187,7 +187,7 @@ export async function streamChat(
       const data = isRecord(event.data) ? event.data : {};
       streamError = new PolarisApiError(
         {
-          message: typeof data.message === 'string' ? data.message : undefined,
+          detail: typeof data.message === 'string' ? data.message : undefined,
           code: typeof data.code === 'string' ? data.code : undefined,
           status: 502,
           requestId: typeof data.requestId === 'string' ? data.requestId : undefined,

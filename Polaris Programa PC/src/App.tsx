@@ -556,11 +556,11 @@ function NavigationItem({
   );
 }
 
-function PolarisMascot3D() {
+function PolarisMascot3D({ state }: { state: PolarisState }) {
   return (
-    <div className="polaris-mascot-stage" aria-label="Mascota Polaris">
+    <div className={`polaris-mascot-stage mascot-state-${state.toLowerCase()}`} aria-label={`Mascota Polaris: ${stateLabels[state]}`}>
       <div className="polaris-mascot-aura" />
-      <div className="polaris-mascot" aria-hidden="true">
+      <div className={`polaris-mascot state-${state.toLowerCase()}`} aria-hidden="true">
         <div className="mascot-antenna"><span /></div>
         <div className="mascot-head">
           <div className="mascot-screen">
@@ -599,7 +599,7 @@ function Home({
   return (
     <div className="page home-page">
       <header className="page-header">
-        <PolarisMascot3D />
+        <PolarisMascot3D state={polarisState} />
         <span className="eyebrow">ASISTENTE PERSONAL · 0.1.0</span>
         <h1>Una sola brújula para tu mundo digital.</h1>
         <p>Polaris conserva la misma identidad, contexto y memoria donde sea que lo abras.</p>

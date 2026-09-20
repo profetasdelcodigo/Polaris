@@ -186,7 +186,6 @@ export async function createMemory(
     })
     .select()
     .single();
-  if (signal) request = request.abortSignal(signal);
   const { data, error } = await request;
   return requireData(data, error);
 }

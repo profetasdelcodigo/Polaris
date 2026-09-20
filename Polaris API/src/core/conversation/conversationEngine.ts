@@ -70,12 +70,28 @@ export class ConversationEngine {
       system: PolarisIdentity.systemPrompt,
       user: input.message,
       context: contextWindow + verifiedToolContext,
-      signal: input.signal
+      signal: input.signal,
+      tools: this.toolEngine.aiDefinitions(),
+      executeTool: async (name: string, rawInput: unknown) => {
+        const registered = this.toolEngine.list().find((candidate) => candidate.name === name);
+        if (!registered) {
+          throw new Error("La herramienta solicitada no está registrada.");
+        }
+        return this.toolEngine.execute(
+          context,
+          registered.name as RegisteredToolName,
+          rawInput
+        );
+      }
     };
 
     for await (const event of this.provider.stream(providerInput)) {
       if (event.type === "text_delta") {
         yield { type: "message.delta", delta: event.delta };
+      } else if (event.type === "tool_started") {
+        yield { type: "tool.started", name: event.name };
+      } else if (event.type === "tool_completed") {
+        yield { type: "tool.completed", name: event.name, result: event.result };
       } else {
         yield { type: "message.done", ...(event.providerResponseId ? { providerResponseId: event.providerResponseId } : {}) };
       }

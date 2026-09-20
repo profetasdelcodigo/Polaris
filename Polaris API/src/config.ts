@@ -21,12 +21,12 @@ export type PolarisConfig = {
   port: number;
   host: string;
   corsOrigins: string[];
-  supabaseUrl?: string;
-  supabasePublishableKey?: string;
-  supabaseServiceRoleKey?: string;
+  supabaseUrl: string | undefined;
+  supabasePublishableKey: string | undefined;
+  supabaseServiceRoleKey: string | undefined;
   aiProvider: "openai" | "gemini" | "anthropic" | "local";
   aiModel: string;
-  openAiApiKey?: string;
+  openAiApiKey: string | undefined;
   requestRateLimitMax: number;
 };
 

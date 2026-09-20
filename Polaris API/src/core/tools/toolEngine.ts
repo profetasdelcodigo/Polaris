@@ -202,7 +202,7 @@ export class ToolEngine {
 
     try {
       return await Promise.race([
-        tool.execute(context, input),
+        tool.execute(context, input as never),
         new Promise<never>((_, reject) => {
           controller.signal.addEventListener(
             "abort",

@@ -1,4 +1,9 @@
 import OpenAI from "openai";
+import { toResponseInputItems } from "openai/lib/responses/ResponseInputItems";
+import type {
+  ResponseInputItem,
+  ResponseOutputItem
+} from "openai/resources/responses/responses";
 import { PolarisError } from "../../errors.js";
 import type { AICompletionInput, AIProvider, AIStreamEvent } from "./types.js";
 
@@ -11,6 +16,7 @@ type FunctionCall = {
 const MAX_TOOL_ROUNDS = 4;
 
 export class OpenAIProvider implements AIProvider {
+  public readonly name = "openai";
   public readonly available = true;
   private readonly client: OpenAI;
 
@@ -31,7 +37,7 @@ export class OpenAIProvider implements AIProvider {
         strict: true
       }));
 
-      let inputItems: Array<Record<string, unknown>> = [
+      let inputItems: ResponseInputItem[] = [
         {
           role: "user",
           content: input.context + "\n\nMENSAJE_ACTUAL:\n" + input.user
@@ -52,7 +58,7 @@ export class OpenAIProvider implements AIProvider {
         );
 
         const callsByItemId = new Map<string, FunctionCall>();
-        const outputItems: Array<Record<string, unknown>> = [];
+        const outputItems: ResponseOutputItem[] = [];
         let responseId: string | undefined;
 
         for await (const event of responseStream) {
@@ -65,7 +71,7 @@ export class OpenAIProvider implements AIProvider {
           }
 
           if (event.type === "response.output_item.done") {
-            outputItems.push(event.item as unknown as Record<string, unknown>);
+            outputItems.push(event.item);
 
             if (event.item.type === "function_call") {
               const call = {
@@ -73,7 +79,7 @@ export class OpenAIProvider implements AIProvider {
                 name: event.item.name,
                 arguments: event.item.arguments
               } satisfies FunctionCall;
-              callsByItemId.set(event.item.id, call);
+              callsByItemId.set(event.item.call_id, call);
             }
           }
         }
@@ -100,7 +106,7 @@ export class OpenAIProvider implements AIProvider {
           );
         }
 
-        const toolOutputs: Array<Record<string, unknown>> = [];
+        const toolOutputs: ResponseInputItem[] = [];
 
         for (const call of calls) {
           yield { type: "tool_started", name: call.name };
@@ -128,7 +134,7 @@ export class OpenAIProvider implements AIProvider {
 
         // Con store=false no podemos usar previous_response_id. Responses requiere
         // reenviar los output items del modelo junto con los resultados de las herramientas.
-        inputItems = [...inputItems, ...outputItems, ...toolOutputs];
+        inputItems = [...inputItems, ...toResponseInputItems(outputItems), ...toolOutputs];
       }
     } catch (error) {
       if (input.signal.aborted) {

@@ -123,9 +123,10 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
   });
 
   app.setErrorHandler((error, request, reply) => {
+    const isZodError = error instanceof Error && error.name === "ZodError";
     const mapped = error instanceof PolarisError
       ? error
-      : error.name === "ZodError"
+      : isZodError
         ? new PolarisError("VALIDATION_ERROR", "La solicitud contiene datos inválidos.", 400, { cause: error })
         : asPolarisError(error);
     void reply.status(mapped.statusCode).send(toProblem(mapped, requestId(request)));
@@ -158,7 +159,12 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
   app.patch("/v1/profile", async (request) => {
     const context = await contextFor(request, config);
     const body = updateProfileSchema.parse(request.body);
-    return updateProfile(context, body);
+    return updateProfile(context, {
+      ...(body.display_name !== undefined ? { display_name: body.display_name } : {}),
+      ...(body.avatar_url !== undefined ? { avatar_url: body.avatar_url } : {}),
+      ...(body.language !== undefined ? { language: body.language } : {}),
+      ...(body.timezone !== undefined ? { timezone: body.timezone } : {})
+    });
   });
 
   app.get("/v1/conversations", async (request) => {
@@ -217,7 +223,11 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
     const context = await contextFor(request, config);
     const id = identifierSchema.parse((request.params as { id?: unknown }).id);
     const body = updateMemorySchema.parse(request.body);
-    return updateMemory(context, id, body);
+    return updateMemory(context, id, {
+      ...(body.category !== undefined ? { category: body.category } : {}),
+      ...(body.content !== undefined ? { content: body.content } : {}),
+      ...(body.importance !== undefined ? { importance: body.importance } : {})
+    });
   });
 
   app.delete("/v1/memories/:id", async (request, reply) => {
@@ -235,7 +245,15 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
   app.patch("/v1/preferences", async (request) => {
     const context = await contextFor(request, config);
     const body = updatePreferencesSchema.parse(request.body);
-    return updatePreferences(context, body);
+    return updatePreferences(context, {
+      ...(body.language !== undefined ? { language: body.language } : {}),
+      ...(body.theme !== undefined ? { theme: body.theme } : {}),
+      ...(body.tone !== undefined ? { tone: body.tone } : {}),
+      ...(body.response_style !== undefined ? { response_style: body.response_style } : {}),
+      ...(body.voice_settings !== undefined ? { voice_settings: body.voice_settings } : {}),
+      ...(body.notifications !== undefined ? { notifications: body.notifications } : {}),
+      ...(body.privacy_settings !== undefined ? { privacy_settings: body.privacy_settings } : {})
+    });
   });
 
   app.get("/v1/devices", async (request) => {
@@ -283,13 +301,20 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
 
     let assistantContent = "";
     let providerResponseId: string | undefined;
-    for await (const event of conversations.stream(context, {
-      conversationId: conversation.id,
-      message,
-      signal: request.raw.signal
-    })) {
-      if (event.type === "message.delta") assistantContent += event.delta;
-      if (event.type === "message.done") providerResponseId = event.providerResponseId;
+    const requestAbortController = new AbortController();
+    const onRequestClose = () => requestAbortController.abort();
+    request.raw.once("close", onRequestClose);
+    try {
+      for await (const event of conversations.stream(context, {
+        conversationId: conversation.id,
+        message,
+        signal: requestAbortController.signal
+      })) {
+        if (event.type === "message.delta") assistantContent += event.delta;
+        if (event.type === "message.done") providerResponseId = event.providerResponseId;
+      }
+    } finally {
+      request.raw.off("close", onRequestClose);
     }
 
     const assistantMessage = await createMessage(context, {

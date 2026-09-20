@@ -4,7 +4,7 @@ export type {
   Tables,
   TablesInsert,
   TablesUpdate
-} from "./database.types";
+} from "./database.types.js";
 
 export const POLARIS_VERSION = "0.1.0" as const;
 

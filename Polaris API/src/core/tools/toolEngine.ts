@@ -142,12 +142,12 @@ const tools = [
       }));
     }
   }
-] as const satisfies readonly ToolDefinition<z.ZodType, unknown>[];
+] as const;
 
 export type RegisteredToolName = (typeof tools)[number]["name"];
 
 export class ToolEngine {
-  public list(): readonly ToolDefinition<z.ZodType, unknown>[] {
+  public list(): readonly (typeof tools)[number][] {
     return tools;
   }
 

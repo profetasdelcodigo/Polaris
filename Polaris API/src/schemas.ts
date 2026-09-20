@@ -1,3 +1,4 @@
+import type { Json } from "@polaris/contracts";
 import { z } from "zod";
 
 export const identifierSchema = z.string().uuid();
@@ -25,7 +26,7 @@ export const updateMemorySchema = createMemorySchema.partial().refine(
   "Incluye al menos un campo para actualizar."
 );
 
-const jsonObjectSchema = z.record(z.string(), z.unknown());
+const jsonObjectSchema = z.record(z.string(), z.unknown()).transform((value) => value as Json);
 
 export const updatePreferencesSchema = z.object({
   language: z.enum(["es", "en"]).optional(),

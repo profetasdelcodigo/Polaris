@@ -17,6 +17,10 @@ describe("Polaris API public contract", () => {
         corsOrigins: ["http://localhost:5173"],
         aiProvider: "openai",
         aiModel: "gpt-5.5",
+        supabaseUrl: undefined,
+        supabasePublishableKey: undefined,
+        supabaseServiceRoleKey: undefined,
+        openAiApiKey: undefined,
         requestRateLimitMax: 30
       }
     });
@@ -41,6 +45,10 @@ describe("Polaris API public contract", () => {
         corsOrigins: ["http://localhost:5173"],
         aiProvider: "openai",
         aiModel: "gpt-5.5",
+        supabaseUrl: undefined,
+        supabasePublishableKey: undefined,
+        supabaseServiceRoleKey: undefined,
+        openAiApiKey: undefined,
         requestRateLimitMax: 30
       }
     });

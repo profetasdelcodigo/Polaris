@@ -687,17 +687,22 @@ function MemoriesView({
   }
 
   useEffect(() => {
+    let cancelled = false;
     const timer = window.setTimeout(() => {
       void (async () => {
         try {
-          setMemories(await polarisApi.listMemories(session, query));
+          const next = await polarisApi.listMemories(session, query);
+          if (!cancelled) setMemories(next);
         } catch (cause) {
-          onProblem(errorText(cause));
+          if (!cancelled) onProblem(errorText(cause));
         }
       })();
     }, query ? 220 : 0);
 
-    return () => window.clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [session.access_token, query]);
 
   function search(value: string) {

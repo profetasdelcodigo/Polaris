@@ -56,6 +56,7 @@ Implementado:
 - capa local de automatización separada del Core
 - AccessibilityService con permiso explícito del usuario
 - parser determinista de órdenes Android de bajo riesgo
+- planificador local acotado de hasta 8 acciones con ejecución secuencial y corte ante fallo
 - navegación real: atrás, inicio, recientes, notificaciones y ajustes rápidos
 - apertura de Ajustes, Wi-Fi y Bluetooth
 - desplazamiento de contenedores visibles

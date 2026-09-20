@@ -1,12 +1,26 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { ConversationEngine } from "../src/core/conversation/conversationEngine.js";
 import { ToolEngine } from "../src/core/tools/toolEngine.js";
 import type { AIProvider } from "../src/core/ai/types.js";
 import { PolarisError } from "../src/errors.js";
 
+class FakeQuery {
+  select() { return this; }
+  eq() { return this; }
+  order() { return this; }
+  limit() { return this; }
+  ilike() { return this; }
+  then<TResult1 = { data: never[]; error: null }, TResult2 = never>(
+    onfulfilled?: ((value: { data: never[]; error: null }) => TResult1 | PromiseLike<TResult1>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
+  ) {
+    return Promise.resolve({ data: [], error: null }).then(onfulfilled as never, onrejected as never);
+  }
+}
+
 const context = {
   user: { id: "user-test" },
-  db: {}
+  db: { from: () => new FakeQuery() }
 } as never;
 
 describe("ToolEngine safety boundary", () => {

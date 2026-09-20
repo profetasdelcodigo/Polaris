@@ -8,6 +8,7 @@ import type {
   Profile
 } from "./models";
 import { supabase } from "./supabase";
+import { getOrCreateDesktopClientId } from "./device";
 
 export class ApiError extends Error {
   constructor(
@@ -135,6 +136,7 @@ export const api = {
     return request("/v1/devices", {
       method: "POST",
       body: JSON.stringify({
+        clientId: getOrCreateDesktopClientId(),
         name: "Polaris Desktop",
         type: "DESKTOP",
         platform: navigator.platform || "desktop",

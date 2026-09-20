@@ -415,6 +415,7 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
       for await (const event of conversations.stream(context, {
         conversationId: conversation.id,
         message,
+        currentMessageId: userMessage.id,
         signal: controller.signal
       })) {
         if (event.type === "message.delta") {

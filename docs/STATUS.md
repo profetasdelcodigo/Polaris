@@ -97,6 +97,7 @@ Implementado:
 
 Pendiente:
 - prueba real de sincronización Web → Android → PC
+- suscripción Realtime equivalente en Android/PC
 - memoria semántica/vectorial
 - exportación/borrado de datos
 - sincronización realtime donde aporte valor
@@ -131,4 +132,4 @@ CI:
 
 ## Próximo objetivo
 
-Cerrar Fase 1 con una prueba real del proveedor de IA y contratos/tests finales. Después, ejecutar la prueba real Web → Android → PC y verificar expiración/refresh de sesión. Luego completar el planificador de automatización multi-paso, observación/localización/verificación/recuperación y el puente seguro Android ↔ Core. Después: voz continua/TTS, memoria semántica, visión/OCR, automatización PC con permisos, sincronización realtime cuando aporte valor y una pasada final de diseño, accesibilidad, rendimiento, pruebas y empaquetado. No se declarará 100% hasta que cada bloque tenga implementación y verificación real. CI Android volvió a confirmar `:app:assembleDebug` después de TTS y modo continuo. Las capacidades de sistema/automatización inspiradas en ARTEMIS quedan separadas como módulo posterior y requieren permisos explícitos.
+Cerrar Fase 1 con una prueba real del proveedor de IA y contratos/tests finales. Después, ejecutar la prueba real Web → Android → PC y verificar expiración/refresh de sesión. Luego completar el planificador de automatización multi-paso, observación/localización/verificación/recuperación y el puente seguro Android ↔ Core. Después: voz continua/TTS, memoria semántica, visión/OCR, automatización PC con permisos, sincronización realtime cuando aporte valor y una pasada final de diseño, accesibilidad, rendimiento, pruebas y empaquetado. No se declarará 100% hasta que cada bloque tenga implementación y verificación real. CI Android volvió a confirmar `:app:assembleDebug` después de TTS y modo continuo. CI Node/Web/PC: SUCCESS tras integrar Realtime Web. Las capacidades de sistema/automatización inspiradas en ARTEMIS quedan separadas como módulo posterior y requieren permisos explícitos.

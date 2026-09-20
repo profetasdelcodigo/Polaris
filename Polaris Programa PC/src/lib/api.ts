@@ -4,7 +4,8 @@ import type {
   Device,
   Memory,
   PolarisMessage,
-  Preferences
+  Preferences,
+  Profile
 } from "./models";
 import { supabase } from "./supabase";
 
@@ -105,6 +106,17 @@ export const api = {
 
   deleteMemory(id: string): Promise<void> {
     return request(`/v1/memories/${encodeURIComponent(id)}`, { method: "DELETE" });
+  },
+
+  getProfile(): Promise<Profile> {
+    return request("/v1/profile");
+  },
+
+  updateProfile(input: { display_name: string; timezone: string }): Promise<Profile> {
+    return request("/v1/profile", {
+      method: "PATCH",
+      body: JSON.stringify(input)
+    });
   },
 
   getPreferences(): Promise<Preferences> {

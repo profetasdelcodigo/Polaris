@@ -155,7 +155,7 @@ export interface StreamCallbacks {
   onError(error: ApiError): void;
 }
 
-function dispatchSseBlock(block: string, callbacks: StreamCallbacks): void {
+function dispatchSseBlock(block: string, callbacks: StreamCallbacks): ApiError | null {
   let event = "message";
   const dataLines: string[] = [];
 
@@ -164,12 +164,12 @@ function dispatchSseBlock(block: string, callbacks: StreamCallbacks): void {
     if (line.startsWith("data:")) dataLines.push(line.slice(5).trimStart());
   }
 
-  if (!dataLines.length) return;
+  if (!dataLines.length) return null;
   let payload: JsonObject;
   try {
     payload = JSON.parse(dataLines.join("\n")) as JsonObject;
   } catch {
-    return;
+    return null;
   }
 
   if (event === "message.delta" && typeof payload.delta === "string") {
@@ -181,14 +181,16 @@ function dispatchSseBlock(block: string, callbacks: StreamCallbacks): void {
   } else if (event === "message.done") {
     callbacks.onDone();
   } else if (event === "error") {
-    callbacks.onError(
-      new ApiError(
-        typeof payload.message === "string" ? payload.message : "La generación falló.",
-        typeof payload.code === "string" ? payload.code : "PROVIDER_ERROR",
-        502
-      )
+    const error = new ApiError(
+      typeof payload.message === "string" ? payload.message : "La generación falló.",
+      typeof payload.code === "string" ? payload.code : "PROVIDER_ERROR",
+      502
     );
+    callbacks.onError(error);
+    return error;
   }
+
+  return null;
 }
 
 export async function streamChat(
@@ -228,10 +230,16 @@ export async function streamChat(
       pending += decoder.decode(value ?? new Uint8Array(), { stream: !done });
       const blocks = pending.split(/\r?\n\r?\n/);
       pending = blocks.pop() ?? "";
-      blocks.forEach((block) => dispatchSseBlock(block, callbacks));
+      for (const block of blocks) {
+        const error = dispatchSseBlock(block, callbacks);
+        if (error) throw error;
+      }
       if (done) break;
     }
-    if (pending.trim()) dispatchSseBlock(pending, callbacks);
+    if (pending.trim()) {
+      const error = dispatchSseBlock(pending, callbacks);
+      if (error) throw error;
+    }
   } finally {
     reader.releaseLock();
   }

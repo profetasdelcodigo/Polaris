@@ -21,12 +21,18 @@ function requireData<T>(data: T | null, error: { message: string; code?: string 
   return data;
 }
 
-export async function listConversations(context: DbContext) {
-  const { data, error } = await context.db
+export async function listConversations(
+  context: DbContext,
+  limit = 100,
+  signal?: AbortSignal
+) {
+  let request = context.db
     .from("conversations")
     .select("*")
     .order("updated_at", { ascending: false })
-    .limit(100);
+    .limit(limit);
+  if (signal) request = request.abortSignal(signal);
+  const { data, error } = await request;
   if (error) throw databaseError(error);
   return data ?? [];
 }
@@ -119,7 +125,12 @@ export async function updateMessage(
   return requireData(data, error);
 }
 
-export async function listRelevantMemories(context: DbContext, query: string, limit = 6) {
+export async function listRelevantMemories(
+  context: DbContext,
+  query: string,
+  limit = 6,
+  signal?: AbortSignal
+) {
   const sanitized = query.replace(/[%_]/g, " ").trim().slice(0, 180);
   let request = context.db
     .from("memories")
@@ -134,6 +145,7 @@ export async function listRelevantMemories(context: DbContext, query: string, li
       type: "plain"
     });
   }
+  if (signal) request = request.abortSignal(signal);
   const { data, error } = await request;
   if (error) throw databaseError(error);
   return data ?? [];
@@ -151,9 +163,10 @@ export async function createMemory(
     importance?: number;
     source?: "user" | "assistant" | "tool" | "import";
     metadata?: Json;
-  }
+  },
+  signal?: AbortSignal
 ) {
-  const { data, error } = await context.db
+  let request = context.db
     .from("memories")
     .insert({
       user_id: context.user.id,
@@ -165,6 +178,8 @@ export async function createMemory(
     })
     .select()
     .single();
+  if (signal) request = request.abortSignal(signal);
+  const { data, error } = await request;
   return requireData(data, error);
 }
 

@@ -179,6 +179,23 @@ export async function streamChat(
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
+  let streamError: PolarisApiError | null = null;
+
+  const emit = (event: SseEvent) => {
+    onEvent(event);
+    if (event.event === 'error') {
+      const data = isRecord(event.data) ? event.data : {};
+      streamError = new PolarisApiError(
+        {
+          message: typeof data.message === 'string' ? data.message : undefined,
+          code: typeof data.code === 'string' ? data.code : undefined,
+          status: 502,
+          requestId: typeof data.requestId === 'string' ? data.requestId : undefined,
+        },
+        502,
+      );
+    }
+  };
 
   try {
     while (true) {
@@ -186,7 +203,8 @@ export async function streamChat(
       buffer += decoder.decode(value, { stream: !done });
       const parsed = parseSseFrames(buffer);
       buffer = parsed.remainder;
-      parsed.events.forEach(onEvent);
+      parsed.events.forEach(emit);
+      if (streamError) throw streamError;
       if (done) {
         break;
       }
@@ -195,7 +213,8 @@ export async function streamChat(
     const tail = decoder.decode();
     if (tail) {
       const parsed = parseSseFrames(buffer + tail + '\n\n');
-      parsed.events.forEach(onEvent);
+      parsed.events.forEach(emit);
+      if (streamError) throw streamError;
     }
   } finally {
     reader.releaseLock();

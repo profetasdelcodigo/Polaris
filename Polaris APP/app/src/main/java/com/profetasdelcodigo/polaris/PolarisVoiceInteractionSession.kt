@@ -342,7 +342,7 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
         // Local Android actions are handled without sending the command to the cloud Core.
         // This keeps low-risk device navigation fast and preserves the permission boundary.
         if (PolarisAutomationController.isEnabled()) {
-            val local = PolarisAutomationController.execute(query)
+            val local = PolarisAutomationController.executePlan(query)
             if (local.success) {
                 status.text = local.message
                 button.isEnabled = true

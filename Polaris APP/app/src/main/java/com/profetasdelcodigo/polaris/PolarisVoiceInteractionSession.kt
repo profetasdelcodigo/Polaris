@@ -21,15 +21,14 @@ import android.widget.TextView
  */
 class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession(context) {
 
+    init {
+        setTheme(com.profetasdelcodigo.polaris.R.style.Theme_Polaris_Assistant)
+    }
+
     private val cyan = Color.rgb(93, 230, 255)
     private val violet = Color.rgb(155, 130, 255)
     private val midnight = Color.rgb(7, 11, 20)
     private val surface = Color.rgb(13, 20, 34)
-
-    override fun onCreate(): Unit {
-        setTheme(com.profetasdelcodigo.polaris.R.style.Theme_Polaris_Assistant)
-        super.onCreate()
-    }
 
     override fun onCreateContentView(): View {
         val root = LinearLayout(context).apply {

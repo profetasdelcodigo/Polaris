@@ -6,6 +6,7 @@ import android.view.accessibility.AccessibilityEvent
 
 /**
  * Local, permissioned Android automation bridge.
+ * Build-verified path: bounded navigation, settings, scroll and visible taps.
  * Android requires the user to grant Accessibility access explicitly.
  */
 class PolarisAccessibilityService : AccessibilityService() {

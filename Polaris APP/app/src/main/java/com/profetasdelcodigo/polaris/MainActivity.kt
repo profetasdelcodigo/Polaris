@@ -1,5 +1,6 @@
 package com.profetasdelcodigo.polaris
 
+import android.Manifest
 import android.app.role.RoleManager
 import android.content.Intent
 import android.os.Build
@@ -67,6 +68,9 @@ private data class ChatItem(val role: String, val content: String)
 class MainActivity : ComponentActivity() {
     private var assistantRoleEnabled by mutableStateOf(false)
 
+    private val microphonePermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
     private val assistantRoleLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             assistantRoleEnabled = isDefaultAssistant()
@@ -96,10 +100,26 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun requestAssistantRole() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            requestMicrophonePermission()
+            return
+        }
         val roleManager = getSystemService(RoleManager::class.java) ?: return
-        if (!roleManager.isRoleAvailable(RoleManager.ROLE_ASSISTANT)) return
+        if (!roleManager.isRoleAvailable(RoleManager.ROLE_ASSISTANT)) {
+            requestMicrophonePermission()
+            return
+        }
+        if (roleManager.isRoleHeld(RoleManager.ROLE_ASSISTANT)) {
+            requestMicrophonePermission()
+            return
+        }
         assistantRoleLauncher.launch(roleManager.createRequestRoleIntent(RoleManager.ROLE_ASSISTANT))
+    }
+
+    private fun requestMicrophonePermission() {
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            microphonePermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
     }
 }
 

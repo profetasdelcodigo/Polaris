@@ -322,18 +322,19 @@ function Workspace({
       setDevices(nextDevices);
       setProfile(nextProfile);
       setPreferences(nextPreferences);
-      if (!nextDevices.some((device) => device.client_id === getOrCreateWebClientId())) {
-        const registered = await polarisApi.registerDevice(session, {
-          clientId: getOrCreateWebClientId(),
-          client_id: getOrCreateWebClientId(),
-          name: 'Polaris Web',
-          type: 'WEB',
-          platform: navigator.userAgent.slice(0, 110),
-          status: 'ONLINE',
-          metadata: { client: 'web', version: '0.1.0' },
-        });
-        setDevices((current) => [registered, ...current]);
-      }
+      const registered = await polarisApi.registerDevice(session, {
+        clientId: getOrCreateWebClientId(),
+        client_id: null,
+        name: 'Polaris Web',
+        type: 'WEB',
+        platform: navigator.userAgent.slice(0, 110),
+        status: 'ONLINE',
+        metadata: { client: 'web', version: '0.1.0' },
+      });
+      setDevices((current) => [
+        registered,
+        ...current.filter((device) => device.id !== registered.id),
+      ]);
     } catch (cause) {
       setProblem(errorText(cause));
     } finally {

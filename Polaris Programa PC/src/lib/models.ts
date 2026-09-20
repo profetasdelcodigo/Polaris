@@ -60,3 +60,14 @@ export interface Preferences {
   notifications: Record<string, unknown>;
   privacy_settings: Record<string, unknown>;
 }
+
+
+export interface Profile {
+  id: string;
+  display_name: string;
+  avatar_url: string | null;
+  timezone: string;
+  locale: string;
+  created_at: string;
+  updated_at: string;
+}

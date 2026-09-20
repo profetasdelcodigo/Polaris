@@ -178,7 +178,8 @@ private fun ConfigurationScreen() {
 @Composable
 private fun AuthenticatedShell(
     assistantRoleEnabled: Boolean,
-    onRequestAssistantRole: () -> Unit
+    onRequestAssistantRole: () -> Unit,
+    onOpenAutomationSettings: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val supabase = remember { SupabaseProvider.client }
@@ -188,6 +189,7 @@ private fun AuthenticatedShell(
         HomeScreen(
             assistantRoleEnabled = assistantRoleEnabled,
             onRequestAssistantRole = onRequestAssistantRole,
+            onOpenAutomationSettings = onOpenAutomationSettings,
             onSignOut = {
                 scope.launch {
                     supabase.auth.signOut()

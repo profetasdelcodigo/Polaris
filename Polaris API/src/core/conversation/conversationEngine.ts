@@ -71,7 +71,7 @@ export class ConversationEngine {
       user: input.message,
       context: contextWindow + verifiedToolContext,
       signal: input.signal,
-      tools: this.toolEngine.aiDefinitions(),
+      tools: tool ? [] : this.toolEngine.aiDefinitions(),
       executeTool: async (name: string, rawInput: unknown) => {
         const registered = this.toolEngine.list().find((candidate) => candidate.name === name);
         if (!registered) {

@@ -172,3 +172,29 @@ a:focus-visible {
     }
   }
 }
+
+
+.new-chat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .65rem;
+}
+
+.new-chat kbd {
+  margin-left: auto;
+  padding: .15rem .34rem;
+  border: 1px solid rgba(128, 190, 224, .16);
+  border-radius: 6px;
+  color: #8fa6c4;
+  background: rgba(255, 255, 255, .025);
+  font-size: .63rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .new-chat kbd {
+    display: none;
+  }
+}

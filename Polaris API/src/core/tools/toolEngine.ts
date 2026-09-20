@@ -166,7 +166,7 @@ export class ToolEngine {
     name: RegisteredToolName,
     rawInput: unknown
   ): Promise<unknown> {
-    return this.executeInternal(context, name, rawInput, false);
+    return this.executeInternal(context, name, rawInput);
   }
 
   public async executeModelCallable(
@@ -183,14 +183,13 @@ export class ToolEngine {
       );
     }
 
-    return this.executeInternal(context, tool.name, rawInput, true);
+    return this.executeInternal(context, tool.name, rawInput);
   }
 
   private async executeInternal(
     context: ToolExecutionContext,
     name: RegisteredToolName,
-    rawInput: unknown,
-    _modelSelected: boolean
+    rawInput: unknown
   ): Promise<unknown> {
     const tool = tools.find((candidate) => candidate.name === name);
     if (!tool) {

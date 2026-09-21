@@ -236,10 +236,11 @@ const tools = [
     inputSchema: relayCommandSchema,
     async execute(context: ToolExecutionContext, input: z.infer<typeof relayCommandSchema>, _signal: AbortSignal) {
       const devices = await listDevices(context, 50, _signal);
+      const targetType = input.action.startsWith("android.") ? "ANDROID" : "DESKTOP";
       const target = input.targetDeviceId
         ? devices.find((device) => device.id === input.targetDeviceId)
         : devices
-            .filter((device) => device.type === "DESKTOP")
+            .filter((device) => device.type === targetType)
             .sort((a, b) => Number(b.status === "ONLINE") - Number(a.status === "ONLINE"))[0];
 
       if (!target) {

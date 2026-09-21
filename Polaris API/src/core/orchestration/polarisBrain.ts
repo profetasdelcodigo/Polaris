@@ -81,7 +81,7 @@ export function preparePolarisBrain(input: BrainInput) {
   return {
     version: "1.0.0",
     task: boundary.sanitized,
-    safeForAutomation: boundary.safe || intent.intent === "CHAT",
+    safeForAutomation: boundary.safe && !["RESEARCH", "UNKNOWN"].includes(intent.intent),
     security: {
       safe: boundary.safe,
       reasons: boundary.flags

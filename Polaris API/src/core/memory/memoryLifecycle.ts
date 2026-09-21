@@ -64,7 +64,7 @@ export function evaluateMemoryLifecycle(candidate: MemoryLike, existing: MemoryL
       state: "REINFORCED",
       confidence: 1,
       reason: "Coincide con una memoria existente.",
-      duplicateOf: exact.id
+      ...(exact.id ? { duplicateOf: exact.id } : {})
     };
   }
 
@@ -79,7 +79,7 @@ export function evaluateMemoryLifecycle(candidate: MemoryLike, existing: MemoryL
       state: "REINFORCED",
       confidence: nearest.score,
       reason: "Es una reformulación muy cercana de una memoria existente.",
-      duplicateOf: nearest.memory.id
+      ...(nearest.memory.id ? { duplicateOf: nearest.memory.id } : {})
     };
   }
 

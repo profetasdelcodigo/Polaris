@@ -671,11 +671,11 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
       throw new PolarisError("VALIDATION_ERROR", "query es obligatorio.", 400);
     }
     const devices = await listDevices(context);
-    const smartDevices = devices.map((device) => ({
+    const smartDevices: SmartDevice[] = devices.map((device) => ({
       id: device.id,
       name: device.name,
-      family: device.type === "ANDROID" ? "PHONE" : device.type === "DESKTOP" ? "PC" : "OTHER",
-      protocol: device.type === "ANDROID" ? "ANDROID_NATIVE" : device.type === "DESKTOP" ? "DESKTOP_NATIVE" : "HTTP_LOCAL",
+      family: (device.type === "ANDROID" ? "PHONE" : device.type === "DESKTOP" ? "PC" : "OTHER") as SmartDevice["family"],
+      protocol: (device.type === "ANDROID" ? "ANDROID_NATIVE" : device.type === "DESKTOP" ? "DESKTOP_NATIVE" : "HTTP_LOCAL") as SmartDevice["protocol"],
       online: device.status === "ONLINE",
       local: true,
       capabilities: [],
@@ -715,7 +715,10 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
     const stateValue = String(body.state ?? "IDLE").toUpperCase();
     const mode = allowedModes.includes(modeValue) ? modeValue : "COMPANION";
     const state = allowedStates.includes(stateValue) ? stateValue : "IDLE";
-    return buildVisualScene(mode, state);
+    return buildVisualScene(
+      mode as Parameters<typeof buildVisualScene>[0],
+      state as Parameters<typeof buildVisualScene>[1]
+    );
   });
 
   app.post("/v1/agent/suggestions", async (request) => {

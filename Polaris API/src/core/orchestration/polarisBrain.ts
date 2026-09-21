@@ -41,13 +41,13 @@ export function preparePolarisBrain(input: BrainInput) {
     task: boundary.sanitized,
     preferredMode: input.preferredMode,
     tone: input.tone ?? input.preferences?.tone ?? undefined,
-    responseStyle: input.responseStyle ?? input.preferences?.response_style
+    responseStyle: input.responseStyle ?? input.preferences?.response_style ?? undefined
   });
   const experience = buildExperienceBrief({
     task: boundary.sanitized,
     preferredDevice: input.preferredDevice,
     preferredMode: input.preferredMode,
-    tone: input.tone ?? input.preferences?.tone,
+    tone: input.tone ?? input.preferences?.tone ?? undefined,
     responseStyle: input.responseStyle ?? input.preferences?.response_style ?? undefined,
     state: "THINKING"
   });

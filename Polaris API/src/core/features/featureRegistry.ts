@@ -77,7 +77,10 @@ export const polarisFeatureRegistry: readonly PolarisFeature[] = [
   ["alexa-bridge", "Puente Alexa", "MULTIPLATFORM", "PARTIAL", "Representa Alexa como gateway autorizado en vez de fingir acceso directo.", "Mantiene clara la frontera entre Polaris y servicios de terceros."],
   ["ir-device-bridge", "Puente infrarrojo", "MULTIPLATFORM", "PARTIAL", "Expone comandos IR cuando el companion dispone de hardware compatible.", "Abre control de TVs, aire acondicionado y equipos antiguos sin asumir hardware inexistente."],
   ["smart-appliance-control", "Electrodomésticos inteligentes", "MULTIPLATFORM", "PARTIAL", "Normaliza nevera, microondas, aire acondicionado y otros equipos según capacidades declaradas.", "Una orden solo se envía cuando el dispositivo realmente anuncia esa capacidad."],
-  ["cross-client-device-control", "Control desde Web/Android/Desktop", "MULTIPLATFORM", "AVAILABLE", "Expone el mismo contrato de comandos a los tres clientes.", "La interfaz cambia por plataforma, pero el Core conserva una política única de seguridad."]
+  ["cross-client-device-control", "Control desde Web/Android/Desktop", "MULTIPLATFORM", "AVAILABLE", "Expone el mismo contrato de comandos a los tres clientes.", "La interfaz cambia por plataforma, pero el Core conserva una política única de seguridad."],
+  ["natural-device-intents", "Intenciones naturales de dispositivos", "INTELLIGENCE", "AVAILABLE", "Convierte frases comunes en acciones de dispositivo tipadas y acotadas.", "Permite decir “enciende la luz” sin depender de nombres técnicos de APIs."],
+  ["device-resolution", "Resolución de dispositivo", "MULTIPLATFORM", "PARTIAL", "Prepara la selección del equipo correcto entre varios dispositivos compatibles.", "Evita enviar una orden al foco equivocado cuando existen varios equipos."],
+  ["home-automation-gateway", "Gateway de domótica", "MULTIPLATFORM", "PARTIAL", "Normaliza gateways domésticos como Home Assistant, MQTT y Matter.", "Permite integrar ecosistemas diferentes sin acoplar el Core a una marca."
 ].map(([id, name, category, status, description, whyItMatters]) => ({
   id,
   name,

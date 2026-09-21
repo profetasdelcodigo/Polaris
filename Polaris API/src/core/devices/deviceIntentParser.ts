@@ -10,7 +10,7 @@ export type DeviceIntent = {
 };
 
 const familyPatterns: Array<[DeviceFamily, RegExp]> = [
-  ["LIGHT", /luz|foco|bombilla|lampara/i],
+  ["LIGHT", /luz|foco|bombilla|lampara|lámpara/i],
   ["TV", /tele|televisor|tv|pantalla/i],
   ["PC", /pc|computadora|ordenador|laptop/i],
   ["PHONE", /celular|móvil|movil|telefono|teléfono/i],

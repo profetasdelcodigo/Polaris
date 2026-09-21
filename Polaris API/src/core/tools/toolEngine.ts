@@ -89,7 +89,7 @@ const safeHandoffSchema = z.object({
     "android.open_input"
   ]),
   payload: z.record(z.string(), z.unknown()).default({})
-});
+}).strict();
 
 const relayCommandSchema = z.object({
   targetDeviceId: z.string().uuid().optional(),

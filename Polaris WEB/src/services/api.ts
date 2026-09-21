@@ -316,3 +316,36 @@ export function getOrbitVisual(
     body: JSON.stringify({ mode, state }),
   });
 }
+
+
+export type FabricCatalogQuery = {
+  q?: string;
+  platform?: 'CORE' | 'WEB' | 'DESKTOP' | 'ANDROID';
+  offset?: number;
+  limit?: number;
+};
+
+export function getFabricCatalog(
+  session: { access_token: string },
+  query: FabricCatalogQuery = {},
+): Promise<Record<string, unknown>> {
+  const params = new URLSearchParams();
+  if (query.q) params.set('q', query.q);
+  if (query.platform) params.set('platform', query.platform);
+  if (query.offset != null) params.set('offset', String(query.offset));
+  if (query.limit != null) params.set('limit', String(query.limit));
+  const suffix = params.toString();
+  return apiRequest('/v1/fabric/catalog' + (suffix ? '?' + suffix : ''), session.access_token);
+}
+
+export function previewFabricFunction(
+  session: { access_token: string },
+  functionId: string,
+  input?: unknown,
+): Promise<Record<string, unknown>> {
+  return apiRequest('/v1/fabric/preview', session.access_token, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ functionId, input }),
+  });
+}

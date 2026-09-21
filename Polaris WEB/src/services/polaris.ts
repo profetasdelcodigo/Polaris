@@ -183,10 +183,12 @@ export const polarisApi = {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(input),
     }),
-  getFabricCatalog: (session: Session, query?: { q?: string; platform?: 'CORE' | 'WEB' | 'DESKTOP' | 'ANDROID' }) => {
+  getFabricCatalog: (session: Session, query?: { q?: string; platform?: 'CORE' | 'WEB' | 'DESKTOP' | 'ANDROID'; offset?: number; limit?: number }) => {
     const params = new URLSearchParams();
     if (query?.q) params.set('q', query.q);
     if (query?.platform) params.set('platform', query.platform);
+    if (query?.offset != null) params.set('offset', String(Math.max(0, Math.floor(query.offset))));
+    if (query?.limit != null) params.set('limit', String(Math.min(200, Math.max(1, Math.floor(query.limit)))))
     const suffix = params.toString() ? `?${params.toString()}` : '';
     return apiRequest<Record<string, unknown>>(`/fabric/catalog${suffix}`, token(session));
   },

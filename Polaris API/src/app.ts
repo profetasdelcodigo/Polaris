@@ -33,6 +33,10 @@ import { createContinuityCapsule, validateContinuityCapsule } from "./core/conti
 import { planDeepResearch } from "./core/research/deepResearchPlanner.js";
 import { createRoutine, routinePreview } from "./core/routines/routineEngine.js";
 import { featureRegistrySummary, polarisFeatureRegistry } from "./core/features/featureRegistry.js";
+import { createOfflineQueueItem, offlineQueuePreview, nextQueueState, type OfflineQueueItem } from "./core/automation/offlineQueue.js";
+import { planBrowserAgent, browserAgentPreview } from "./core/browser/browserAgent.js";
+import { chooseHandoffTarget, handoffEnvelope, type HandoffDevice } from "./core/multiplatform/handoffPlanner.js";
+import { compileBoundedMacro } from "./core/skills/skillMacro.js";
 import {
   claimRelayCommand,
   createRelayCommand,
@@ -444,6 +448,86 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
       tabId: typeof body.tabId === "string" ? body.tabId : undefined
     });
     return { context, summary: browserContextSummary(context) };
+  });
+
+  app.post("/v1/offline-queue/preview", async (request) => {
+    await contextFor(request, config);
+    const body = request.body as { items?: unknown[] };
+    const items = Array.isArray(body.items) ? body.items as OfflineQueueItem[] : [];
+    return offlineQueuePreview(items.slice(0, 50));
+  });
+
+  app.post("/v1/offline-queue/create", async (request) => {
+    const context = await contextFor(request, config);
+    const body = request.body as { task?: unknown; targetDeviceId?: unknown; safeToReplay?: unknown; maxAttempts?: unknown };
+    if (typeof body.task !== "string" || !body.task.trim()) {
+      throw new PolarisError("VALIDATION_ERROR", "task es obligatorio.", 400);
+    }
+    return createOfflineQueueItem({
+      userId: context.user.id,
+      task: body.task,
+      ...(typeof body.targetDeviceId === "string" ? { targetDeviceId: body.targetDeviceId } : {}),
+      ...(typeof body.safeToReplay === "boolean" ? { safeToReplay: body.safeToReplay } : {}),
+      ...(typeof body.maxAttempts === "number" ? { maxAttempts: body.maxAttempts } : {})
+    });
+  });
+
+  app.post("/v1/offline-queue/transition", async (request) => {
+    await contextFor(request, config);
+    const body = request.body as { item?: unknown; result?: unknown };
+    if (!body.item || typeof body.item !== "object" || !["RETRY","SUCCESS","FAIL","CANCEL"].includes(String(body.result))) {
+      throw new PolarisError("VALIDATION_ERROR", "item y result válidos son obligatorios.", 400);
+    }
+    return nextQueueState(body.item as OfflineQueueItem, body.result as "RETRY" | "SUCCESS" | "FAIL" | "CANCEL");
+  });
+
+  app.post("/v1/browser/plan", async (request) => {
+    await contextFor(request, config);
+    const body = request.body as { task?: unknown; context?: unknown };
+    if (typeof body.task !== "string" || !body.task.trim()) {
+      throw new PolarisError("VALIDATION_ERROR", "task es obligatorio.", 400);
+    }
+    const browserContext = body.context && typeof body.context === "object" && !Array.isArray(body.context)
+      ? body.context as Parameters<typeof planBrowserAgent>[1]
+      : undefined;
+    const plan = planBrowserAgent(body.task, browserContext);
+    return { plan, preview: browserAgentPreview(plan) };
+  });
+
+  app.post("/v1/handoff/select", async (request) => {
+    await contextFor(request, config);
+    const body = request.body as { devices?: unknown; capability?: unknown; preferredType?: unknown; task?: unknown; sourceDeviceId?: unknown; continuityToken?: unknown };
+    if (!Array.isArray(body.devices) || typeof body.capability !== "string") {
+      throw new PolarisError("VALIDATION_ERROR", "devices y capability son obligatorios.", 400);
+    }
+    const devices = body.devices.slice(0, 20) as HandoffDevice[];
+    const target = chooseHandoffTarget(
+      devices,
+      body.capability,
+      typeof body.preferredType === "string" ? body.preferredType as HandoffDevice["type"] : undefined
+    );
+    return {
+      target,
+      envelope: handoffEnvelope({
+        task: typeof body.task === "string" ? body.task : body.capability,
+        targetDevice: target,
+        ...(typeof body.sourceDeviceId === "string" ? { sourceDeviceId: body.sourceDeviceId } : {}),
+        ...(typeof body.continuityToken === "string" ? { continuityToken: body.continuityToken } : {})
+      })
+    };
+  });
+
+  app.post("/v1/skills/macro", async (request) => {
+    await contextFor(request, config);
+    const body = request.body as { name?: unknown; steps?: unknown; repeat?: unknown };
+    if (typeof body.name !== "string" || !Array.isArray(body.steps)) {
+      throw new PolarisError("VALIDATION_ERROR", "name y steps son obligatorios.", 400);
+    }
+    return compileBoundedMacro({
+      name: body.name,
+      steps: body.steps as ReturnType<typeof compileBoundedMacro>["steps"],
+      ...(typeof body.repeat === "number" ? { repeat: body.repeat } : {})
+    });
   });
 
   app.get("/v1/health", async () => ({

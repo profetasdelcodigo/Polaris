@@ -33,6 +33,10 @@ describe("capability fabric", () => {
     expect(executeCoreFabricFunction(fn!, 10)).toBe(17);
   });
 
+  it("does not advertise a fake translation runner", () => {
+    expect(getFabricFunction("core.text.translate-key.1")).toBeUndefined();
+  });
+
   it("executes deterministic text functions", () => {
     const fn = getFabricFunction("core.text.upper.1");
     expect(fn).toBeDefined();

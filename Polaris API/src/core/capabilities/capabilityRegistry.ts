@@ -237,6 +237,96 @@ export const capabilityRegistry: readonly PolarisCapability[] = [
     requiresConfirmation: true,
     danger: "HIGH",
     composable: true
+  },
+  {
+    id: "core.context",
+    name: "Contexto adaptativo",
+    description: "Combina memoria, preferencias, perfil y estado de dispositivos para construir el contexto mínimo útil.",
+    kinds: all("CORE"),
+    availability: { WEB: "AVAILABLE", ANDROID: "AVAILABLE", DESKTOP: "AVAILABLE", ROBOT: "NOT_IMPLEMENTED" },
+    requiresConfirmation: false,
+    danger: "LOW",
+    composable: true
+  },
+  {
+    id: "core.capability_negotiation",
+    name: "Negociación de capacidades",
+    description: "Selecciona la plataforma y capacidad real para una tarea.",
+    kinds: all("CORE", "REMOTE"),
+    availability: { WEB: "AVAILABLE", ANDROID: "AVAILABLE", DESKTOP: "AVAILABLE", ROBOT: "NOT_IMPLEMENTED" },
+    requiresConfirmation: false,
+    danger: "LOW",
+    composable: true
+  },
+  {
+    id: "core.verification",
+    name: "Verificación",
+    description: "Exige evidencia observable después de una acción.",
+    kinds: all("CORE", "REMOTE"),
+    availability: { WEB: "AVAILABLE", ANDROID: "AVAILABLE", DESKTOP: "AVAILABLE", ROBOT: "NOT_IMPLEMENTED" },
+    requiresConfirmation: false,
+    danger: "LOW",
+    composable: true
+  },
+  {
+    id: "core.recovery",
+    name: "Recuperación",
+    description: "Gestiona reintentos, fallbacks y paradas seguras.",
+    kinds: all("CORE", "REMOTE"),
+    availability: { WEB: "AVAILABLE", ANDROID: "AVAILABLE", DESKTOP: "AVAILABLE", ROBOT: "NOT_IMPLEMENTED" },
+    requiresConfirmation: false,
+    danger: "LOW",
+    composable: true
+  },
+  {
+    id: "core.audit",
+    name: "Auditoría de ejecución",
+    description: "Crea trazas identificables de las operaciones.",
+    kinds: all("CORE", "REMOTE"),
+    availability: { WEB: "AVAILABLE", ANDROID: "AVAILABLE", DESKTOP: "AVAILABLE", ROBOT: "NOT_IMPLEMENTED" },
+    requiresConfirmation: false,
+    danger: "LOW",
+    composable: true
+  },
+  {
+    id: "research.deep_plan",
+    name: "Plan de investigación profunda",
+    description: "Descompone preguntas de investigación y prepara criterios de verificación.",
+    kinds: all("CORE", "WEB"),
+    availability: { WEB: "AVAILABLE", ANDROID: "AVAILABLE", DESKTOP: "AVAILABLE", ROBOT: "NOT_IMPLEMENTED" },
+    requiresConfirmation: false,
+    danger: "LOW",
+    composable: true
+  },
+  {
+    id: "research.contradiction_check",
+    name: "Contraste de fuentes",
+    description: "Estructura la comprobación de contradicciones y límites de evidencia.",
+    kinds: all("CORE", "WEB"),
+    availability: { WEB: "AVAILABLE", ANDROID: "AVAILABLE", DESKTOP: "AVAILABLE", ROBOT: "NOT_IMPLEMENTED" },
+    requiresConfirmation: false,
+    danger: "LOW",
+    composable: true
+  },
+  {
+    id: "task.continuity",
+    name: "Continuidad de tareas",
+    description: "Empaqueta y valida estado para reanudar tareas entre dispositivos.",
+    kinds: all("CORE", "REMOTE"),
+    availability: { WEB: "AVAILABLE", ANDROID: "AVAILABLE", DESKTOP: "AVAILABLE", ROBOT: "NOT_IMPLEMENTED" },
+    requiresConfirmation: false,
+    danger: "MEDIUM",
+    composable: true
+  },
+  {
+    id: "security.emergency_stop",
+    name: "Parada de emergencia",
+    description: "Marca una automatización como detenida antes de continuar con pasos posteriores.",
+    kinds: all("CORE", "REMOTE"),
+    availability: { WEB: "AVAILABLE", ANDROID: "AVAILABLE", DESKTOP: "AVAILABLE", ROBOT: "AVAILABLE" },
+    requiresConfirmation: false,
+    danger: "LOW",
+    composable: true
   }
 ];
 

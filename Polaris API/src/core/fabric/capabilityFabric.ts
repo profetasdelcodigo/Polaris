@@ -391,7 +391,6 @@ function executeText(op: string, variant: number, value: string): unknown {
     case "prefix": return `Polaris ${variant}: ${text}`;
     case "suffix": return `${text} · Polaris ${variant}`;
     case "truncate": return text.length > variant * 10 ? `${text.slice(0, variant * 10)}…` : text;
-    case "translate-key": return text; // deterministic placeholder-free contract: preserves input until a translation provider is explicitly connected
     default: return text;
   }
 }
@@ -472,14 +471,23 @@ export function getFabricFunction(id: string): FabricFunction | undefined {
   return byId.get(id);
 }
 
-export function searchFabricFunctions(query = "", platform?: FabricPlatform): readonly FabricFunction[] {
+export function searchFabricFunctions(
+  query = "",
+  platform?: FabricPlatform,
+  offset = 0,
+  limit = 200
+): readonly FabricFunction[] {
   const normalized = query.trim().toLowerCase();
-  return fabricCatalog.filter((item) => {
-    const platformOk = !platform || item.platform === platform;
-    if (!platformOk) return false;
-    if (!normalized) return true;
-    return [item.id, item.name, item.domain, item.description].join(" ").toLowerCase().includes(normalized);
-  }).slice(0, 200);
+  const safeOffset = Number.isFinite(offset) ? Math.max(0, Math.floor(offset)) : 0;
+  const safeLimit = Number.isFinite(limit) ? Math.min(200, Math.max(1, Math.floor(limit))) : 200;
+  return fabricCatalog
+    .filter((item) => {
+      const platformOk = !platform || item.platform === platform;
+      if (!platformOk) return false;
+      if (!normalized) return true;
+      return [item.id, item.name, item.domain, item.description].join(" ").toLowerCase().includes(normalized);
+    })
+    .slice(safeOffset, safeOffset + safeLimit);
 }
 
 export function fabricCatalogSummary() {

@@ -230,19 +230,32 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
   });
 
   app.get("/v1/fabric/catalog", async (request) => {
-    const query = request.query as { q?: unknown; platform?: unknown };
+    const query = request.query as { q?: unknown; platform?: unknown; offset?: unknown; limit?: unknown };
     const platform =
       typeof query.platform === "string" &&
       ["CORE", "WEB", "DESKTOP", "ANDROID"].includes(query.platform.toUpperCase())
         ? query.platform.toUpperCase() as FabricPlatform
         : undefined;
+    const offset = typeof query.offset === "string" ? Number(query.offset) : 0;
+    const limit = typeof query.limit === "string" ? Number(query.limit) : 200;
+    const safeOffset = Number.isFinite(offset) ? Math.max(0, Math.floor(offset)) : 0;
+    const safeLimit = Number.isFinite(limit) ? Math.min(200, Math.max(1, Math.floor(limit))) : 200;
     const functions = searchFabricFunctions(
       typeof query.q === "string" ? query.q.slice(0, 120) : "",
-      platform
+      platform,
+      safeOffset,
+      safeLimit
     );
+    const summary = fabricCatalogSummary();
+    const totalMatching = fabricCatalogSummary().count;
+    const hasMore = functions.length === safeLimit;
     return {
-      ...fabricCatalogSummary(),
+      ...summary,
       returned: functions.length,
+      offset: safeOffset,
+      limit: safeLimit,
+      nextOffset: hasMore ? safeOffset + functions.length : null,
+      totalMatching,
       functions
     };
   });

@@ -424,3 +424,41 @@ body {
     animation: none !important;
   }
 }
+
+
+.polaris-home-visual {
+  position: relative;
+  width: 240px;
+  height: 205px;
+  margin: -8px auto 8px;
+  display: grid;
+  place-items: center;
+  perspective: 900px;
+  isolation: isolate;
+}
+.polaris-home-orbit {
+  position: absolute;
+  border: 1px solid rgba(93,230,255,.18);
+  border-radius: 50%;
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+.polaris-home-orbit.orbit-one { width: 180px; height: 90px; transform: rotateX(62deg) rotateZ(12deg); animation: desktop-orbit-a 9s linear infinite; }
+.polaris-home-orbit.orbit-two { width: 145px; height: 165px; transform: rotateY(65deg) rotateZ(-24deg); border-color: rgba(155,130,255,.20); animation: desktop-orbit-b 12s linear infinite reverse; }
+.polaris-home-orbit.orbit-three { width: 215px; height: 120px; transform: rotateX(32deg) rotateZ(73deg); border-color: rgba(111,241,193,.15); animation: desktop-orbit-c 15s linear infinite; }
+.polaris-home-visual .polaris-mascot-stage { margin: 0; z-index: 2; }
+.polaris-home-visual::after {
+  content: "";
+  position: absolute;
+  width: 120px;
+  height: 70px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(93,230,255,.19), transparent 70%);
+  filter: blur(6px);
+}
+@keyframes desktop-orbit-a { to { transform: rotateX(62deg) rotateZ(372deg); } }
+@keyframes desktop-orbit-b { to { transform: rotateY(65deg) rotateZ(-384deg); } }
+@keyframes desktop-orbit-c { to { transform: rotateX(32deg) rotateZ(433deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .polaris-home-orbit { animation: none !important; }
+}

@@ -163,7 +163,7 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ targetDeviceId })
     });
-  }
+  },
 
   updateRelayCommand(
     commandId: string,

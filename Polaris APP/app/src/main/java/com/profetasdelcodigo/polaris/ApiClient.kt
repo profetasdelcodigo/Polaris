@@ -154,7 +154,7 @@ class PolarisApiClient(
         return client.post(baseUrl() + "/v1/relay/commands/" + commandId + "/claim") {
             configure(this)
             contentType(ContentType.Application.Json)
-            setBody(buildJsonObject { put("targetDeviceId", deviceId) })
+            setBody(buildJsonObject { put("targetDeviceId", kotlinx.serialization.json.JsonPrimitive(deviceId)) })
         }.body()
     }
 
@@ -169,9 +169,9 @@ class PolarisApiClient(
             contentType(ContentType.Application.Json)
             setBody(
                 buildJsonObject {
-                    put("status", status)
+                    put("status", kotlinx.serialization.json.JsonPrimitive(status))
                     put("result", kotlinx.serialization.json.JsonObject(result))
-                    if (errorMessage != null) put("errorMessage", errorMessage)
+                    if (errorMessage != null) put("errorMessage", kotlinx.serialization.json.JsonPrimitive(errorMessage))
                 }
             )
         }.body()

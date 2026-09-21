@@ -302,7 +302,7 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
     backend: "ok",
     database: hasSupabaseConfiguration(config) ? "configured" : "unconfigured",
     provider: provider.available ? "configured" : "unconfigured",
-    version: "0.2.0"
+    version: "0.3.0"
   }));
 
   app.get("/v1/capabilities", async (): Promise<Capabilities> => {

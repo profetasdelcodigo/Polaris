@@ -87,7 +87,8 @@ function metadataString(device: SmartDevice, key: string): string {
 }
 
 function scoreRecency(device: SmartDevice): { score: number; reason?: string } {
-  const lastUsedAt = metadataString(device, "lastUsedAt");
+  const rawLastUsedAt = device.metadata?.lastUsedAt;
+  const lastUsedAt = typeof rawLastUsedAt === "string" ? rawLastUsedAt : "";
   if (!lastUsedAt) return { score: 0 };
 
   const timestamp = Date.parse(lastUsedAt);

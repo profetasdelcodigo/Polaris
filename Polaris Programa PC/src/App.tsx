@@ -805,8 +805,8 @@ function Home({
           <li><span>✓</span> Chat y streaming</li>
           <li><span>✓</span> Memoria controlable</li>
           <li><span>✓</span> Sesión segura en Windows</li>
-          <li className="muted"><span>○</span> Voz · Próximamente</li>
-          <li className="muted"><span>○</span> Visión · Próximamente</li>
+          <li><span>✓</span> Skills nativas con allowlist</li>
+          <li><span>✓</span> Relay y control multidispositivo</li>
         </ul>
       </section>
     </div>

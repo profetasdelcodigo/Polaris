@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 
 type PolarisOrbitProps = {
   state?: "idle" | "listening" | "thinking" | "executing" | "speaking" | "success" | "warning" | "error" | "offline";
@@ -22,7 +22,7 @@ export function PolarisOrbit({ state = "idle", mode = "companion" }: PolarisOrbi
         });
       }}
       onPointerLeave={() => setTilt({ x: 0, y: 0 })}
-      style={{ "--orbit-x": `${tilt.x}deg`, "--orbit-y": `${tilt.y}deg` } as React.CSSProperties}
+      style={{ "--orbit-x": `${tilt.x}deg`, "--orbit-y": `${tilt.y}deg` } as CSSProperties}
     >
       <div className="polaris-orbit-glow" />
       <div className="polaris-orbit-ring ring-a" />

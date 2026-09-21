@@ -26,6 +26,9 @@ import { createEvent, PolarisEventBus } from "./core/events/polarisEventBus.js";
 import { routeNotification } from "./core/notifications/notificationRouter.js";
 import { evaluateAutomationPolicy } from "./core/automation/automationPolicy.js";
 import { createBrowserContext, browserContextSummary } from "./core/browser/browserContext.js";
+import { inspectPromptBoundary } from "./core/security/promptBoundary.js";
+import { classifyIntent } from "./core/intent/intentClassifier.js";
+import { createLatencyBudget } from "./core/performance/latencyBudget.js";
 import { createContinuityCapsule, validateContinuityCapsule } from "./core/continuity/continuityCapsule.js";
 import { planDeepResearch } from "./core/research/deepResearchPlanner.js";
 import { createRoutine, routinePreview } from "./core/routines/routineEngine.js";
@@ -177,15 +180,25 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
     if (typeof body.task !== "string" || !body.task.trim()) {
       throw new PolarisError("VALIDATION_ERROR", "task es obligatorio.", 400);
     }
+    const boundary = inspectPromptBoundary(body.task);
+    const intent = classifyIntent(body.task);
+    if (!boundary.safe && intent.intent !== "CHAT") {
+      throw new PolarisError("PERMISSION_DENIED", "La entrada contiene instrucciones que no pueden convertirse automáticamente en una acción privilegiada.", 403);
+    }
 
-    return planAgentTask({
-      task: body.task,
+    const plan = planAgentTask({
+      task: boundary.sanitized,
       ...(typeof body.preferredDevice === "string"
         ? { preferredDevice: body.preferredDevice.toUpperCase() as DeviceType }
         : {}),
       ...(typeof body.preferredMode === "string" ? { preferredMode: body.preferredMode } : {}),
       requireVerification: body.requireVerification !== false
     });
+    return {
+      ...plan,
+      intent,
+      latencyBudget: createLatencyBudget(plan.mode)
+    };
   });
 
   app.post("/v1/context/adaptive", async (request) => {

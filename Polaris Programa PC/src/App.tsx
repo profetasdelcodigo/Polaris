@@ -15,6 +15,7 @@ import type {
   Profile as PolarisProfile
 } from "./lib/models";
 import { clearSecureSession, loadSecureSession, saveSecureSession } from "./lib/secureSession";
+import { desktopNative, type DesktopSystemInfo } from "./lib/native";
 import { supabase } from "./lib/supabase";
 
 type Screen = "home" | "chat" | "history" | "memories" | "profile" | "settings" | "devices";
@@ -986,6 +987,46 @@ function Settings({
   preferences: Preferences | null;
   onTheme(theme: Preferences["theme"]): void;
 }) {
+  const [systemInfo, setSystemInfo] = useState<DesktopSystemInfo | null>(null);
+  const [nativeError, setNativeError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void desktopNative.systemInfo()
+      .then((info) => {
+        if (active) setSystemInfo(info);
+      })
+      .catch((error: unknown) => {
+        if (active) setNativeError(error instanceof Error ? error.message : "El bridge nativo no está disponible.");
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function openRepository(): Promise<void> {
+    setNativeError(null);
+    try {
+      await desktopNative.openUrl("https://github.com/profetasdelcodigo/Polaris");
+    } catch (error) {
+      setNativeError(error instanceof Error ? error.message : "No se pudo abrir el enlace.");
+    }
+  }
+
+  async function revealCurrentDirectory(): Promise<void> {
+    setNativeError(null);
+    const path = systemInfo?.current_dir;
+    if (!path) {
+      setNativeError("No se conoce la carpeta de trabajo del proceso.");
+      return;
+    }
+    try {
+      await desktopNative.revealPath(path);
+    } catch (error) {
+      setNativeError(error instanceof Error ? error.message : "No se pudo abrir el explorador.");
+    }
+  }
+
   return (
     <div className="page narrow">
       <header className="section-header"><div><span className="eyebrow">CONTROL</span><h1>Ajustes</h1><p>Preferencias sincronizadas con tu identidad Polaris.</p></div></header>
@@ -1004,9 +1045,16 @@ function Settings({
         <p>Las sesiones de escritorio se almacenan en el administrador de credenciales de Windows. Las claves privadas de IA nunca viven en este cliente.</p>
       </section>
       <section className="info-card">
-        <h2>Voz y automatización</h2>
-        <p>Preparadas arquitectónicamente, pero no activadas hasta tener permisos explícitos y proveedores reales.</p>
-        <button type="button" className="button disabled" disabled>Próximamente</button>
+        <h2>Bridge nativo</h2>
+        <p>
+          Polaris ya puede comunicarse con acciones locales verificables del programa de PC.
+          {systemInfo ? ` Sistema: ${systemInfo.os} · ${systemInfo.arch} · ${systemInfo.family}.` : " Detectando el entorno…"}
+        </p>
+        <div className="button-row">
+          <button type="button" className="button secondary" onClick={() => void openRepository()}>Abrir repositorio</button>
+          <button type="button" className="button secondary" onClick={() => void revealCurrentDirectory()} disabled={!systemInfo?.current_dir}>Mostrar carpeta</button>
+        </div>
+        {nativeError && <p className="form-error">{nativeError}</p>}
       </section>
     </div>
   );

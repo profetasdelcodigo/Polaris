@@ -53,8 +53,8 @@ export function resolveFabricIntent(task: string, preferredDevice?: string): Fab
   if (openMatch) {
     const requested = normalize(openMatch[1] ?? "").replace(/\s+/g, "-");
     for (const service of knownServices) {
-      if (requested.includes(service)) {
-        const item = find("open.service.01-" + service) ?? candidates.find((candidate) => candidate.id.includes("open.service") && candidate.id.endsWith("-" + service));
+      if (matchesService(requested, service)) {
+        const item = findService("open", service);
         if (item) return { function: item, confidence: 0.98, reason: "servicio conocido" };
       }
     }

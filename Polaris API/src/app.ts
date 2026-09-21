@@ -11,7 +11,7 @@ import { ConversationEngine } from "./core/conversation/conversationEngine.js";
 import { ToolEngine, type RegisteredToolName } from "./core/tools/toolEngine.js";
 import { capabilityRegistry, routeCapabilities } from "./core/capabilities/capabilityRegistry.js";
 import { planUniversalTask, universalCatalogStats } from "./core/automation/universalTaskRouter.js";
-import { listSkillCatalog, skillCatalogCapacity } from "./core/skills/skillCatalog.js";
+import { listSkillCatalog, skillCatalogCapacity, skillCatalogCapacityByDevice } from "./core/skills/skillCatalog.js";
 import {
   claimRelayCommand,
   createRelayCommand,
@@ -236,6 +236,7 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
     return {
       registryVersion: "skills-v1",
       catalogCapacity: skillCatalogCapacity,
+      catalogCapacityByDevice: skillCatalogCapacityByDevice,
       returned: skills.length,
       implemented: skills.filter((skill) => skill.status === "AVAILABLE").length,
       partial: skills.filter((skill) => skill.status === "PARTIAL").length,

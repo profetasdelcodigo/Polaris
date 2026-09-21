@@ -37,6 +37,15 @@ function inferredTool(message: string): { name: RegisteredToolName; input: unkno
       /^(?:abre|abrir)\b/.test(verb) && /ajustes|configuraci[oó]n/.test(object) ? "android.open_settings" :
       /^(?:abre|abrir)\b/.test(verb) && /wifi|wi-fi/.test(object) ? "android.open_wifi" :
       /^(?:abre|abrir)\b/.test(verb) && /bluetooth/.test(object) ? "android.open_bluetooth" :
+      /^(?:abre|abrir)\b/.test(verb) && /pantalla|display/.test(object) ? "android.open_display" :
+      /^(?:abre|abrir)\b/.test(verb) && /sonido|audio/.test(object) ? "android.open_sound" :
+      /^(?:abre|abrir)\b/.test(verb) && /bater[ií]a/.test(object) ? "android.open_battery" :
+      /^(?:abre|abrir)\b/.test(verb) && /ubicaci[oó]n/.test(object) ? "android.open_location" :
+      /^(?:abre|abrir|muestra|mostrar)\b/.test(verb) && /ajustes de notificaciones/.test(object) ? "android.open_notifications" :
+      /^(?:abre|abrir)\b/.test(verb) && /accesibilidad/.test(object) ? "android.open_accessibility" :
+      /^(?:abre|abrir)\b/.test(verb) && /idioma/.test(object) ? "android.open_language" :
+      /^(?:abre|abrir)\b/.test(verb) && /teclado/.test(object) ? "android.open_input" :
+      /^(?:describe|lee|muestra|mostrar)\b/.test(verb) && /pantalla/.test(object) ? "android.describe_screen" :
       /^(?:baja|despl[aá]zate)\b/.test(verb) ? "android.scroll_down" :
       /^(?:sube)\b/.test(verb) ? "android.scroll_up" :
       /^(?:pulsa|presiona|toca)\b/.test(verb)
@@ -53,6 +62,18 @@ function inferredTool(message: string): { name: RegisteredToolName; input: unkno
         }
       };
     }
+  }
+
+  const webUrl = message.match(/^(?:abre|abrir|open)(?:\s+en\s+(?:web|esta\s+pestaña|el\s+navegador))?\s+(https?:\/\/[^\s]+)(?:\s+en\s+(?:otra\s+)?pestaña)?$/iu);
+  if (webUrl?.[1]) {
+    return {
+      name: "queue_device_command",
+      input: {
+        action: "web.open_url",
+        payload: { url: webUrl[1].replace(/[),.;!?]+$/u, "") },
+        requiresConfirmation: false
+      }
+    };
   }
 
   const desktopUrl = message.match(/^(?:abre|abrir|open)\s+(?:en\s+(?:mi\s+)?)?(?:pc|ordenador|computadora)\s+(https?:\/\/[^\s]+)$/iu);

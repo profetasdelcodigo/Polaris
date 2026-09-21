@@ -165,6 +165,24 @@ export const api = {
     });
   },
 
+  executeSkill(input: {
+    task: string;
+    targetDeviceId?: string;
+    preferredDevice?: "WEB" | "ANDROID" | "DESKTOP";
+    requireConfirmation?: boolean;
+  }): Promise<{
+    queued: boolean;
+    runtime: string;
+    fingerprint: string;
+    target: { id: string; name: string; type: string; status: string };
+    command: RelayCommand;
+  }> {
+    return request("/v1/skills/execute", {
+      method: "POST",
+      body: JSON.stringify(input)
+    });
+  },
+
   updateRelayCommand(
     commandId: string,
     status: RelayCommand["status"],

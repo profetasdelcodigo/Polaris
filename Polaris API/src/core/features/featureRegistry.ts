@@ -61,7 +61,12 @@ export const polarisFeatureRegistry: readonly PolarisFeature[] = [
   ["response-contract", "Contrato de respuesta", "INTELLIGENCE", "AVAILABLE", "Normaliza respuestas como respuesta, acción, investigación, confirmación o error.", "Permite que Web, Android y PC interpreten el resultado de forma consistente."],
   ["latency-budget", "Presupuesto de latencia", "INTELLIGENCE", "AVAILABLE", "Asigna tiempo según el modo adaptativo.", "Evita que una acción urgente se comporte como una investigación profunda."],
   ["intent-classifier", "Clasificador de intención", "INTELLIGENCE", "AVAILABLE", "Clasifica chat, acción, investigación, memoria, control de dispositivo y automatización.", "Ayuda a seleccionar el pipeline correcto antes de llamar al modelo."],
-  ["action-idempotency", "Control de idempotencia", "SECURITY", "AVAILABLE", "Identifica acciones seguras para reintento.", "Evita duplicar operaciones no reversibles durante recovery."]
+  ["action-idempotency", "Control de idempotencia", "SECURITY", "AVAILABLE", "Identifica acciones seguras para reintento.", "Evita duplicar operaciones no reversibles durante recovery."],
+  ["safe-skill-macros", "Macros de Skills seguras", "AUTOMATION", "AVAILABLE", "Compila repeticiones acotadas dentro del runtime allowlisted.", "Permite automatizaciones reutilizables sin abrir ejecución arbitraria."],
+  ["handoff-planner", "Planificador de handoff", "MULTIPLATFORM", "AVAILABLE", "Selecciona el companion compatible con disponibilidad y latencia.", "Hace el cambio de dispositivo explícito y verificable."],
+  ["offline-queue-core", "Núcleo de cola offline", "MULTIPLATFORM", "PARTIAL", "Modela tareas seguras para reintento con idempotencia y límites.", "Permite resistir desconexiones sin fingir persistencia nativa completa."],
+  ["browser-agent-core", "Núcleo Browser Agent", "RESEARCH", "PARTIAL", "Genera planes de navegación observables y verificables.", "Separa planificación del navegador de la ejecución concreta del cliente."],
+  ["task-replay-envelope", "Sobre de replay", "AUTOMATION", "AVAILABLE", "Define una transición segura de una tarea reintentable.", "Evita reejecuciones ilimitadas o estados ambiguos."]
 ].map(([id, name, category, status, description, whyItMatters]) => ({
   id,
   name,

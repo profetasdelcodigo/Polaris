@@ -39,12 +39,6 @@ function configOrThrow() {
   return { baseUrl, token };
 }
 
-function assertSafeIdentifier(value: string, name: string): void {
-  if (!/^[a-z0-9_]+\.[a-z0-9_]+$/i.test(value)) {
-    throw new PolarisError("VALIDATION_ERROR", `${name} no tiene un formato válido.`, 400);
-  }
-}
-
 export function homeAssistantStatus() {
   return {
     configured: configured(),

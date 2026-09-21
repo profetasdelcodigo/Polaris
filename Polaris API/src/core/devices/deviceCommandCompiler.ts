@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { PolarisError } from "../../errors.js";
 import { validateDeviceCommand, type DeviceAction, type SmartDevice } from "./deviceFabric.js";
 

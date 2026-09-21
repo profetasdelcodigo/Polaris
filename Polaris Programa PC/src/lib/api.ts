@@ -165,6 +165,23 @@ export const api = {
     });
   },
 
+  getDeviceFabricProtocols(): Promise<JsonObject> {
+    return request("/v1/devices/fabric/protocols");
+  },
+
+  executeDeviceCommand(input: {
+    targetDeviceId: string;
+    device: JsonObject;
+    action: string;
+    value?: string | number | boolean;
+    confirmed?: boolean;
+  }): Promise<JsonObject> {
+    return request("/v1/devices/fabric/execute", {
+      method: "POST",
+      body: JSON.stringify(input)
+    });
+  },
+
   executeSkill(input: {
     task: string;
     targetDeviceId?: string;

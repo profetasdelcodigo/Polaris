@@ -1,6 +1,6 @@
 [package]
 name = "polaris-desktop"
-version = "0.1.0"
+version = "0.9.0"
 description = "Polaris IA desktop client"
 authors = ["Profetas del Código"]
 edition = "2021"

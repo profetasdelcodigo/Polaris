@@ -277,7 +277,7 @@ const tools = [
   },
   {
     name: "handoff_safe_command",
-    description: "Delega una acción de bajo riesgo a Web, Android o PC del mismo usuario. Solo permite abrir una URL o abrir/navegar por superficies del sistema; no ejecuta shell, archivos destructivos ni pulsaciones arbitrarias.",
+    description: "Delega una acción de bajo riesgo a Web, Android o PC del mismo usuario. En PC también puede ejecutar un Polaris Skill v1: un microprograma JSON de hasta 12 pasos con acciones allowlisted (open_url, reveal_path, system_info, copy_text, scroll_top, scroll_bottom, focus_chat, wait). Nunca interpreta JavaScript, shell ni código arbitrario; el cliente valida y ejecuta cada paso por separado.",
     category: "AUTOMATION",
     riskLevel: "MEDIUM",
     timeoutMs: 5_000,

@@ -38,6 +38,8 @@ import { planBrowserAgent, browserAgentPreview } from "./core/browser/browserAge
 import { chooseHandoffTarget, handoffEnvelope, type HandoffDevice } from "./core/multiplatform/handoffPlanner.js";
 import { compileBoundedMacro } from "./core/skills/skillMacro.js";
 import { repairSkillFailure } from "./core/recovery/skillRepair.js";
+import { compileDeviceCommand, type DeviceCommandEnvelope } from "./core/devices/deviceCommandCompiler.js";
+import { discoverableProtocolMatrix, deviceActions, deviceFamilies, deviceProtocols, type DeviceAction, type DeviceFamily, type DeviceProtocol, type SmartDevice } from "./core/devices/deviceFabric.js";
 import {
   claimRelayCommand,
   createRelayCommand,
@@ -544,11 +546,45 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
     );
   });
 
+  app.get("/v1/devices/fabric/protocols", async (request) => {
+    await contextFor(request, config);
+    return { protocols: discoverableProtocolMatrix(), families: deviceFamilies, actions: deviceActions };
+  });
+
+  app.post("/v1/devices/fabric/compile", async (request) => {
+    await contextFor(request, config);
+    const body = request.body as {
+      device?: unknown;
+      action?: unknown;
+      value?: unknown;
+      confirmed?: unknown;
+    };
+    if (!body.device || typeof body.device !== "object" || typeof body.action !== "string") {
+      throw new PolarisError("VALIDATION_ERROR", "device y action son obligatorios.", 400);
+    }
+    if (!deviceActions.includes(body.action as DeviceAction)) {
+      throw new PolarisError("VALIDATION_ERROR", "Acción de dispositivo no soportada.", 400);
+    }
+    const device = body.device as SmartDevice;
+    if (!deviceProtocols.includes(device.protocol as DeviceProtocol) ||
+        !deviceFamilies.includes(device.family as DeviceFamily)) {
+      throw new PolarisError("VALIDATION_ERROR", "Protocolo o familia de dispositivo no soportado.", 400);
+    }
+    return compileDeviceCommand({
+      device,
+      action: body.action as DeviceAction,
+      ...(typeof body.value === "string" || typeof body.value === "number" || typeof body.value === "boolean"
+        ? { value: body.value }
+        : {}),
+      confirmed: body.confirmed === true
+    });
+  });
+
   app.get("/v1/health", async () => ({
     backend: "ok",
     database: hasSupabaseConfiguration(config) ? "configured" : "unconfigured",
     provider: provider.available ? "configured" : "unconfigured",
-    version: "0.6.0"
+    version: "0.7.0"
   }));
 
   app.get("/v1/capabilities", async (): Promise<Capabilities> => {

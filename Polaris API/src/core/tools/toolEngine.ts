@@ -59,7 +59,22 @@ const getPreferencesSchema = z.object({});
 const listDevicesSchema = z.object({});
 const relayCommandSchema = z.object({
   targetDeviceId: z.string().uuid().optional(),
-  action: z.enum(["desktop.open_url", "desktop.reveal_path", "desktop.system_info"]),
+  action: z.enum([
+    "desktop.open_url",
+    "desktop.reveal_path",
+    "desktop.system_info",
+    "android.back",
+    "android.home",
+    "android.notifications",
+    "android.quick_settings",
+    "android.recents",
+    "android.open_settings",
+    "android.open_wifi",
+    "android.open_bluetooth",
+    "android.scroll_up",
+    "android.scroll_down",
+    "android.tap_text"
+  ]),
   payload: z.record(z.string(), z.unknown()).default({}),
   requiresConfirmation: z.boolean().default(true)
 });
@@ -232,8 +247,10 @@ const tools = [
       }
 
       const requiresConfirmation = input.action === "desktop.open_url"
-        ? input.requiresConfirmation && false
-        : true;
+        ? false
+        : input.action.startsWith("android.") && input.action !== "android.tap_text"
+          ? false
+          : true;
 
       const command = await createRelayCommand(context, {
         targetDeviceId: target.id,

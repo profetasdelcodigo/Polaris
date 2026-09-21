@@ -119,3 +119,78 @@ export type ServerSentEventName =
   | "tool.started"
   | "tool.completed"
   | "error";
+
+
+export const universalTaskStages = [
+  "OBSERVE",
+  "LOCATE",
+  "ACT",
+  "VERIFY",
+  "RECOVER",
+  "COMPLETE"
+] as const;
+
+export type UniversalTaskStage = (typeof universalTaskStages)[number];
+
+export const executionBackends = [
+  "CORE",
+  "WEB",
+  "ANDROID",
+  "DESKTOP",
+  "REMOTE",
+  "HUMAN"
+] as const;
+
+export type ExecutionBackend = (typeof executionBackends)[number];
+
+export type UniversalTaskRisk = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+
+export interface UniversalTaskRequest {
+  task: string;
+  preferredDevice?: DeviceType;
+  allowRemote?: boolean;
+  requireVerification?: boolean;
+  maxSteps?: number;
+}
+
+export interface UniversalTaskStep {
+  id: string;
+  stage: UniversalTaskStage;
+  backend: ExecutionBackend;
+  capabilityId: string;
+  purpose: string;
+  requiresPermission: boolean;
+  requiresConfirmation: boolean;
+  risk: UniversalTaskRisk;
+  fallbackCapabilityId?: string;
+}
+
+export interface UniversalTaskPlan {
+  planId: string;
+  status: "READY" | "NEEDS_PERMISSION" | "NEEDS_CONFIRMATION" | "UNAVAILABLE";
+  task: string;
+  preferredDevice?: DeviceType;
+  strategy: "LOCAL_FIRST" | "REMOTE_FIRST" | "CORE_FIRST" | "HUMAN_FALLBACK";
+  observeBeforeAct: boolean;
+  verifyAfterAct: boolean;
+  steps: readonly UniversalTaskStep[];
+  fallbacks: readonly string[];
+  rationale: readonly string[];
+}
+
+export interface UniversalTaskObservation {
+  stage: "BEFORE" | "AFTER" | "ERROR";
+  backend: ExecutionBackend;
+  summary: string;
+  confidence: number;
+  timestamp: string;
+}
+
+export interface UniversalTaskResult {
+  planId: string;
+  status: "COMPLETED" | "PARTIAL" | "BLOCKED" | "FAILED";
+  completedSteps: number;
+  totalSteps: number;
+  observations: readonly UniversalTaskObservation[];
+  message: string;
+}

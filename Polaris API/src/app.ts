@@ -18,6 +18,14 @@ import { buildPersonalityProfile, extractMemoryCandidates, summarizeAdaptiveCont
 import { planAgentTask } from "./core/planning/agentPlanner.js";
 import { createExecutionTrace } from "./core/execution/executionTrace.js";
 import { recoveryPolicy } from "./core/recovery/recoveryPolicy.js";
+import { evaluateConsent } from "./core/security/consentPolicy.js";
+import { createTaskState, updateTaskState, checkpointTask, cancelTask } from "./core/tasks/taskState.js";
+import { assessDeviceHealth } from "./core/devices/deviceHealth.js";
+import { rankMemories } from "./core/memory/memoryScorer.js";
+import { createEvent, PolarisEventBus } from "./core/events/polarisEventBus.js";
+import { routeNotification } from "./core/notifications/notificationRouter.js";
+import { evaluateAutomationPolicy } from "./core/automation/automationPolicy.js";
+import { createBrowserContext, browserContextSummary } from "./core/browser/browserContext.js";
 import { createContinuityCapsule, validateContinuityCapsule } from "./core/continuity/continuityCapsule.js";
 import { planDeepResearch } from "./core/research/deepResearchPlanner.js";
 import { createRoutine, routinePreview } from "./core/routines/routineEngine.js";
@@ -107,6 +115,7 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
   const config = dependencies.config ?? loadConfig();
   const provider = dependencies.provider ?? createAIProvider(config);
   const tools = new ToolEngine();
+  const eventBus = new PolarisEventBus();
   const conversations = new ConversationEngine(provider, tools);
   const app = Fastify({
     logger: config.nodeEnv === "production"
@@ -296,6 +305,132 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
     await contextFor(request, config);
     const routine = createRoutine(request.body);
     return routinePreview(routine);
+  });
+
+  app.post("/v1/security/consent", async (request) => {
+    await contextFor(request, config);
+    const body = request.body as { risk?: unknown; explicitUserApproval?: unknown; sessionApproved?: unknown; capabilityTrusted?: unknown };
+    if (!["LOW", "MEDIUM", "HIGH", "CRITICAL"].includes(String(body.risk))) {
+      throw new PolarisError("VALIDATION_ERROR", "risk no es válido.", 400);
+    }
+    return evaluateConsent({
+      risk: body.risk as "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
+      explicitUserApproval: body.explicitUserApproval === true,
+      sessionApproved: body.sessionApproved === true,
+      capabilityTrusted: body.capabilityTrusted === true
+    });
+  });
+
+  app.post("/v1/tasks/create", async (request) => {
+    const context = await contextFor(request, config);
+    const body = request.body as { objective?: unknown };
+    if (typeof body.objective !== "string" || !body.objective.trim()) {
+      throw new PolarisError("VALIDATION_ERROR", "objective es obligatorio.", 400);
+    }
+    const task = createTaskState(body.objective);
+    await eventBus.emit(createEvent("TASK_CREATED", { taskId: task.taskId, objective: task.objective }, context.user.id, "api"));
+    return task;
+  });
+
+  app.post("/v1/tasks/transition", async (request) => {
+    const context = await contextFor(request, config);
+    const body = request.body as {
+      task?: unknown;
+      status?: unknown;
+      progress?: unknown;
+      currentStep?: unknown;
+      error?: unknown;
+      checkpoint?: unknown;
+      checkpointState?: unknown;
+      cancel?: unknown;
+    };
+    if (!body.task || typeof body.task !== "object") {
+      throw new PolarisError("VALIDATION_ERROR", "task es obligatorio.", 400);
+    }
+    let task = body.task as ReturnType<typeof createTaskState>;
+    if (body.cancel === true) task = cancelTask(task);
+    else {
+      task = updateTaskState(task, {
+        status: ["QUEUED","RUNNING","PAUSED","WAITING_USER","SUCCEEDED","FAILED","CANCELLED"].includes(String(body.status))
+          ? body.status as ReturnType<typeof updateTaskState>["status"] : undefined,
+        progress: typeof body.progress === "number" ? body.progress : undefined,
+        currentStep: typeof body.currentStep === "string" ? body.currentStep : undefined,
+        error: typeof body.error === "string" ? body.error : undefined
+      });
+      if (typeof body.checkpoint === "string") {
+        const state = body.checkpointState && typeof body.checkpointState === "object" && !Array.isArray(body.checkpointState)
+          ? body.checkpointState as Record<string, unknown> : {};
+        task = checkpointTask(task, body.checkpoint, state);
+      }
+    }
+    await eventBus.emit(createEvent("TASK_UPDATED", { taskId: task.taskId, status: task.status, progress: task.progress }, context.user.id, "api"));
+    return task;
+  });
+
+  app.post("/v1/devices/health", async (request) => {
+    await contextFor(request, config);
+    const body = request.body as { deviceId?: unknown; type?: unknown; status?: unknown; lastSeen?: unknown; latencyMs?: unknown };
+    if (typeof body.deviceId !== "string" || typeof body.type !== "string" || typeof body.status !== "string") {
+      throw new PolarisError("VALIDATION_ERROR", "deviceId, type y status son obligatorios.", 400);
+    }
+    return assessDeviceHealth({
+      deviceId: body.deviceId,
+      type: body.type as DeviceType,
+      status: body.status,
+      lastSeen: typeof body.lastSeen === "string" ? body.lastSeen : null,
+      latencyMs: typeof body.latencyMs === "number" ? body.latencyMs : null
+    });
+  });
+
+  app.post("/v1/memory/rank", async (request) => {
+    const context = await contextFor(request, config);
+    const body = request.body as { query?: unknown };
+    if (typeof body.query !== "string") throw new PolarisError("VALIDATION_ERROR", "query es obligatorio.", 400);
+    const memories = await listMemories(context, body.query);
+    return rankMemories(body.query, memories);
+  });
+
+  app.post("/v1/notifications/preview", async (request) => {
+    await contextFor(request, config);
+    const body = request.body as { title?: unknown; body?: unknown; channel?: unknown; urgent?: unknown; action?: unknown };
+    if (typeof body.title !== "string" || typeof body.body !== "string") {
+      throw new PolarisError("VALIDATION_ERROR", "title y body son obligatorios.", 400);
+    }
+    return routeNotification({
+      title: body.title,
+      body: body.body,
+      preferredChannel: typeof body.channel === "string" ? body.channel as "IN_APP" | "WEB" | "ANDROID" | "DESKTOP" : undefined,
+      urgent: body.urgent === true,
+      action: body.action && typeof body.action === "object" ? body.action as { label: string; intent: string } : undefined
+    });
+  });
+
+  app.post("/v1/automation/policy", async (request) => {
+    await contextFor(request, config);
+    const body = request.body as { risk?: unknown; reversible?: unknown; userRequested?: unknown; hasPermission?: unknown; dryRun?: unknown };
+    if (!["LOW","MEDIUM","HIGH","CRITICAL"].includes(String(body.risk))) {
+      throw new PolarisError("VALIDATION_ERROR", "risk no es válido.", 400);
+    }
+    return evaluateAutomationPolicy({
+      risk: body.risk as "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
+      reversible: body.reversible === true,
+      userRequested: body.userRequested === true,
+      hasPermission: body.hasPermission === true,
+      dryRun: body.dryRun === true
+    });
+  });
+
+  app.post("/v1/browser/context", async (request) => {
+    await contextFor(request, config);
+    const body = request.body as { url?: unknown; title?: unknown; selectedText?: unknown; visibleText?: unknown; tabId?: unknown };
+    const context = createBrowserContext({
+      url: typeof body.url === "string" ? body.url : undefined,
+      title: typeof body.title === "string" ? body.title : undefined,
+      selectedText: typeof body.selectedText === "string" ? body.selectedText : undefined,
+      visibleText: typeof body.visibleText === "string" ? body.visibleText : undefined,
+      tabId: typeof body.tabId === "string" ? body.tabId : undefined
+    });
+    return { context, summary: browserContextSummary(context) };
   });
 
   app.get("/v1/health", async () => ({

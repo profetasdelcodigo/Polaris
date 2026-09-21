@@ -39,6 +39,7 @@ import { chooseHandoffTarget, handoffEnvelope, type HandoffDevice } from "./core
 import { compileBoundedMacro } from "./core/skills/skillMacro.js";
 import { repairSkillFailure } from "./core/recovery/skillRepair.js";
 import { compileDeviceCommand, type DeviceCommandEnvelope } from "./core/devices/deviceCommandCompiler.js";
+import { parseDeviceIntent } from "./core/devices/deviceIntentParser.js";
 import { discoverableProtocolMatrix, deviceActions, deviceFamilies, deviceProtocols, type DeviceAction, type DeviceFamily, type DeviceProtocol, type SmartDevice } from "./core/devices/deviceFabric.js";
 import {
   claimRelayCommand,
@@ -544,6 +545,15 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
       body.failedStep,
       body.reason
     );
+  });
+
+  app.post("/v1/devices/fabric/intent", async (request) => {
+    await contextFor(request, config);
+    const body = request.body as { text?: unknown };
+    if (typeof body.text !== "string") {
+      throw new PolarisError("VALIDATION_ERROR", "text es obligatorio.", 400);
+    }
+    return parseDeviceIntent(body.text);
   });
 
   app.get("/v1/devices/fabric/protocols", async (request) => {

@@ -193,6 +193,42 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
     void reply.status(mapped.statusCode).send(toProblem(mapped, requestId(request)));
   });
 
+  app.post("/v1/brain/prepare", async (request) => {
+    const context = await contextFor(request, config);
+    const body = request.body as {
+      task?: unknown;
+      preferredDevice?: unknown;
+      preferredMode?: unknown;
+      tone?: unknown;
+      responseStyle?: unknown;
+    };
+    if (typeof body.task !== "string" || !body.task.trim()) {
+      throw new PolarisError("VALIDATION_ERROR", "task es obligatorio.", 400);
+    }
+
+    const [preferences, memories, devices] = await Promise.all([
+      getPreferences(context),
+      listMemories(context),
+      listDevices(context)
+    ]);
+
+    return preparePolarisBrain({
+      task: body.task,
+      ...(typeof body.preferredDevice === "string"
+        ? { preferredDevice: body.preferredDevice.toUpperCase() as DeviceType }
+        : {}),
+      ...(typeof body.preferredMode === "string" ? { preferredMode: body.preferredMode } : {}),
+      ...(typeof body.tone === "string" ? { tone: body.tone } : {}),
+      ...(typeof body.responseStyle === "string" ? { responseStyle: body.responseStyle } : {}),
+      preferences: {
+        tone: preferences.tone,
+        response_style: preferences.response_style
+      },
+      memories,
+      devices
+    });
+  });
+
   app.get("/v1/fabric/catalog", async (request) => {
     const query = request.query as { q?: unknown; platform?: unknown };
     const platform =

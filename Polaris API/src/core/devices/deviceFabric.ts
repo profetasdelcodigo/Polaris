@@ -119,6 +119,7 @@ export function validateDeviceCommand(input: {
 export function protocolCapabilities(protocol: DeviceProtocol): DeviceAction[] {
   switch (protocol) {
     case "CHROMECAST":
+    case "ANDROID_TV":
     case "GOOGLE_CAST":
       return ["GET_STATE", "PLAY", "PAUSE", "STOP", "NEXT", "PREVIOUS", "SET_VOLUME", "MUTE", "UNMUTE", "OPEN_APP"];
     case "MATTER":

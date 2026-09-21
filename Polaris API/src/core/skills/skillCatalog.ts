@@ -1,5 +1,5 @@
 import type { DeviceType, SkillSummary } from "@polaris/contracts";
-import { ToolEngine } from "./tools/toolEngine.js";
+import { ToolEngine } from "../tools/toolEngine.js";
 
 export interface SkillRecipe {
   domain: string;

@@ -10,6 +10,7 @@ import type { AIProvider } from "./core/ai/types.js";
 import { ConversationEngine } from "./core/conversation/conversationEngine.js";
 import { ToolEngine, type RegisteredToolName } from "./core/tools/toolEngine.js";
 import { capabilityRegistry, routeCapabilities } from "./core/capabilities/capabilityRegistry.js";
+import { planUniversalTask, universalCatalogStats } from "./core/automation/universalTaskRouter.js";
 import { listSkillCatalog, skillCatalogCapacity } from "./core/skills/skillCatalog.js";
 import {
   claimRelayCommand,
@@ -174,6 +175,43 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
       deviceMatrix: matrix,
       capabilities: capabilityRegistry
     };
+  });
+
+  app.get("/v1/automation/catalog", async () => ({
+    registryVersion: "universal-automation-v1",
+    ...universalCatalogStats()
+  }));
+
+  app.post("/v1/automation/plan", async (request) => {
+    await contextFor(request, config);
+    const body = request.body as {
+      task?: unknown;
+      preferredDevice?: unknown;
+      allowRemote?: unknown;
+      requireVerification?: unknown;
+      maxSteps?: unknown;
+    };
+
+    const preferred = typeof body.preferredDevice === "string"
+      ? body.preferredDevice.toUpperCase()
+      : undefined;
+
+    if (
+      preferred !== undefined &&
+      !["WEB", "ANDROID", "DESKTOP", "ROBOT"].includes(preferred)
+    ) {
+      throw new PolarisError("VALIDATION_ERROR", "preferredDevice no es válido.", 400);
+    }
+
+    const plan = planUniversalTask({
+      task: typeof body.task === "string" ? body.task.trim() : "",
+      ...(preferred ? { preferredDevice: preferred as DeviceType } : {}),
+      allowRemote: body.allowRemote !== false,
+      requireVerification: body.requireVerification !== false,
+      maxSteps: typeof body.maxSteps === "number" ? body.maxSteps : undefined
+    });
+
+    return plan;
   });
 
   app.get("/v1/skills", async (request) => {

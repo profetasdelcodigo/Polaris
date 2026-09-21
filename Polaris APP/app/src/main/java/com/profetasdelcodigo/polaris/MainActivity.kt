@@ -508,9 +508,21 @@ private fun HomeScreen(
         busy = true
         scope.launch {
             try {
-                val result = api.chat(clean, conversationId)
-                conversationId = result.conversationId
-                messages = messages + ChatItem("assistant", result.content)
+                val localPlan = PolarisLocalAutomation.parsePlan(clean)
+                if (localPlan.isNotEmpty() && PolarisAccessibilityService.isEnabled()) {
+                    val execution = PolarisLocalAutomation.executePlan(localPlan)
+                    val summary = execution.joinToString("\\n") { step ->
+                        (if (step.success) "✓ " else "⚠ ") + step.message
+                    }
+                    messages = messages + ChatItem("assistant", summary)
+                    if (execution.any { !it.success }) {
+                        error = "La automatización se detuvo al encontrar un paso que no pudo ejecutarse."
+                    }
+                } else {
+                    val result = api.chat(clean, conversationId)
+                    conversationId = result.conversationId
+                    messages = messages + ChatItem("assistant", result.content)
+                }
             } catch (t: Throwable) {
                 error = t.message ?: "No fue posible contactar con Polaris API."
             } finally {
@@ -553,7 +565,7 @@ private fun HomeScreen(
                     )
                 }
                 TextButton(onClick = onOpenAutomationSettings) {
-                    Text(if (PolarisAccessibilityService.isEnabled()) "Automatización activa" else "Automatización")
+                    Text(if (PolarisAccessibilityService.isEnabled()) "Auto ✓" else "Auto")
                 }
                 TextButton(onClick = onSignOut) { Text("Salir") }
             }

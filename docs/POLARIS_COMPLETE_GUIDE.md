@@ -49,7 +49,7 @@ Esto permite conceptos como modo cine, modo estudio o modo noche sin inventar qu
 Familias modeladas: LIGHT, SWITCH, PLUG, TV, SPEAKER, ROUTER, PHONE, TABLET, PC, FRIDGE, MICROWAVE, AC, CAMERA, ROBOT y OTHER.
 Protocolos modelados: MATTER, HOME_ASSISTANT, MQTT, HTTP_LOCAL, CHROMECAST, ANDROID_TV, GOOGLE_CAST, ALEXA_BRIDGE, IR, BLUETOOTH, ANDROID_NATIVE y DESKTOP_NATIVE.
 Acciones modeladas: ON, OFF, TOGGLE, SET_BRIGHTNESS, SET_COLOR, SET_VOLUME, MUTE, UNMUTE, PLAY, PAUSE, STOP, NEXT, PREVIOUS, OPEN_APP, SET_CHANNEL, SET_INPUT, SET_TEMPERATURE, SET_MODE, LOCK, UNLOCK, REBOOT, IDENTIFY y GET_STATE.
-Device Resolver puntúa nombre, familia, habitación, disponibilidad online y protocolo. Si no hay una coincidencia fuerte, devuelve NOT_FOUND; si hay ambigüedad, devuelve AMBIGUOUS y una pregunta de aclaración.
+Device Resolver puntúa nombre, familia, habitación/zona, disponibilidad online, protocolo, uso reciente y favoritos. Normaliza variantes en español (incluidos acentos y alias de habitaciones), usa la actividad reciente para desempatar candidatos cercanos y nunca inventa un dispositivo: si no hay una coincidencia suficientemente clara devuelve NOT_FOUND; si hay ambigüedad devuelve AMBIGUOUS y una pregunta de aclaración.
 Matter, Home Assistant, MQTT, Cast, Alexa, IR y electrodomésticos permanecen correctamente marcados como PARTIAL cuando falta el adaptador o gateway físico.
 
 ## 7. Seguridad
@@ -186,12 +186,12 @@ Entre las capacidades registradas están personalidad adaptativa, memoria, conte
 
 ## 18. Pruebas añadidas en esta tanda
 
-Polaris API/tests/experienceLayer.test.ts cubre adaptación de personalidad, detección de memoria repetida, compilación de escenas con riesgo y determinismo del motor visual.
+Polaris API/tests/experienceLayer.test.ts cubre adaptación de personalidad, detección de memoria repetida, compilación de escenas con riesgo y determinismo del motor visual.\nPolaris API/tests/deviceResolver.test.ts cubre resolución por familia/habitación, desempate por uso reciente y rechazo de referencias no relacionadas.
 
 ## 19. Qué no debe marcarse todavía como conectado físicamente
 
 Los contratos y rutas para Matter, Home Assistant, MQTT, Google Cast/Chromecast, Alexa, IR y muchos electrodomésticos ya están estructurados, pero su integración física depende de adaptadores, gateways, SDKs y hardware concretos. El registro los mantiene PARTIAL.
 
-## 20. Regla práctica para seguir construyendo Polaris
+## 20. Estado de verificación de esta tanda\n\nSe añadieron la resolución contextual por habitación/zona y el desempate por uso reciente al Device Resolver, junto con pruebas específicas. GitHub Actions no reportó una ejecución asociada a los commits de esta tanda en el momento de la comprobación, por lo que no se declara CI verde hasta disponer de una ejecución real.\n\n## 21. Regla práctica para seguir construyendo Polaris
 
 Cada capacidad nueva debe pasar por cuatro filtros: realidad de la integración, contrato tipado, política de seguridad y verificación posterior. La interfaz no debe anunciar una función física hasta que exista su adaptador nativo o gateway real.

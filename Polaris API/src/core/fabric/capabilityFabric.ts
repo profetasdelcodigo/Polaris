@@ -303,8 +303,15 @@ function addPlatformFunctions(target: FabricFunction[], platform: Exclude<Fabric
       "OPEN_LOCATION_SETTINGS", "OPEN_NOTIFICATION_SETTINGS", "OPEN_ACCESSIBILITY_SETTINGS",
       "OPEN_LANGUAGE_SETTINGS", "OPEN_INPUT_SETTINGS"
     ];
+    const androidRelayNames = [
+      "android.back", "android.home", "android.notifications", "android.quick_settings", "android.recents",
+      "android.open_settings", "android.open_wifi", "android.open_bluetooth",
+      "android.open_display", "android.open_sound", "android.open_battery",
+      "android.open_location", "android.open_notifications", "android.open_accessibility",
+      "android.open_language", "android.open_input"
+    ];
     androidActions.forEach((action, index) => {
-      relayFunction(target, platform, `android.${action.toLowerCase()}`, `system.action.${String(index + 1).padStart(2, "0")}`, `Android · ${action}`, `Ejecuta ${action} mediante el AccessibilityService autorizado.`, "none", action.startsWith("OPEN_") ? "MEDIUM" : "LOW");
+      relayFunction(target, platform, androidRelayNames[index]!, `system.action.${String(index + 1).padStart(2, "0")}`, `Android · ${action}`, `Ejecuta ${action} mediante el AccessibilityService autorizado.`, "none", action.startsWith("OPEN_") ? "MEDIUM" : "LOW");
     });
   }
 

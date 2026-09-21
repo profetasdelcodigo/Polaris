@@ -31,8 +31,8 @@ export function detectPersonaMode(task: string, preferredMode?: string | null): 
   }
 
   const value = task.toLocaleLowerCase("es-PE");
-  if (/investig|fuentes|compara|estudia|analiza|evidencia|paper|datos/.test(value)) return "RESEARCH";
   if (/abre|cierra|enciende|apaga|ejecuta|configura|automat|dispositivo|pc|telefono|tv|luz|router/.test(value)) return "OPERATOR";
+  if (/investig|fuentes|compara|estudia|analiza|evidencia|paper|datos/.test(value)) return "RESEARCH";
   if (/idea|diseña|crea|inventa|nombre|logo|guion|música|arte/.test(value)) return "CREATIVE";
   if (/estudia|tarea|examen|concentr|programa|código|codifica|depura|aprende/.test(value)) return "FOCUS";
   if (/calma|respira|tranquilo|ansiedad|pausa|descansa/.test(value)) return "CALM";

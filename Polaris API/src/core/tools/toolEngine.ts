@@ -70,6 +70,7 @@ const safeHandoffSchema = z.object({
     "desktop.scroll_top",
     "desktop.scroll_bottom",
     "desktop.focus_chat",
+    "desktop.run_skill",
     "android.back",
     "android.home",
     "android.notifications",
@@ -101,6 +102,7 @@ const relayCommandSchema = z.object({
     "desktop.open_url",
     "desktop.reveal_path",
     "desktop.system_info",
+    "desktop.run_skill",
     "android.back",
     "android.home",
     "android.notifications",
@@ -303,6 +305,26 @@ const tools = [
         const url = input.payload.url;
         if (typeof url !== "string" || !/^https?:\/\//i.test(url) || url.length > 2_000) {
           throw new PolarisError("VALIDATION_ERROR", "La URL no es HTTP/HTTPS válida.", 400);
+        }
+      }
+
+      if (input.action === "desktop.run_skill") {
+        const program = input.payload.program;
+        if (!program || typeof program !== "object") {
+          throw new PolarisError("VALIDATION_ERROR", "El skill generado no contiene un programa válido.", 400);
+        }
+        const candidate = program as Record<string, unknown>;
+        const steps = candidate.steps;
+        if (candidate.version !== 1 || typeof candidate.name !== "string" || !Array.isArray(steps) || steps.length < 1 || steps.length > 12) {
+          throw new PolarisError("VALIDATION_ERROR", "El skill debe usar Polaris Skill v1 y contener entre 1 y 12 pasos.", 400);
+        }
+        for (const step of steps) {
+          if (!step || typeof step !== "object" || ![
+            "open_url", "reveal_path", "system_info", "copy_text",
+            "scroll_top", "scroll_bottom", "focus_chat", "wait"
+          ].includes((step as Record<string, unknown>).action as string)) {
+            throw new PolarisError("VALIDATION_ERROR", "El skill contiene una acción no permitida.", 400);
+          }
         }
       }
 

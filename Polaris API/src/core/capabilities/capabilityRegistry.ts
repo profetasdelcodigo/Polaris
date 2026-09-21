@@ -69,6 +69,16 @@ export const capabilityRegistry: readonly PolarisCapability[] = [
     composable: true
   },
   {
+    id: "web.local_control",
+    name: "Control local Web",
+    description: "Controla de forma acotada la sesión Web abierta: portapapeles, desplazamiento y foco del chat.",
+    kinds: all("WEB", "REMOTE"),
+    availability: { WEB: "AVAILABLE", ANDROID: "NOT_IMPLEMENTED", DESKTOP: "NOT_IMPLEMENTED", ROBOT: "NOT_IMPLEMENTED" },
+    requiresConfirmation: false,
+    danger: "LOW",
+    composable: true
+  },
+  {
     id: "web.browser",
     name: "Navegador",
     description: "Abrir y operar páginas web cuando el cliente tenga un agente de navegador.",

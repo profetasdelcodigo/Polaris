@@ -389,6 +389,45 @@ function App() {
     setComposer("");
     setStreaming(true);
     setPolarisState("THINKING");
+
+    // First try the safe Skill runtime. Unknown intents fall through to normal AI chat.
+    try {
+      const execution = await api.executeSkill({
+        task: content,
+        targetDeviceId: desktopDeviceId ?? undefined,
+        preferredDevice: "DESKTOP",
+        requireConfirmation: false
+      });
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === localAssistantId
+            ? {
+                ...message,
+                content: `✓ Skill ${execution.fingerprint} enviada a ${execution.target.name}. Polaris ejecutará los pasos permitidos y verificará el resultado en el dispositivo.`,
+                status: "completed"
+              }
+            : message
+        )
+      );
+      setPolarisState("SUCCESS");
+      window.setTimeout(() => setPolarisState("IDLE"), 900);
+      setStreaming(false);
+      setActiveTool(null);
+      return;
+    } catch (cause) {
+      if (!(cause instanceof ApiError) || cause.code !== "NOT_FOUND") {
+        setMessages((current) =>
+          current.map((message) =>
+            message.id === localAssistantId ? { ...message, status: "failed" } : message
+          )
+        );
+        setStreaming(false);
+        setPolarisState("ERROR");
+        setError(toUserMessage(cause));
+        return;
+      }
+    }
+
     const controller = new AbortController();
     streamController.current = controller;
 

@@ -60,7 +60,66 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.intOrNull
 
+
+private suspend fun executeAndroidSkill(
+    context: android.content.Context,
+    program: JsonElement
+): LocalAutomationResult {
+    val root = program.jsonObject
+    val steps = root["steps"]?.jsonArray
+        ?: return LocalAutomationResult(false, "La Skill no contiene pasos.")
+
+    var completed = 0
+    for (step in steps) {
+        val action = step.jsonObject["action"]?.jsonPrimitive?.contentOrNull
+            ?: return LocalAutomationResult(false, "La Skill contiene un paso sin acción.")
+
+        val result = when (action) {
+            "open_url" -> {
+                val url = step.jsonObject["url"]?.jsonPrimitive?.contentOrNull
+                if (url.isNullOrBlank() || !(url.startsWith("https://") || url.startsWith("http://"))) {
+                    LocalAutomationResult(false, "La URL de la Skill no es segura.")
+                } else {
+                    try {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                        LocalAutomationResult(true, "Abrí la URL solicitada.")
+                    } catch (_: Throwable) {
+                        LocalAutomationResult(false, "Android no pudo abrir la URL.")
+                    }
+                }
+            }
+            "copy_text" -> {
+                val value = step.jsonObject["text"]?.jsonPrimitive?.contentOrNull
+                if (value == null || value.length > 20_000) LocalAutomationResult(false, "El texto para copiar no es válido.")
+                else {
+                    val clipboard = context.getSystemService(android.content.ClipboardManager::class.java)
+                    clipboard?.setPrimaryClip(android.content.ClipData.newPlainText("Polaris", value))
+                    LocalAutomationResult(true, "Texto copiado al portapapeles.")
+                }
+            }
+            "scroll_top" -> PolarisAccessibilityService.execute(LocalAutomationAction.SCROLL_UP)
+            "scroll_bottom" -> PolarisAccessibilityService.execute(LocalAutomationAction.SCROLL_DOWN)
+            "system_info" -> LocalAutomationResult(true, "Android ${Build.VERSION.RELEASE} · ${Build.MANUFACTURER} ${Build.MODEL}", "Información del sistema obtenida localmente.")
+            "wait" -> {
+                val ms = step.jsonObject["ms"]?.jsonPrimitive?.intOrNull ?: 0
+                delay(ms.coerceIn(0, 10_000).toLong())
+                LocalAutomationResult(true, "Espera completada.")
+            }
+            "focus_chat", "reveal_path" -> LocalAutomationResult(false, "La acción $action no está disponible en Android.")
+            else -> LocalAutomationResult(false, "Acción de Skill no soportada en Android: $action")
+        }
+
+        if (!result.success) return result
+        completed++
+    }
+
+    return LocalAutomationResult(true, "Skill ejecutada en Android: $completed pasos.", "Todos los pasos permitidos finalizaron correctamente.")
+}
 private val PolarisMidnight = Color(0xFF070B14)
 private val PolarisSurface = Color(0xFF0D1422)
 private val PolarisSurface2 = Color(0xFF111B2C)
@@ -509,11 +568,19 @@ private fun HomeScreen(
                                 }
                                 LocalAutomationAction.TAP_TEXT(text)
                             }
-                            else -> throw IllegalArgumentException("Acción Android no soportada: " + claimed.action)
+                            else -> null
                         }
 
                         api.updateRelayCommand(claimed.id, "RUNNING")
-                        val result = PolarisAccessibilityService.execute(action)
+                        val result = if (claimed.action == "android.run_skill") {
+                            val program = claimed.payload["program"]
+                                ?: throw IllegalArgumentException("Falta el programa de Skill.")
+                            executeAndroidSkill(context, program)
+                        } else {
+                            PolarisAccessibilityService.execute(
+                                action ?: throw IllegalArgumentException("Acción Android no soportada: " + claimed.action)
+                            )
+                        }
                         if (result.success) {
                             api.updateRelayCommand(
                                 claimed.id,

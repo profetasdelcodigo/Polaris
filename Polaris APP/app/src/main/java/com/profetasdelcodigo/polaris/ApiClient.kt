@@ -239,6 +239,52 @@ class PolarisApiClient(
             )
         }.body()
     }
+
+    suspend fun getExperienceBrief(task: String, preferredMode: String? = null): JsonElement {
+        return client.post(baseUrl() + "/v1/experience/brief") {
+            configure(this)
+            contentType(ContentType.Application.Json)
+            setBody(buildJsonObject {
+                put("task", kotlinx.serialization.json.JsonPrimitive(task))
+                if (preferredMode != null) put("preferredMode", kotlinx.serialization.json.JsonPrimitive(preferredMode))
+            })
+        }.body()
+    }
+
+    suspend fun resolveDevice(query: String): JsonElement {
+        return client.post(baseUrl() + "/v1/devices/resolve") {
+            configure(this)
+            contentType(ContentType.Application.Json)
+            setBody(buildJsonObject { put("query", kotlinx.serialization.json.JsonPrimitive(query)) })
+        }.body()
+    }
+
+    suspend fun compileScene(scene: JsonElement): JsonElement {
+        return client.post(baseUrl() + "/v1/automation/scene/compile") {
+            configure(this)
+            contentType(ContentType.Application.Json)
+            setBody(scene)
+        }.body()
+    }
+
+    suspend fun designSkill(task: String): JsonElement {
+        return client.post(baseUrl() + "/v1/skills/studio") {
+            configure(this)
+            contentType(ContentType.Application.Json)
+            setBody(buildJsonObject { put("task", kotlinx.serialization.json.JsonPrimitive(task)) })
+        }.body()
+    }
+
+    suspend fun getOrbitVisual(mode: String, state: String): JsonElement {
+        return client.post(baseUrl() + "/v1/visuals/orbit") {
+            configure(this)
+            contentType(ContentType.Application.Json)
+            setBody(buildJsonObject {
+                put("mode", kotlinx.serialization.json.JsonPrimitive(mode))
+                put("state", kotlinx.serialization.json.JsonPrimitive(state))
+            })
+        }.body()
+    }
     suspend fun chat(content: String, conversationId: String?): ChatResponse {
         return client.post(baseUrl() + "/v1/chat") {
             configure(this)

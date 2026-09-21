@@ -155,6 +155,19 @@ Dirección del siguiente bloque:
 - integrar el activo 3D real y mapear sus animaciones a estados del Core,
 - ampliar herramientas Web con APIs del navegador y companions cuando los permisos estén disponibles.
 
+### Skill Runtime v1 — endurecimiento
+
+Implementado en el commit actual:
+- validador server-side autenticado para Polaris Skill v1;
+- contrato único de 8 acciones allowlisted para el runtime de PC;
+- límites server-side: 12 pasos, 10 s por espera y 32 KB serializados;
+- endpoint `POST /v1/skills/validate` para validar un microprograma antes de enviarlo al dispositivo;
+- se mantiene la regla: Polaris puede generar un microprograma estructurado, pero nunca shell, JavaScript arbitrario ni código nativo ejecutable directamente desde la IA.
+
+Pendiente de esta capa:
+- conectar validación server-side al flujo de ejecución para que el cliente no sea el único punto de enforcement;
+- añadir pruebas E2E del ciclo generar → validar → relay → ejecutar → verificar en PC real.
+
 ## Próximo objetivo
 
 Cerrar Fase 1 con una prueba real del proveedor de IA y contratos/tests finales. Después, ejecutar la prueba real Web → Android → PC y verificar expiración/refresh de sesión. Luego completar el planificador de automatización multi-paso, observación/localización/verificación/recuperación y el puente seguro Android ↔ Core. Después: voz continua/TTS, memoria semántica, visión/OCR, automatización PC con permisos, sincronización realtime cuando aporte valor y una pasada final de diseño, accesibilidad, rendimiento, pruebas y empaquetado. No se declarará 100% hasta que cada bloque tenga implementación y verificación real. CI Android volvió a confirmar `:app:assembleDebug` después de TTS y modo continuo. CI Node/Web/PC: SUCCESS tras integrar Realtime Web. Las capacidades de sistema/automatización inspiradas en ARTEMIS quedan separadas como módulo posterior y requieren permisos explícitos.

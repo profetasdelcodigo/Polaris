@@ -1,4 +1,4 @@
-# Polaris 0.8.0 — Guía completa de funciones
+# Polaris — Guía completa de funciones (Experience Core 0.9) — Guía completa de funciones
 
 ## Estado general
 
@@ -41,7 +41,7 @@ Autonomy Fabric conecta planificación, consentimiento, Skill, verificación y r
 
 ## 5. Escenas
 
-Scene Engine compila hasta 24 pasos, crea grupos ordenados/paralelos, limita retrasos, calcula fingerprint, estima riesgo y marca confirmación para acciones de alto riesgo.
+Scene Engine compila hasta 24 pasos, crea grupos ordenados/paralelos, limita retrasos, calcula fingerprint e idempotencyKey deterministas, estima riesgo, exige confirmation para acciones de alto impacto y admite recovery mediante rollback por paso cuando el autor lo define. Si no existe rollback seguro, la estrategia es STOP_AND_REPORT.
 Esto permite conceptos como modo cine, modo estudio o modo noche sin inventar que todos los dispositivos ya tengan un adaptador real.
 
 ## 6. Device Fabric
@@ -107,7 +107,7 @@ La nueva capa Desktop expone Experience Brief, Device Resolver, Scene Engine, Sk
 
 ## 16. API completa
 
-El Core registra 69 rutas en 0.8.0.
+El Core mantiene las rutas del Experience Core; esta tanda cambia la semántica interna del Scene Engine sin añadir una ruta nueva.
 
 - GET /v1/features
 - POST /v1/agent/plan
@@ -186,7 +186,7 @@ Entre las capacidades registradas están personalidad adaptativa, memoria, conte
 
 ## 18. Pruebas añadidas en esta tanda
 
-Polaris API/tests/experienceLayer.test.ts cubre adaptación de personalidad, detección de memoria repetida, compilación de escenas con riesgo y determinismo del motor visual.\nPolaris API/tests/deviceResolver.test.ts cubre resolución por familia/habitación, desempate por uso reciente y rechazo de referencias no relacionadas.
+Polaris API/tests/experienceLayer.test.ts cubre adaptación de personalidad, detección de memoria repetida, compilación de escenas con riesgo y determinismo del motor visual.\nPolaris API/tests/deviceResolver.test.ts cubre resolución por familia/habitación, desempate por uso reciente y rechazo de referencias no relacionadas.\nPolaris API/tests/sceneEngine.test.ts cubre idempotencia determinista, límites de retraso, rollback y confirmación de escenas de alto impacto.
 
 ## 19. Qué no debe marcarse todavía como conectado físicamente
 

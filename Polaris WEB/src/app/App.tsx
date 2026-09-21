@@ -28,6 +28,7 @@ import {
 } from '../services/polaris';
 import { PolarisApiError, type SseEvent } from '../services/api';
 import { getSupabaseClient } from '../services/supabase';
+import { PolarisOrbit } from './PolarisOrbit';
 
 type View = 'home' | 'chat' | 'history' | 'memories' | 'profile' | 'settings' | 'devices';
 type AuthView = 'sign-in' | 'sign-up' | 'recover' | 'update-password';
@@ -572,6 +573,14 @@ function Dashboard({
         <p>Polaris conserva lo importante sin ocultarlo: chat, memoria y dispositivos bajo tu control.</p>
         <div><button type="button" className="primary-button" onClick={onChat}>Hablar con Polaris <span>→</span></button><button type="button" className="secondary-button" onClick={onMemories}>Ver memorias</button></div>
       </header>
+      <div className="dashboard-orbit-shell">
+        <PolarisOrbit mode="companion" state="idle" />
+        <div className="dashboard-orbit-copy">
+          <span className="eyebrow">POLARIS CORE</span>
+          <strong>Un núcleo, muchos mundos.</strong>
+          <span>Memoria · Skills · dispositivos · continuidad</span>
+        </div>
+      </div>
       <section className="summary-grid">
         <Summary title="Conversaciones" value={loading ? '—' : String(conversations.length)} hint="Historial privado" />
         <Summary title="Memorias" value={loading ? '—' : String(memories.length)} hint="Explícitas y controlables" />

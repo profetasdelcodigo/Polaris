@@ -775,8 +775,13 @@ function Home({
   return (
     <div className="page home-page">
       <header className="page-header">
-        <PolarisMascot3D state={polarisState} />
-        <span className="eyebrow">ASISTENTE PERSONAL · 0.1.0</span>
+        <div className="polaris-home-visual">
+          <div className="polaris-home-orbit orbit-one" />
+          <div className="polaris-home-orbit orbit-two" />
+          <div className="polaris-home-orbit orbit-three" />
+          <PolarisMascot3D state={polarisState} />
+        </div>
+        <span className="eyebrow">ASISTENTE PERSONAL · 0.8.0</span>
         <h1>Una sola brújula para tu mundo digital.</h1>
         <p>Polaris conserva la misma identidad, contexto y memoria donde sea que lo abras.</p>
         <div className="hero-actions">

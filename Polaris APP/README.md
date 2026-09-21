@@ -34,9 +34,6 @@ La aplicación inicial implementa:
 - sesión persistente
 - chat contra el Polaris Core
 
-Voz, Bluetooth, memoria visual avanzada, visión y control de robot se implementarán en fases posteriores.
-
-
 ## Polaris 0.9.0
 
 La build Android incluye la identidad Polaris, autenticación, conversación con Core, memoria, relay multidispositivo, ejecución de Skills seguras y VoiceInteractionService. Las acciones que requieren permisos del sistema siguen sujetas a los permisos reales del dispositivo.

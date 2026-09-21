@@ -58,7 +58,7 @@ const getProfileSchema = z.object({});
 const getPreferencesSchema = z.object({});
 const listDevicesSchema = z.object({});
 const safeHandoffSchema = z.object({
-  targetDeviceId: z.string().uuid().optional(),
+  targetDeviceId: z.string().uuid(),
   action: z.enum([
     "web.open_url",
     "web.copy_text",

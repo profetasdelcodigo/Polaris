@@ -663,8 +663,12 @@ private fun HomeScreen(
         busy = true
         scope.launch {
             try {
-                val localPlan = PolarisLocalAutomation.parsePlan(clean)
-                if (localPlan.isNotEmpty() && PolarisAccessibilityService.isEnabled()) {
+                val skill = try { api.executeSkill(clean, preferredDevice = "ANDROID", targetDeviceId = deviceId) } catch (_: Throwable) { null }
+                if (skill != null) {
+                    messages = messages + ChatItem("assistant", "✓ Skill ${skill.fingerprint} enviada a ${skill.target.name}. Ejecutando pasos permitidos y verificando el resultado.")
+                } else {
+                    val localPlan = PolarisLocalAutomation.parsePlan(clean)
+                    if (localPlan.isNotEmpty() && PolarisAccessibilityService.isEnabled()) {
                     val execution = PolarisLocalAutomation.executePlan(localPlan)
                     val summary = execution.joinToString("\\n") { step ->
                         (if (step.success) "✓ " else "⚠ ") + step.message
@@ -673,10 +677,11 @@ private fun HomeScreen(
                     if (execution.any { !it.success }) {
                         error = "La automatización se detuvo al encontrar un paso que no pudo ejecutarse."
                     }
-                } else {
-                    val result = api.chat(clean, conversationId)
-                    conversationId = result.conversationId
-                    messages = messages + ChatItem("assistant", result.content)
+                    } else {
+                        val result = api.chat(clean, conversationId)
+                        conversationId = result.conversationId
+                        messages = messages + ChatItem("assistant", result.content)
+                    }
                 }
             } catch (t: Throwable) {
                 error = t.message ?: "No fue posible contactar con Polaris API."

@@ -102,6 +102,26 @@ function inferredTool(message: string): { name: RegisteredToolName; input: unkno
     };
   }
 
+  const desktopCopy = message.match(/^(?:copia|copiar)\s+(.+?)(?:\s+en\s+(?:mi\s+)?(?:pc|ordenador|computadora))$/iu);
+  if (desktopCopy?.[1]) {
+    return {
+      name: "handoff_safe_command",
+      input: {
+        action: "desktop.copy_text",
+        payload: { text: desktopCopy[1].trim() }
+      }
+    };
+  }
+
+  if (/^(?:sube|baja|ve)\s+(?:al|a la)\s+(?:parte superior|inicio|final|parte inferior)\s+(?:de\s+)?(?:mi\s+)?(?:pc|ordenador|computadora|escritorio)$/iu.test(lowered)) {
+    const action = /final|parte inferior/iu.test(lowered) ? "desktop.scroll_bottom" : "desktop.scroll_top";
+    return { name: "handoff_safe_command", input: { action, payload: {} } };
+  }
+
+  if (/^(?:enfoca|enfocar|focus)\s+(?:el )?(?:chat|campo de chat)(?: de (?:mi )?(?:pc|ordenador|computadora))?$/iu.test(lowered)) {
+    return { name: "handoff_safe_command", input: { action: "desktop.focus_chat", payload: {} } };
+  }
+
   const desktopUrl = message.match(/^(?:abre|abrir|open)\s+(?:en\s+(?:mi\s+)?)?(?:pc|ordenador|computadora)\s+(https?:\/\/[^\s]+)$/iu);
   if (desktopUrl?.[1]) {
     return {

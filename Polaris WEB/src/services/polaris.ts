@@ -171,6 +171,18 @@ export const polarisApi = {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(input),
     }),
+  prepareBrain: (session: Session, input: {
+    task: string;
+    preferredDevice?: 'WEB' | 'ANDROID' | 'DESKTOP';
+    preferredMode?: string;
+    tone?: string;
+    responseStyle?: string;
+  }) =>
+    apiRequest<Record<string, unknown>>('/brain/prepare', token(session), {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(input),
+    }),
   getFabricCatalog: (session: Session, query?: { q?: string; platform?: 'CORE' | 'WEB' | 'DESKTOP' | 'ANDROID' }) => {
     const params = new URLSearchParams();
     if (query?.q) params.set('q', query.q);

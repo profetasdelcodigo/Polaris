@@ -24,6 +24,41 @@ function inferredTool(message: string): { name: RegisteredToolName; input: unkno
     return { name: "search_memory", input: { query: "" } };
   }
 
+  const desktopUrl = message.match(/^(?:abre|abrir|open)\s+(?:en\s+(?:mi\s+)?)?(?:pc|ordenador|computadora)\s+(https?:\/\/[^\s]+)$/iu);
+  if (desktopUrl?.[1]) {
+    return {
+      name: "queue_device_command",
+      input: {
+        action: "desktop.open_url",
+        payload: { url: desktopUrl[1].replace(/[),.;!?]+$/u, "") },
+        requiresConfirmation: false
+      }
+    };
+  }
+
+  const desktopPath = message.match(/^(?:muestra|abre|abrir)\s+(?:la\s+)?(?:carpeta|ruta)\s+(?:en\s+mi\s+)?(?:pc|ordenador|computadora)\s+[\"](.+)[\"]$/iu);
+  if (desktopPath?.[1]) {
+    return {
+      name: "queue_device_command",
+      input: {
+        action: "desktop.reveal_path",
+        payload: { path: desktopPath[1] },
+        requiresConfirmation: true
+      }
+    };
+  }
+
+  if (/^(?:dame|mu[eé]strame|muestra)\s+(?:la\s+)?informaci[oó]n\s+de\s+(?:mi\s+)?pc$/iu.test(lowered)) {
+    return {
+      name: "queue_device_command",
+      input: {
+        action: "desktop.system_info",
+        payload: {},
+        requiresConfirmation: false
+      }
+    };
+  }
+
   const calculation = message.match(/^(?:calcula|resuelve)\s+(.+)$/iu);
   if (calculation?.[1]) {
     return { name: "calculator", input: { expression: calculation[1].trim() } };

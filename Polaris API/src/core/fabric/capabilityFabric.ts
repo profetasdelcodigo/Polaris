@@ -252,7 +252,6 @@ function relayFunction(
 }
 
 function addPlatformFunctions(target: FabricFunction[], platform: Exclude<FabricPlatform, "CORE">): void {
-  const prefix = platform.toLowerCase();
   const openAction = platform === "WEB" ? "web.open_url" : platform === "DESKTOP" ? "desktop.open_url" : "android.run_skill";
   const copyAction = platform === "WEB" ? "web.copy_text" : platform === "DESKTOP" ? "desktop.copy_text" : "android.run_skill";
   const waitAction = platform === "WEB" ? "web.run_skill" : platform === "DESKTOP" ? "desktop.run_skill" : "android.run_skill";
@@ -497,12 +496,18 @@ export function fabricCatalogSummary() {
   };
 }
 
+function finiteNumber(input: unknown): number {
+  const value = typeof input === "number" ? input : Number(input);
+  if (!Number.isFinite(value)) throw new Error("La función matemática requiere un número finito.");
+  return value;
+}
+
 export function executeCoreFabricFunction(item: FabricFunction, input: unknown): unknown {
   if (item.mode !== "CORE" || !item.runner) throw new Error("La función no es ejecutable como núcleo.");
   switch (item.runner) {
-    case "MATH_ADD": return Number(input) + (item.variant ?? 0);
-    case "MATH_MULTIPLY": return Number(input) * (item.variant ?? 0);
-    case "MATH_PERCENT": return Number(input) * ((item.variant ?? 0) / 100);
+    case "MATH_ADD": return finiteNumber(input) + (item.variant ?? 0);
+    case "MATH_MULTIPLY": return finiteNumber(input) * (item.variant ?? 0);
+    case "MATH_PERCENT": return finiteNumber(input) * ((item.variant ?? 0) / 100);
     case "TEXT": {
       const parts = item.id.split(".");
       return executeText(parts[2] ?? "", item.variant ?? 1, asText(input));
@@ -528,7 +533,6 @@ export function executeCoreFabricFunction(item: FabricFunction, input: unknown):
 export function buildFabricRelayPayload(item: FabricFunction, input: unknown): Record<string, unknown> {
   if (item.mode !== "RELAY" || !item.relayAction) throw new Error("La función no es un relay.");
   const textInput = asText(input);
-  const inputValue = typeof input === "number" ? input : textInput;
   if (item.platform === "WEB" || item.platform === "DESKTOP") {
     if (item.relayAction.endsWith("open_url")) {
       let url = item.preset ?? "";

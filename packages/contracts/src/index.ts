@@ -91,7 +91,10 @@ export interface ApiProblem {
     | "VALIDATION_ERROR"
     | "RATE_LIMIT"
     | "NOT_FOUND"
-    | "INTERNAL_ERROR";
+    | "INTERNAL_ERROR"
+    | "CONFIRMATION_REQUIRED"
+    | "INTEGRATION_UNAVAILABLE"
+    | "INTEGRATION_ERROR";
   message: string;
   requestId?: string;
 }

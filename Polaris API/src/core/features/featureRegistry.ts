@@ -80,7 +80,16 @@ export const polarisFeatureRegistry: readonly PolarisFeature[] = [
   ["cross-client-device-control", "Control desde Web/Android/Desktop", "MULTIPLATFORM", "AVAILABLE", "Expone el mismo contrato de comandos a los tres clientes.", "La interfaz cambia por plataforma, pero el Core conserva una política única de seguridad."],
   ["natural-device-intents", "Intenciones naturales de dispositivos", "INTELLIGENCE", "AVAILABLE", "Convierte frases comunes en acciones de dispositivo tipadas y acotadas.", "Permite decir “enciende la luz” sin depender de nombres técnicos de APIs."],
   ["device-resolution", "Resolución de dispositivo", "MULTIPLATFORM", "PARTIAL", "Prepara la selección del equipo correcto entre varios dispositivos compatibles.", "Evita enviar una orden al foco equivocado cuando existen varios equipos."],
-  ["home-automation-gateway", "Gateway de domótica", "MULTIPLATFORM", "PARTIAL", "Normaliza gateways domésticos como Home Assistant, MQTT y Matter.", "Permite integrar ecosistemas diferentes sin acoplar el Core a una marca."
+  ["home-automation-gateway", "Gateway de domótica", "MULTIPLATFORM", "PARTIAL", "Normaliza gateways domésticos como Home Assistant, MQTT y Matter.", "Permite integrar ecosistemas diferentes sin acoplar el Core a una marca.",
+  ["persona-orchestration", "Orquestación de personalidad", "INTELLIGENCE", "AVAILABLE", "Adapta tono, iniciativa, verbosidad y energía visual al modo de trabajo.", "Hace que Polaris se sienta contextual sin alterar sus límites de seguridad."],
+  ["memory-lifecycle", "Ciclo de vida de memoria", "MEMORY", "AVAILABLE", "Detecta repetición, refuerzo, conflictos y memorias potencialmente obsoletas.", "La memoria evoluciona en lugar de crecer sin control."],
+  ["device-resolution-engine", "Resolución semántica de dispositivos", "MULTIPLATFORM", "AVAILABLE", "Resuelve nombres, habitaciones y familias de dispositivos antes de enviar órdenes.", "Reduce errores cuando existen varios equipos parecidos."],
+  ["scene-orchestrator", "Orquestador de escenas", "AUTOMATION", "AVAILABLE", "Agrupa órdenes en secuencias y grupos paralelos con evaluación de riesgo.", "Permite modos completos como cine, noche o estudio."],
+  ["skill-studio", "Skill Studio seguro", "AUTOMATION", "AVAILABLE", "Diseña, explica y audita microprogramas sin ejecutar código arbitrario.", "Acerca la idea de Skills creadas por IA sin abrir una puerta de shell."],
+  ["visual-state-engine", "Motor visual 3D de estado", "INTELLIGENCE", "AVAILABLE", "Entrega un estado visual determinista para órbitas, partículas, brillo y movimiento.", "Web, PC y Android pueden compartir una identidad viva."],
+  ["experience-brief", "Experience Brief", "INTELLIGENCE", "AVAILABLE", "Une intención, personalidad, presupuesto de latencia, visuales y guardrails.", "Convierte una petición en una experiencia coherente antes de ejecutar."],
+  ["proactive-suggestions-v2", "Sugerencias proactivas seguras", "PRODUCTIVITY", "AVAILABLE", "Propone siguientes pasos reversibles sin ejecutar automáticamente.", "Polaris ayuda a avanzar sin secuestrar el control del usuario."],
+  ["cross-device-scenes", "Escenas multiplataforma", "MULTIPLATFORM", "PARTIAL", "Prepara grupos de acciones que pueden resolverse en distintos companions.", "Permite que una sola intención abarque casa, PC y móvil."
 ].map(([id, name, category, status, description, whyItMatters]) => ({
   id,
   name,

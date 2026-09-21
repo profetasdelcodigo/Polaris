@@ -40,7 +40,7 @@ export function preparePolarisBrain(input: BrainInput) {
   const persona: PersonaProfile = buildPersonaProfile({
     task: boundary.sanitized,
     preferredMode: input.preferredMode,
-    tone: input.tone ?? input.preferences?.tone,
+    tone: input.tone ?? input.preferences?.tone ?? undefined,
     responseStyle: input.responseStyle ?? input.preferences?.response_style
   });
   const experience = buildExperienceBrief({
@@ -48,7 +48,7 @@ export function preparePolarisBrain(input: BrainInput) {
     preferredDevice: input.preferredDevice,
     preferredMode: input.preferredMode,
     tone: input.tone ?? input.preferences?.tone,
-    responseStyle: input.responseStyle ?? input.preferences?.response_style,
+    responseStyle: input.responseStyle ?? input.preferences?.response_style ?? undefined,
     state: "THINKING"
   });
   const memoryCandidates = extractMemoryCandidates(boundary.sanitized);
@@ -84,7 +84,7 @@ export function preparePolarisBrain(input: BrainInput) {
     safeForAutomation: boundary.safe || intent.intent === "CHAT",
     security: {
       safe: boundary.safe,
-      reasons: boundary.reasons
+      reasons: boundary.flags
     },
     intent,
     adaptive: adaptivePersonality,

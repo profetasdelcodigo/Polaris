@@ -57,6 +57,31 @@ const listConversationsSchema = z.object({});
 const getProfileSchema = z.object({});
 const getPreferencesSchema = z.object({});
 const listDevicesSchema = z.object({});
+const safeHandoffSchema = z.object({
+  targetDeviceId: z.string().uuid().optional(),
+  action: z.enum([
+    "web.open_url",
+    "desktop.open_url",
+    "android.back",
+    "android.home",
+    "android.notifications",
+    "android.quick_settings",
+    "android.recents",
+    "android.open_settings",
+    "android.open_wifi",
+    "android.open_bluetooth",
+    "android.open_display",
+    "android.open_sound",
+    "android.open_battery",
+    "android.open_location",
+    "android.open_notifications",
+    "android.open_accessibility",
+    "android.open_language",
+    "android.open_input"
+  ]),
+  payload: z.record(z.string(), z.unknown()).default({})
+});
+
 const relayCommandSchema = z.object({
   targetDeviceId: z.string().uuid().optional(),
   action: z.enum([
@@ -234,6 +259,57 @@ const tools = [
         status: device.status,
         lastSeen: device.last_seen
       }));
+    }
+  },
+  {
+    name: "handoff_safe_command",
+    description: "Delega una acción de bajo riesgo a Web, Android o PC del mismo usuario. Solo permite abrir una URL o abrir/navegar por superficies del sistema; no ejecuta shell, archivos destructivos ni pulsaciones arbitrarias.",
+    category: "AUTOMATION",
+    riskLevel: "MEDIUM",
+    timeoutMs: 5_000,
+    modelCallable: true,
+    inputSchema: safeHandoffSchema,
+    async execute(context: ToolExecutionContext, input: z.infer<typeof safeHandoffSchema>, _signal: AbortSignal) {
+      const devices = await listDevices(context, 50, _signal);
+      const targetType = input.action.startsWith("android.")
+        ? "ANDROID"
+        : input.action.startsWith("web.")
+          ? "WEB"
+          : "DESKTOP";
+      const target = input.targetDeviceId
+        ? devices.find((device) => device.id === input.targetDeviceId)
+        : devices
+            .filter((device) => device.type === targetType)
+            .sort((a, b) => Number(b.status === "ONLINE") - Number(a.status === "ONLINE"))[0];
+
+      if (!target) {
+        const label = targetType === "ANDROID" ? "Android" : targetType === "WEB" ? "Web" : "PC";
+        throw new PolarisError("NOT_FOUND", `No hay un dispositivo ${label} disponible para ejecutar la orden.`, 404);
+      }
+
+      if (input.action.endsWith("open_url")) {
+        const url = input.payload.url;
+        if (typeof url !== "string" || !/^https?:\/\//i.test(url) || url.length > 2_000) {
+          throw new PolarisError("VALIDATION_ERROR", "La URL no es HTTP/HTTPS válida.", 400);
+        }
+      }
+
+      const command = await createRelayCommand(context, {
+        targetDeviceId: target.id,
+        capabilityId: input.action,
+        action: input.action,
+        payload: input.payload,
+        requiresConfirmation: false
+      });
+
+      return {
+        queued: true,
+        safe: true,
+        commandId: command.id,
+        targetDeviceId: target.id,
+        targetName: target.name,
+        action: command.action
+      };
     }
   },
   {

@@ -979,6 +979,7 @@ function CapabilitiesView({
     count?: number;
     byPlatform?: Partial<Record<FabricItem['platform'], number>>;
     returned?: number;
+    matchedCount?: number;
     offset?: number;
     limit?: number;
     nextOffset?: number | null;
@@ -1096,7 +1097,7 @@ function CapabilitiesView({
         )}
         <div className="detail-card" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 16 }}>
           <button type="button" className="secondary-button" disabled={!hasPrevious || loading} onClick={() => void load(Math.max(0, pageStart - (catalog?.limit ?? 200)))}>← Anterior</button>
-          <span style={{ alignSelf: 'center' }}>{catalog ? String(pageStart + 1) + '–' + String(pageEnd) + ' / ' + String(catalog.count ?? pageEnd) : '—'}</span>
+          <span style={{ alignSelf: 'center' }}>{catalog ? String(pageStart + 1) + '–' + String(pageEnd) + ' / ' + String(catalog.matchedCount ?? pageEnd) : '—'}</span>
           <button type="button" className="secondary-button" disabled={!hasNext || loading} onClick={() => void load(catalog?.nextOffset ?? pageEnd)}>Siguiente →</button>
         </div>
       </section>

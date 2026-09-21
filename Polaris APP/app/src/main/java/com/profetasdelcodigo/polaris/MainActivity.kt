@@ -663,7 +663,7 @@ private fun HomeScreen(
         busy = true
         scope.launch {
             try {
-                val skill = try { api.executeSkill(clean, preferredDevice = "ANDROID", targetDeviceId = deviceId) } catch (_: Throwable) { null }
+                val skill = try { api.executeSkill(clean, preferredDevice = "ANDROID") } catch (_: Throwable) { null }
                 if (skill != null) {
                     messages = messages + ChatItem("assistant", "✓ Skill ${skill.fingerprint} enviada a ${skill.target.name}. Ejecutando pasos permitidos y verificando el resultado.")
                 } else {

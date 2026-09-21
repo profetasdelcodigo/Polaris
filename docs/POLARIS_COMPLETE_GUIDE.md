@@ -1,4 +1,4 @@
-# Polaris — Guía completa de funciones (Experience Core 0.9) — Guía completa de funciones
+# Polaris — Guía completa de funciones (Capability Fabric + Experience Core)
 
 ## Estado general
 
@@ -93,17 +93,18 @@ La identidad visual responde a idle, listening, thinking, executing, speaking, s
 
 Autenticación, registro, recuperación, sesión persistente, chat con streaming SSE, historial, memoria, perfil, preferencias, dispositivos y relay Web.
 Atajos: Ctrl/Cmd + K y Ctrl/Cmd + 1…7.
-La capa API del cliente expone Experience Brief, resolución de dispositivos, escenas, Skill Studio y visuales orbitales.
+La capa API del cliente expone Experience Brief, resolución de dispositivos, escenas, Skill Studio, visuales orbitales, Capability Fabric, preparación del Brain y Home Assistant.
+Web incluye `src/services/fabric.ts`, que convierte las capacidades Web del catálogo en funciones invocables dinámicamente mediante el API seguro.
 
 ## 14. Android
 
 Kotlin/Compose nativo, rol de asistente del sistema, micrófono, VoiceInteractionService, AccessibilityService, observación de UI, scroll, tap por texto, Home/Back/Recents/Notificaciones/Quick Settings y varios paneles de Ajustes.
-También incluye chat, historial, memoria, relay, Skill Runtime v1 local, Device Fabric y acceso API a Experience Brief, Device Resolver, Scene Engine, Skill Studio y Visual Director.
+También incluye chat, historial, memoria, relay, Skill Runtime v1 local, Device Fabric y acceso API a Experience Brief, Device Resolver, Scene Engine, Skill Studio, Visual Director, Capability Fabric, Brain y Home Assistant.
 
 ## 15. PC
 
 Tauri/React nativo, sesión segura, chat/streaming, historial, memoria, perfil, preferencias, dispositivos, relay, system info, reveal path, clipboard, scroll, focus chat y Skill Runtime allowlisted.
-La nueva capa Desktop expone Experience Brief, Device Resolver, Scene Engine, Skill Studio y Visual Director. La portada combina la mascota 3D con una escena orbital.
+La nueva capa Desktop expone Experience Brief, Device Resolver, Scene Engine, Skill Studio, Visual Director, Capability Fabric, Brain y Home Assistant. `src/lib/fabric.ts` crea handles dinámicos para las capacidades Desktop reales.
 
 ## 16. API completa
 
@@ -179,19 +180,40 @@ El Core mantiene las rutas del Experience Core; esta tanda cambia la semántica 
 - POST /v1/chat
 - POST /v1/chat/stream
 
-## 17. Catálogo de capacidades
+## 17. Capability Fabric y escala funcional
 
-El registro contiene 82 capacidades en 0.8.0. Se conserva el criterio AVAILABLE/PARTIAL/PLANNED para no vender integraciones inexistentes como si ya fueran hardware funcional.
-Entre las capacidades registradas están personalidad adaptativa, memoria, context router, capability negotiation, Skill Factory, dry-run, recovery, audit, continuity, research, routines, handoff, browser agent, offline queue, consent, device health, Device Fabric, natural device intents, device resolution, scene orchestrator, Skill Studio, visual state engine, Experience Brief y cross-device scenes.
+Polaris incorpora un catálogo ejecutable de **1.312 funciones únicas**:
+- CORE: 896 funciones deterministas (matemática, texto, URL, JSON/datos y tiempo).
+- Web: 144 funciones direccionables.
+- Desktop: 144 funciones direccionables.
+- Android: 128 funciones direccionables.
+
+Cada entrada tiene un ID, plataforma, dominio, riesgo, tipo de entrada y modo de ejecución. Las funciones CORE se ejecutan dentro del Core con lógica determinista. Las funciones Web/Desktop/Android se convierten en payloads de relay o Skills v1 que reutilizan runtimes ya implementados. No se crea una función “ficticia” solo para aumentar el contador.
+
+El resolver de intención entiende órdenes naturales concretas como “abre YouTube”, “busca en Google polaris assistant”, “copia …”, “espera 1 segundo”, “ve arriba” y “enfoca el chat”, y las convierte en una función del catálogo antes de caer al flujo genérico de Skills.
+
+Web y Desktop exponen además handles dinámicos que cargan el catálogo desde el servidor, por lo que una función nueva del Fabric no necesita una copia manual de cientos de wrappers en cada cliente.
+
+El contador del Feature Registry y el contador del Capability Fabric son independientes: el primero describe subsistemas mayores; el segundo enumera operaciones direccionables.
 
 ## 18. Pruebas añadidas en esta tanda
 
-Polaris API/tests/experienceLayer.test.ts cubre adaptación de personalidad, detección de memoria repetida, compilación de escenas con riesgo y determinismo del motor visual.\nPolaris API/tests/deviceResolver.test.ts cubre resolución por familia/habitación, desempate por uso reciente y rechazo de referencias no relacionadas.\nPolaris API/tests/sceneEngine.test.ts cubre idempotencia determinista, límites de retraso, rollback y confirmación de escenas de alto impacto.
+Polaris API/tests/experienceLayer.test.ts cubre adaptación de personalidad, detección de memoria repetida, compilación de escenas con riesgo y determinismo del motor visual.
+Polaris API/tests/deviceResolver.test.ts cubre resolución por familia/habitación, desempate por uso reciente y rechazo de referencias no relacionadas.
+Polaris API/tests/sceneEngine.test.ts cubre idempotencia determinista, límites de retraso, rollback y confirmación de escenas de alto impacto.
+Polaris API/tests/capabilityFabric.test.ts comprueba que el catálogo supera 1.000 funciones únicas, que Web y Desktop superan 100 cada uno y que varias funciones CORE/relay producen resultados concretos.
+Polaris API/tests/fabricIntentResolver.test.ts comprueba resolución de lenguaje natural a funciones concretas de Web/Desktop y rechazo de destinos inventados.
 
-## 19. Qué no debe marcarse todavía como conectado físicamente
+## 19. Domótica real y límites honestos
 
-Los contratos y rutas para Matter, Home Assistant, MQTT, Google Cast/Chromecast, Alexa, IR y muchos electrodomésticos ya están estructurados, pero su integración física depende de adaptadores, gateways, SDKs y hardware concretos. El registro los mantiene PARTIAL.
+Home Assistant ahora tiene un **adaptador REST real** en `homeAssistantAdapter.ts`. Cuando se definen `POLARIS_HOME_ASSISTANT_URL` y `POLARIS_HOME_ASSISTANT_TOKEN`, Polaris puede consultar `/api/states` y ejecutar un conjunto allowlisted de servicios para luces, switches, multimedia, escenas/scripts, clima, persianas, ventiladores y locks. Las operaciones de mayor impacto requieren confirmación.
 
-## 20. Estado de verificación de esta tanda\n\nSe añadieron la resolución contextual por habitación/zona y el desempate por uso reciente al Device Resolver, junto con pruebas específicas. GitHub Actions no reportó una ejecución asociada a los commits de esta tanda en el momento de la comprobación, por lo que no se declara CI verde hasta disponer de una ejecución real.\n\n## 21. Regla práctica para seguir construyendo Polaris
+Matter, MQTT, Google Cast/Chromecast, Alexa, IR y muchos electrodomésticos siguen correctamente en estado PARTIAL porque necesitan el gateway, SDK o hardware concreto. No se presentan como conexiones físicas ya realizadas.
+
+## 20. Estado de verificación de esta tanda
+
+Se añadieron Capability Fabric, resolución de intención, Brain unificado, adaptador Home Assistant y sus pruebas. La rama `main` contiene los cambios. El conector GitHub disponible en esta sesión no expuso una ejecución de GitHub Actions asociada al push directo, por lo que **no se declara CI verde** sin esa evidencia. La última comprobación disponible mostró que el repositorio tiene workflows de Node y Android configurados para `push`/`pull_request`.
+
+## 21. Regla práctica para seguir construyendo Polaris
 
 Cada capacidad nueva debe pasar por cuatro filtros: realidad de la integración, contrato tipado, política de seguridad y verificación posterior. La interfaz no debe anunciar una función física hasta que exista su adaptador nativo o gateway real.

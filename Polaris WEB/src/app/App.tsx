@@ -359,44 +359,54 @@ function Workspace({
         return;
       }
 
-      if (command.action !== 'web.open_url') {
-        await polarisApi.updateRelayCommand(
-          session,
-          command.id,
-          'FAILED',
-          {},
-          `Acción Web no implementada en este cliente: ${command.action}`,
-        );
-        return;
-      }
-
-      const rawUrl = command.payload.url;
-      if (typeof rawUrl !== 'string' || !/^https?:\/\//i.test(rawUrl)) {
-        await polarisApi.updateRelayCommand(
-          session,
-          command.id,
-          'FAILED',
-          {},
-          'La orden web.open_url no contiene una URL HTTP/HTTPS válida.',
-        );
-        return;
-      }
-
       await polarisApi.updateRelayCommand(session, command.id, 'RUNNING');
 
       try {
-        const opened = window.open(rawUrl, '_blank', 'noopener,noreferrer');
-        if (!opened) {
-          window.location.assign(rawUrl);
+        if (command.action === 'web.open_url') {
+          const rawUrl = command.payload.url;
+          if (typeof rawUrl !== 'string' || !/^https?:\/\//i.test(rawUrl)) {
+            throw new Error('La orden web.open_url no contiene una URL HTTP/HTTPS válida.');
+          }
+          const opened = window.open(rawUrl, '_blank', 'noopener,noreferrer');
+          if (!opened) {
+            window.location.assign(rawUrl);
+          }
+          await polarisApi.updateRelayCommand(session, command.id, 'SUCCEEDED', {
+            opened: true,
+            url: rawUrl,
+            fallbackNavigation: !opened,
+          });
+          setNotice(`Polaris abrió ${rawUrl}`);
+        } else if (command.action === 'web.copy_text') {
+          const text = command.payload.text;
+          if (typeof text !== 'string' || text.length > 20_000) {
+            throw new Error('El texto para copiar no es válido.');
+          }
+          if (!navigator.clipboard?.writeText) {
+            throw new Error('El navegador no ofrece Clipboard API en esta sesión.');
+          }
+          await navigator.clipboard.writeText(text);
+          await polarisApi.updateRelayCommand(session, command.id, 'SUCCEEDED', {
+            copied: true,
+            length: text.length,
+          });
+          setNotice('Polaris copió texto al portapapeles Web.');
+        } else if (command.action === 'web.scroll_top') {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          await polarisApi.updateRelayCommand(session, command.id, 'SUCCEEDED', { position: 'top' });
+        } else if (command.action === 'web.scroll_bottom') {
+          window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+          await polarisApi.updateRelayCommand(session, command.id, 'SUCCEEDED', { position: 'bottom' });
+        } else if (command.action === 'web.focus_chat') {
+          const target = document.querySelector<HTMLTextAreaElement>('textarea[aria-label="Mensaje para Polaris"]');
+          if (!target) throw new Error('No hay un campo de chat disponible en la vista actual.');
+          target.focus();
+          await polarisApi.updateRelayCommand(session, command.id, 'SUCCEEDED', { focused: true });
+        } else {
+          throw new Error(`Acción Web no implementada en este cliente: ${command.action}`);
         }
-        await polarisApi.updateRelayCommand(session, command.id, 'SUCCEEDED', {
-          opened: true,
-          url: rawUrl,
-          fallbackNavigation: !opened,
-        });
-        setNotice(`Polaris abrió ${rawUrl}`);
       } catch (cause) {
-        const message = cause instanceof Error ? cause.message : 'El navegador rechazó la apertura.';
+        const message = cause instanceof Error ? cause.message : 'La acción Web falló.';
         await polarisApi.updateRelayCommand(session, command.id, 'FAILED', {}, message);
         setProblem(message);
       }

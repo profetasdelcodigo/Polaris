@@ -89,7 +89,7 @@ export const polarisFeatureRegistry: readonly PolarisFeature[] = [
   ["visual-state-engine", "Motor visual 3D de estado", "INTELLIGENCE", "AVAILABLE", "Entrega un estado visual determinista para órbitas, partículas, brillo y movimiento.", "Web, PC y Android pueden compartir una identidad viva."],
   ["experience-brief", "Experience Brief", "INTELLIGENCE", "AVAILABLE", "Une intención, personalidad, presupuesto de latencia, visuales y guardrails.", "Convierte una petición en una experiencia coherente antes de ejecutar."],
   ["proactive-suggestions-v2", "Sugerencias proactivas seguras", "PRODUCTIVITY", "AVAILABLE", "Propone siguientes pasos reversibles sin ejecutar automáticamente.", "Polaris ayuda a avanzar sin secuestrar el control del usuario."],
-  ["cross-device-scenes", "Escenas multiplataforma", "MULTIPLATFORM", "PARTIAL", "Prepara grupos de acciones que pueden resolverse en distintos companions.", "Permite que una sola intención abarque casa, PC y móvil."
+  ["cross-device-scenes", "Escenas multiplataforma", "MULTIPLATFORM", "PARTIAL", "Prepara grupos de acciones que pueden resolverse en distintos companions.", "Permite que una sola intención abarque casa, PC y móvil."]
 ].map(([id, name, category, status, description, whyItMatters]) => ({
   id,
   name,

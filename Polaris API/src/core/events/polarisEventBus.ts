@@ -35,7 +35,7 @@ export function createEvent(type: PolarisEventType, payload: Record<string, unkn
 }
 
 export class PolarisEventBus {
-  private readonly listeners = new Map<PolarisEventType, Set<(event: PolarisEvent) => void | Promise<void)>>();
+  private readonly listeners = new Map<PolarisEventType, Set<(event: PolarisEvent) => void | Promise<void>>>();
 
   on(type: PolarisEventType, listener: (event: PolarisEvent) => void | Promise<void>): () => void {
     const listeners = this.listeners.get(type) ?? new Set();

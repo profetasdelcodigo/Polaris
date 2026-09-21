@@ -403,6 +403,31 @@ function Workspace({
           if (!target) throw new Error('No hay un campo de chat disponible en la vista actual.');
           target.focus();
           await polarisApi.updateRelayCommand(session, command.id, 'SUCCEEDED', { focused: true });
+        } else if (command.action === 'web.run_skill') {
+          const program = command.payload.program;
+          if (!program || typeof program !== 'object' || Array.isArray(program)) {
+            throw new Error('La orden web.run_skill no contiene un programa válido.');
+          }
+          const root = program as { version?: unknown; steps?: unknown };
+          if (root.version !== 1 || !Array.isArray(root.steps) || root.steps.length > 12) {
+            throw new Error('Skill Web fuera de los límites permitidos.');
+          }
+          let completed = 0;
+          for (const rawStep of root.steps) {
+            if (!rawStep || typeof rawStep !== 'object' || Array.isArray(rawStep)) {
+              throw new Error('Paso Web inválido.');
+            }
+            const step = rawStep as { action?: unknown; ms?: unknown };
+            if (step.action !== 'wait') {
+              throw new Error(`Acción web.run_skill no permitida: ${String(step.action)}`);
+            }
+            const ms = typeof step.ms === 'number' && Number.isFinite(step.ms) ? step.ms : 0;
+            if (ms < 0 || ms > 10_000) throw new Error('La espera Web está fuera del límite.');
+            await new Promise<void>((resolve) => window.setTimeout(resolve, ms));
+            completed += 1;
+          }
+          await polarisApi.updateRelayCommand(session, command.id, 'SUCCEEDED', { skill: { completed } });
+          setNotice(`Skill Web ejecutada: ${completed} paso(s).`);
         } else {
           throw new Error(`Acción Web no implementada en este cliente: ${command.action}`);
         }

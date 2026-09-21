@@ -71,6 +71,78 @@ export type Database = {
         }
         Relationships: []
       }
+      device_commands: {
+        Row: {
+          action: string
+          capability_id: string
+          claimed_at: string | null
+          completed_at: string | null
+          confirmation_at: string | null
+          created_at: string
+          error_message: string | null
+          expires_at: string
+          id: string
+          payload: Json
+          requires_confirmation: boolean
+          result: Json
+          source_device_id: string | null
+          status: string
+          target_device_id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          capability_id: string
+          claimed_at?: string | null
+          completed_at?: string | null
+          confirmation_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          expires_at?: string
+          id?: string
+          payload?: Json
+          requires_confirmation?: boolean
+          result?: Json
+          source_device_id?: string | null
+          status?: string
+          target_device_id: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          capability_id?: string
+          claimed_at?: string | null
+          completed_at?: string | null
+          confirmation_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          expires_at?: string
+          id?: string
+          payload?: Json
+          requires_confirmation?: boolean
+          result?: Json
+          source_device_id?: string | null
+          status?: string
+          target_device_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_commands_source_device_id_fkey"
+            columns: ["source_device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_commands_target_device_id_fkey"
+            columns: ["target_device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       devices: {
         Row: {
           client_id: string | null
@@ -394,4 +466,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-

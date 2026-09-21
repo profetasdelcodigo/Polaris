@@ -490,6 +490,16 @@ export function searchFabricFunctions(
     .slice(safeOffset, safeOffset + safeLimit);
 }
 
+export function countFabricFunctions(query = "", platform?: FabricPlatform): number {
+  const normalized = query.trim().toLowerCase();
+  return fabricCatalog.filter((item) => {
+    const platformOk = !platform || item.platform === platform;
+    if (!platformOk) return false;
+    if (!normalized) return true;
+    return [item.id, item.name, item.domain, item.description].join(" ").toLowerCase().includes(normalized);
+  }).length;
+}
+
 export function fabricCatalogSummary() {
   return {
     version: "1.0.0",

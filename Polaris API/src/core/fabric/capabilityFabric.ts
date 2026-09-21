@@ -535,6 +535,15 @@ export function buildFabricRelayPayload(item: FabricFunction, input: unknown): R
     if (item.relayAction === "web.copy_text" || item.relayAction === "desktop.copy_text") {
       return { text: textInput || `Polaris slot${item.preset ? ` · ${item.preset}` : ""}` };
     }
+    if (item.relayAction === "web.run_skill" || item.relayAction === "desktop.run_skill") {
+      const ms = Number(item.preset ?? 250);
+      return {
+        program: {
+          version: 1,
+          steps: [{ action: "wait", ms: Math.max(0, Math.min(ms, 10_000)) }]
+        }
+      };
+    }
     if (item.relayAction.endsWith("scroll_top") || item.relayAction.endsWith("scroll_bottom") || item.relayAction.endsWith("focus_chat")) {
       return {};
     }

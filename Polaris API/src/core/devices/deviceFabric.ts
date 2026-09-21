@@ -69,7 +69,7 @@ export type SmartDevice = {
   protocol: DeviceProtocol;
   online: boolean;
   local: boolean;
-  capabilities: DeviceAction[];
+  capabilities: readonly DeviceAction[];
   metadata?: Record<string, unknown>;
 };
 
@@ -135,6 +135,8 @@ export function protocolCapabilities(protocol: DeviceProtocol): DeviceAction[] {
     case "BLUETOOTH":
     case "ALEXA_BRIDGE":
       return ["GET_STATE", "ON", "OFF", "TOGGLE", "SET_VOLUME", "MUTE", "UNMUTE", "PLAY", "PAUSE", "STOP", "NEXT", "PREVIOUS", "SET_CHANNEL", "SET_INPUT"];
+    default:
+      throw new PolarisError("VALIDATION_ERROR", `Protocolo no soportado: ${protocol}`, 400);
   }
 }
 

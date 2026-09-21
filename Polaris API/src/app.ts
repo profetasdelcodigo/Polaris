@@ -1094,7 +1094,7 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
     if (typeof body.task !== "string" || !body.task.trim()) {
       throw new PolarisError("VALIDATION_ERROR", "task es obligatorio.", 400);
     }
-    const fabricMatch = resolveFabricIntent(body.task, requestedDevice);
+    const fabricMatch = resolveFabricIntent(body.task, target.type);
     if (fabricMatch) {
       if (fabricMatch.function.requiresConfirmation && body.requireConfirmation !== true) {
         throw new PolarisError(

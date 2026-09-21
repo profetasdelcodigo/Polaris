@@ -51,6 +51,7 @@ import { suggestNextActions } from "./core/agent/proactiveSuggestions.js";
 import { discoverableProtocolMatrix, deviceActions, deviceFamilies, deviceProtocols, type DeviceAction, type DeviceFamily, type DeviceProtocol, type SmartDevice } from "./core/devices/deviceFabric.js";
 import {
   fabricCatalogSummary,
+  countFabricFunctions,
   searchFabricFunctions,
   getFabricFunction,
   executeCoreFabricFunction,
@@ -247,10 +248,15 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
       safeLimit
     );
     const summary = fabricCatalogSummary();
-    const hasMore = functions.length === safeLimit;
+    const matchedCount = countFabricFunctions(
+      typeof query.q === "string" ? query.q.slice(0, 120) : "",
+      platform
+    );
+    const hasMore = safeOffset + functions.length < matchedCount;
     return {
       ...summary,
       returned: functions.length,
+      matchedCount,
       offset: safeOffset,
       limit: safeLimit,
       nextOffset: hasMore ? safeOffset + functions.length : null,

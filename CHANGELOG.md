@@ -1,3 +1,16 @@
+# 0.9.0 — Capability Fabric & Unified Brain
+
+- Added a 1,312-function Capability Fabric: 896 CORE, 144 Web, 144 Desktop and 128 Android.
+- Added real CORE execution for deterministic math, text, URL, JSON/data and time operations.
+- Added dynamic Web and Desktop function handles backed by the API catalog.
+- Added natural-language capability resolution before generic Skill composition.
+- Added unified Brain preparation combining security boundary, intent, memory lifecycle, personality, experience, latency and device availability.
+- Added real Home Assistant REST integration with allowlisted services and confirmation gates for higher-impact operations.
+- Added Web/PC/Android API access to Fabric, Brain and Home Assistant.
+- Added capability-scale and natural-language resolver tests.
+- Preserved the non-arbitrary-execution boundary: no shell, eval, unrestricted JavaScript or native-code execution is granted to the model.
+- CI status remains unclaimed until a real workflow execution is observable for this direct push.
+
 # Changelog
 
 ## 0.8.0 — Polaris Living Core

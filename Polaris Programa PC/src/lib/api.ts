@@ -150,7 +150,7 @@ export const api = {
         metadata: { client: "tauri", version: "0.1.0" }
       })
     });
-  }
+  },
 
   listRelayCommands(targetDeviceId: string): Promise<RelayCommand[]> {
     return request(

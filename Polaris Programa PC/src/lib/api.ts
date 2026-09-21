@@ -5,7 +5,8 @@ import type {
   Memory,
   PolarisMessage,
   Preferences,
-  Profile
+  Profile,
+  RelayCommand
 } from "./models";
 import { supabase } from "./supabase";
 import { getOrCreateDesktopClientId } from "./device";
@@ -148,6 +149,31 @@ export const api = {
         status: "ONLINE",
         metadata: { client: "tauri", version: "0.1.0" }
       })
+    });
+  }
+
+  listRelayCommands(targetDeviceId: string): Promise<RelayCommand[]> {
+    return request(
+      `/v1/relay/commands?targetDeviceId=${encodeURIComponent(targetDeviceId)}`
+    );
+  }
+
+  claimRelayCommand(commandId: string, targetDeviceId: string): Promise<RelayCommand> {
+    return request(`/v1/relay/commands/${encodeURIComponent(commandId)}/claim`, {
+      method: "POST",
+      body: JSON.stringify({ targetDeviceId })
+    });
+  }
+
+  updateRelayCommand(
+    commandId: string,
+    status: RelayCommand["status"],
+    result: Record<string, unknown> = {},
+    errorMessage: string | null = null
+  ): Promise<RelayCommand> {
+    return request(`/v1/relay/commands/${encodeURIComponent(commandId)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status, result, errorMessage })
     });
   }
 };

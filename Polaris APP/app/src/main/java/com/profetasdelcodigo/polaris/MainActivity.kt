@@ -6,6 +6,7 @@ import android.content.Intent
 import android.provider.Settings
 import android.os.Build
 import android.os.Bundle
+import java.util.UUID
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
@@ -48,13 +49,17 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 
 private val PolarisMidnight = Color(0xFF070B14)
 private val PolarisSurface = Color(0xFF0D1422)
@@ -429,8 +434,14 @@ private fun HomeScreen(
     onSignOut: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     val supabase = remember { SupabaseProvider.client }
-    val api = remember { PolarisApiClient(supabase) }
+    val androidClientId = remember {
+        Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+            ?.takeIf { it.isNotBlank() }
+            ?: UUID.randomUUID().toString()
+    }
+    val api = remember(androidClientId) { PolarisApiClient(supabase, androidClientId) }
 
     var section by remember { mutableStateOf(AndroidSection.CHAT) }
     var draft by remember { mutableStateOf("") }
@@ -453,6 +464,74 @@ private fun HomeScreen(
     var memories by remember { mutableStateOf<List<MemoryRecord>>(emptyList()) }
     var memoryDraft by remember { mutableStateOf("") }
     var memoryBusy by remember { mutableStateOf(false) }
+
+    LaunchedEffect(api) {
+        var deviceId: String? = null
+        try {
+            deviceId = api.registerAndroidDevice()
+            while (true) {
+                val target = deviceId ?: break
+                val commands = api.listPendingRelayCommands(target)
+                for (command in commands.take(3)) {
+                    if (command.requires_confirmation) continue
+
+                    val claimed = try {
+                        api.claimRelayCommand(command.id, target)
+                    } catch (_: Throwable) {
+                        null
+                    } ?: continue
+
+                    try {
+                        val action = when (claimed.action) {
+                            "android.back" -> LocalAutomationAction.BACK
+                            "android.home" -> LocalAutomationAction.HOME
+                            "android.notifications" -> LocalAutomationAction.NOTIFICATIONS
+                            "android.quick_settings" -> LocalAutomationAction.QUICK_SETTINGS
+                            "android.recents" -> LocalAutomationAction.RECENTS
+                            "android.open_settings" -> LocalAutomationAction.OPEN_SETTINGS
+                            "android.open_wifi" -> LocalAutomationAction.OPEN_WIFI_SETTINGS
+                            "android.open_bluetooth" -> LocalAutomationAction.OPEN_BLUETOOTH_SETTINGS
+                            "android.scroll_up" -> LocalAutomationAction.SCROLL_UP
+                            "android.scroll_down" -> LocalAutomationAction.SCROLL_DOWN
+                            "android.tap_text" -> {
+                                val text = claimed.payload["text"]?.jsonPrimitive?.contentOrNull
+                                if (text.isNullOrBlank()) {
+                                    throw IllegalArgumentException("Falta el texto que se debe pulsar.")
+                                }
+                                LocalAutomationAction.TAP_TEXT(text)
+                            }
+                            else -> throw IllegalArgumentException("Acción Android no soportada: " + claimed.action)
+                        }
+
+                        api.updateRelayCommand(claimed.id, "RUNNING")
+                        val result = PolarisAccessibilityService.execute(action)
+                        if (result.success) {
+                            api.updateRelayCommand(
+                                claimed.id,
+                                "SUCCEEDED",
+                                mapOf("message" to kotlinx.serialization.json.JsonPrimitive(result.message))
+                            )
+                        } else {
+                            api.updateRelayCommand(
+                                claimed.id,
+                                "FAILED",
+                                errorMessage = result.message
+                            )
+                        }
+                    } catch (error: Throwable) {
+                        api.updateRelayCommand(
+                            claimed.id,
+                            "FAILED",
+                            errorMessage = error.message ?: "La ejecución remota falló."
+                        )
+                    }
+                }
+                delay(2500)
+            }
+        } catch (_: Throwable) {
+            // Relay remoto es opcional; el resto de Polaris sigue funcionando.
+        }
+    }
 
     LaunchedEffect(section) {
         error = null

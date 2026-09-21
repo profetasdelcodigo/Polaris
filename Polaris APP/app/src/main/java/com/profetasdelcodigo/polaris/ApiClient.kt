@@ -18,6 +18,8 @@ import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.buildJsonObject
 
 @Serializable
 data class ChatRequest(val conversationId: String? = null, val content: String)
@@ -65,7 +67,43 @@ data class CreateMemoryRequest(
     val importance: Int = 3
 )
 
-class PolarisApiClient(private val supabase: SupabaseClient) {
+@Serializable
+data class RegisterDeviceRequest(
+    val clientId: String,
+    val name: String,
+    val type: String,
+    val platform: String,
+    val status: String,
+    val metadata: Map<String, String> = emptyMap()
+)
+
+@Serializable
+data class DeviceRecord(
+    val id: String,
+    val client_id: String? = null,
+    val name: String,
+    val type: String,
+    val platform: String,
+    val status: String,
+    val last_seen: String? = null
+)
+
+@Serializable
+data class RelayCommandRecord(
+    val id: String,
+    val target_device_id: String,
+    val capability_id: String,
+    val action: String,
+    val payload: Map<String, JsonElement> = emptyMap(),
+    val status: String,
+    val requires_confirmation: Boolean,
+    val error_message: String? = null
+)
+
+class PolarisApiClient(
+    private val supabase: SupabaseClient,
+    private val clientId: String? = null
+) {
     private val client = HttpClient(Android) {
         install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
     }
@@ -83,6 +121,60 @@ class PolarisApiClient(private val supabase: SupabaseClient) {
 
     private suspend fun configure(builder: io.ktor.client.request.HttpRequestBuilder) {
         builder.header(HttpHeaders.Authorization, "Bearer " + token())
+    }
+
+    suspend fun registerAndroidDevice(): String {
+        val id = requireNotNull(clientId) { "Falta clientId de Android." }
+        return client.post(baseUrl() + "/v1/devices") {
+            configure(this)
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterDeviceRequest(
+                    clientId = id,
+                    name = "Polaris Android",
+                    type = "ANDROID",
+                    platform = "Android",
+                    status = "ONLINE",
+                    metadata = mapOf("client" to "android", "version" to BuildConfig.VERSION_NAME)
+                )
+            )
+        }.body<DeviceRecord>().id
+    }
+
+    suspend fun listPendingRelayCommands(deviceId: String): List<RelayCommandRecord> {
+        return client.get(
+            baseUrl() + "/v1/relay/commands?targetDeviceId=" +
+                java.net.URLEncoder.encode(deviceId, "UTF-8")
+        ) {
+            configure(this)
+        }.body()
+    }
+
+    suspend fun claimRelayCommand(commandId: String, deviceId: String): RelayCommandRecord {
+        return client.post(baseUrl() + "/v1/relay/commands/" + commandId + "/claim") {
+            configure(this)
+            contentType(ContentType.Application.Json)
+            setBody(buildJsonObject { put("targetDeviceId", deviceId) })
+        }.body()
+    }
+
+    suspend fun updateRelayCommand(
+        commandId: String,
+        status: String,
+        result: Map<String, JsonElement> = emptyMap(),
+        errorMessage: String? = null
+    ): RelayCommandRecord {
+        return client.patch(baseUrl() + "/v1/relay/commands/" + commandId) {
+            configure(this)
+            contentType(ContentType.Application.Json)
+            setBody(
+                buildJsonObject {
+                    put("status", status)
+                    put("result", kotlinx.serialization.json.JsonObject(result))
+                    if (errorMessage != null) put("errorMessage", errorMessage)
+                }
+            )
+        }.body()
     }
 
     suspend fun chat(content: String, conversationId: String?): ChatResponse {

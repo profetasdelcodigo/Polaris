@@ -1094,6 +1094,76 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
     if (typeof body.task !== "string" || !body.task.trim()) {
       throw new PolarisError("VALIDATION_ERROR", "task es obligatorio.", 400);
     }
+    const fabricMatch = resolveFabricIntent(body.task, requestedDevice);
+    if (fabricMatch) {
+      if (fabricMatch.function.requiresConfirmation && body.requireConfirmation !== true) {
+        throw new PolarisError(
+          "CONFIRMATION_REQUIRED",
+          `La capacidad ${fabricMatch.function.name} requiere confirmación explícita.`,
+          409
+        );
+      }
+
+      const fabricPayload = buildFabricRelayPayload(fabricMatch.function, fabricMatch.input);
+      const fabricFingerprint = skillFingerprint({
+        version: 1,
+        steps: [{
+          action: fabricMatch.function.relayAction === "desktop.run_skill" || fabricMatch.function.relayAction === "web.run_skill"
+            ? "wait"
+            : fabricMatch.function.relayAction === "desktop.open_url" || fabricMatch.function.relayAction === "web.open_url"
+              ? "open_url"
+              : "copy_text",
+          ...(typeof fabricPayload.url === "string" ? { url: fabricPayload.url } : {}),
+          ...(typeof fabricPayload.text === "string" ? { text: fabricPayload.text } : {})
+        }]
+      });
+
+      const fabricTrace = createExecutionTrace({
+        task: body.task.trim(),
+        fingerprint: fabricFingerprint,
+        targetDeviceId: target.id,
+        actions: [{ action: fabricMatch.function.id, device: target.type as DeviceType }]
+      });
+
+      if (body.dryRun === true) {
+        return reply.status(200).send({
+          queued: false,
+          dryRun: true,
+          runtime: "polaris-fabric-v1",
+          fingerprint: fabricFingerprint,
+          trace: fabricTrace,
+          function: fabricMatch.function,
+          input: fabricMatch.input ?? null,
+          relayAction: fabricMatch.function.relayAction,
+          payload: fabricPayload
+        });
+      }
+
+      const command = await createRelayCommand(context, {
+        targetDeviceId: target.id,
+        capabilityId: `fabric.${fabricMatch.function.id}`,
+        action: fabricMatch.function.relayAction!,
+        payload: fabricPayload,
+        requiresConfirmation: fabricMatch.function.requiresConfirmation,
+        ttlSeconds: 120
+      });
+
+      return reply.status(201).send({
+        queued: true,
+        runtime: "polaris-fabric-v1",
+        fingerprint: fabricFingerprint,
+        trace: fabricTrace,
+        function: fabricMatch.function,
+        target: {
+          id: target.id,
+          name: target.name,
+          type: target.type,
+          status: target.status
+        },
+        command
+      });
+    }
+
     const program = composeSkillFromIntent(body.task);
     const fingerprint = skillFingerprint(program);
     const trace = createExecutionTrace({

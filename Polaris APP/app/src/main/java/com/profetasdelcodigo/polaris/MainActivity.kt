@@ -372,6 +372,62 @@ private fun AuthScreen(onAuthenticated: () -> Unit) {
 }
 
 @Composable
+private fun PolarisOrbitalCore(active: Boolean) {
+    val transition = rememberInfiniteTransition(label = "polaris-orbit")
+    val rotation by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(if (active) 3200 else 9000),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "rotation"
+    )
+
+    Box(
+        modifier = Modifier
+            .size(150.dp)
+            .graphicsLayer {
+                rotationY = if (active) 8f else 2f
+                rotationZ = rotation * .03f
+                cameraDistance = 22f * density
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(118.dp)
+                .graphicsLayer { rotationX = 66f; rotationZ = rotation }
+                .background(
+                    Brush.horizontalGradient(listOf(PolarisCyan.copy(alpha = .20f), PolarisViolet.copy(alpha = .08f))),
+                    RoundedCornerShape(60.dp)
+                )
+        )
+        Box(
+            modifier = Modifier
+                .size(94.dp)
+                .graphicsLayer { rotationY = 66f; rotationZ = -rotation * .8f }
+                .background(
+                    Brush.horizontalGradient(listOf(PolarisViolet.copy(alpha = .16f), PolarisMint.copy(alpha = .10f))),
+                    RoundedCornerShape(60.dp)
+                )
+        )
+        Box(
+            modifier = Modifier
+                .size(58.dp)
+                .shadow(18.dp, RoundedCornerShape(20.dp), clip = false)
+                .background(
+                    Brush.linearGradient(listOf(PolarisCyan, PolarisBlue, PolarisViolet)),
+                    RoundedCornerShape(20.dp)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("✦", color = PolarisMidnight, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineSmall)
+        }
+    }
+}
+
+@Composable
 private fun PolarisMascotMini(
     active: Boolean,
     modifier: Modifier = Modifier
@@ -733,6 +789,7 @@ private fun HomeScreen(
 
         when (section) {
             AndroidSection.CHAT -> {
+                PolarisOrbitalCore(active = busy)
                 PolarisMascotMini(
                     active = busy,
                     modifier = Modifier

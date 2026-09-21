@@ -6,7 +6,7 @@ export type {
   TablesUpdate
 } from "./database.types.js";
 
-export const POLARIS_VERSION = "0.4.0" as const;
+export const POLARIS_VERSION = "0.5.0" as const;
 
 export const polarisStates = [
   "IDLE",

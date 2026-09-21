@@ -8,6 +8,9 @@ export function classifyIntent(text:string): { intent: PolarisIntent; confidence
   const t=normalize(text);
   if (/(cancela|detente|para todo|stop)/.test(t)) return {intent:"CANCEL",confidence:.98};
   if (/(investiga|fuentes|paper|evidencia|compara)/.test(t)) return {intent:"RESEARCH",confidence:.94};
+  if (/(abre|haz|ejecuta|realiza|crea|envia|envía)\b/.test(t) && /\b(y|luego|despues|después)\b/.test(t)) {
+    return {intent:"ACTION",confidence:.82};
+  }
   if (/(recuerda|memoriza|olvida|memoria)/.test(t)) return {intent:"MEMORY",confidence:.94};
   if (/(abre|cierra|pulsa|toca|desplaza|notificaciones|ajustes|wifi|bluetooth)/.test(t)) return {intent:"DEVICE_CONTROL",confidence:.9};
   if (/(automatiza|rutina|cada dia|cada día|cuando ocurra)/.test(t)) return {intent:"AUTOMATION",confidence:.9};

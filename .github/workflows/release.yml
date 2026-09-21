@@ -96,6 +96,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y             libwebkit2gtk-4.1-dev             libappindicator3-dev             librsvg2-dev             patchelf
       - run: pnpm install --frozen-lockfile
+      - name: Generate native desktop icons
+        working-directory: "Polaris Programa PC"
+        run: pnpm icon
       - name: Build native desktop bundle
         working-directory: "Polaris Programa PC"
         run: pnpm tauri build

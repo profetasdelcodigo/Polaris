@@ -140,6 +140,7 @@ Implementado en esta iteración:
 - Ejecución remota real en Android para navegación, ajustes, scroll, pulsaciones y observación de pantalla.
 - Ejecución remota real en PC para abrir URLs, revelar rutas y consultar información del sistema.
 - Sesión Web ejecutable: registro de dispositivo, relay autenticado y ejecución de `web.open_url`, con fallback a navegación en la pestaña actual si el navegador bloquea una nueva pestaña.
+- Handoff seguro model-callable: el Core puede delegar automáticamente acciones limitadas a Web/Android/PC sin exponer shell, archivos destructivos ni taps arbitrarios.
 - El cliente Android registra su dispositivo y consume órdenes pendientes.
 - El cliente PC registra su dispositivo y consume órdenes pendientes.
 - Catálogo declarativo generado: 48.000 recetas únicas antes de herramientas incorporadas; el endpoint expone capacidad por plataforma.

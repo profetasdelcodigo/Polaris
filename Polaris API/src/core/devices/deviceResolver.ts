@@ -41,6 +41,32 @@ const familyAliases: Record<DeviceFamily, string[]> = {
   OTHER: ["dispositivo"]
 };
 
+const roomAliases: Record<string, string[]> = {
+  dormitorio: ["dormitorio", "cuarto", "habitacion", "habitación", "recamara", "recámara"],
+  sala: ["sala", "salon", "salón", "living"],
+  cocina: ["cocina"],
+  bano: ["baño", "bano", "servicio"],
+  oficina: ["oficina", "estudio", "despacho"],
+  comedor: ["comedor"],
+  patio: ["patio", "jardin", "jardín"],
+  garaje: ["garaje", "cochera"],
+  entrada: ["entrada", "recibidor"]
+};
+
+const protocolPriority: DeviceProtocol[] = [
+  "ANDROID_NATIVE",
+  "DESKTOP_NATIVE",
+  "HOME_ASSISTANT",
+  "MATTER",
+  "GOOGLE_CAST",
+  "CHROMECAST",
+  "MQTT",
+  "HTTP_LOCAL",
+  "BLUETOOTH",
+  "ALEXA_BRIDGE",
+  "IR"
+];
+
 function normalize(value: string): string {
   return value
     .toLocaleLowerCase("es-PE")
@@ -49,6 +75,30 @@ function normalize(value: string): string {
     .replace(/[^a-z0-9ñ ]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function hasPhrase(query: string, phrase: string): boolean {
+  return query === phrase || query.includes(` ${phrase} `) || query.startsWith(`${phrase} `) || query.endsWith(` ${phrase}`);
+}
+
+function metadataString(device: SmartDevice, key: string): string {
+  const value = device.metadata?.[key];
+  return typeof value === "string" ? normalize(value) : "";
+}
+
+function scoreRecency(device: SmartDevice): { score: number; reason?: string } {
+  const lastUsedAt = metadataString(device, "lastUsedAt");
+  if (!lastUsedAt) return { score: 0 };
+
+  const timestamp = Date.parse(lastUsedAt);
+  if (!Number.isFinite(timestamp)) return { score: 0 };
+
+  const ageMs = Math.max(0, Date.now() - timestamp);
+  const ageHours = ageMs / 3_600_000;
+  if (ageHours <= 1) return { score: 14, reason: "usado recientemente" };
+  if (ageHours <= 24) return { score: 9, reason: "usado hoy" };
+  if (ageHours <= 168) return { score: 4, reason: "usado esta semana" };
+  return { score: 0 };
 }
 
 function scoreDevice(query: string, device: SmartDevice): DeviceResolutionCandidate {
@@ -60,7 +110,7 @@ function scoreDevice(query: string, device: SmartDevice): DeviceResolutionCandid
   if (name === q) {
     score += 100;
     reasons.push("coincidencia exacta de nombre");
-  } else if (name && q.includes(name)) {
+  } else if (name && hasPhrase(q, name)) {
     score += 72;
     reasons.push("nombre contenido en la petición");
   } else {
@@ -73,16 +123,30 @@ function scoreDevice(query: string, device: SmartDevice): DeviceResolutionCandid
   }
 
   const aliases = familyAliases[device.family] ?? [];
-  const familyMatch = aliases.some((alias) => q.includes(normalize(alias)));
+  const familyMatch = aliases.some((alias) => hasPhrase(q, normalize(alias)));
   if (familyMatch) {
     score += 30;
     reasons.push("familia coincide");
   }
 
-  const room = typeof device.metadata?.room === "string" ? normalize(device.metadata.room) : "";
-  if (room && q.includes(room)) {
+  const room = metadataString(device, "room");
+  if (room && hasPhrase(q, room)) {
     score += 28;
     reasons.push("habitación coincide");
+  } else if (room) {
+    const normalizedRoom = Object.entries(roomAliases).find(([, aliases]) =>
+      aliases.some((alias) => normalize(alias) === room)
+    )?.[0];
+    if (normalizedRoom && (roomAliases[normalizedRoom] ?? []).some((alias) => hasPhrase(q, normalize(alias)))) {
+      score += 28;
+      reasons.push("habitación coincide");
+    }
+  }
+
+  const zone = metadataString(device, "zone");
+  if (zone && hasPhrase(q, zone)) {
+    score += 12;
+    reasons.push("zona coincide");
   }
 
   if (device.online) {
@@ -93,8 +157,17 @@ function scoreDevice(query: string, device: SmartDevice): DeviceResolutionCandid
     reasons.push("dispositivo offline");
   }
 
-  const protocolPriority: DeviceProtocol[] = ["ANDROID_NATIVE", "DESKTOP_NATIVE", "HOME_ASSISTANT", "MATTER", "GOOGLE_CAST", "CHROMECAST", "MQTT", "HTTP_LOCAL", "BLUETOOTH", "ALEXA_BRIDGE", "IR"];
-  score += Math.max(0, 12 - protocolPriority.indexOf(device.protocol));
+  const recency = scoreRecency(device);
+  score += recency.score;
+  if (recency.reason) reasons.push(recency.reason);
+
+  if (device.metadata?.favorite === true) {
+    score += 3;
+    reasons.push("dispositivo favorito");
+  }
+
+  const protocolIndex = protocolPriority.indexOf(device.protocol);
+  score += protocolIndex >= 0 ? Math.max(0, 12 - protocolIndex) : 0;
 
   return { device, score, reasons };
 }
@@ -123,6 +196,7 @@ export function resolveDeviceReference(query: string, devices: SmartDevice[]): D
       question: "No pude seleccionar un dispositivo seguro."
     };
   }
+
   if (top.score >= 85 && (!second || top.score - second.score >= 18)) {
     return { status: "RESOLVED", device: top.device, candidates };
   }

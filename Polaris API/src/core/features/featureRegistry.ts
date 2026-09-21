@@ -66,7 +66,9 @@ export const polarisFeatureRegistry: readonly PolarisFeature[] = [
   ["handoff-planner", "Planificador de handoff", "MULTIPLATFORM", "AVAILABLE", "Selecciona el companion compatible con disponibilidad y latencia.", "Hace el cambio de dispositivo explícito y verificable."],
   ["offline-queue-core", "Núcleo de cola offline", "MULTIPLATFORM", "PARTIAL", "Modela tareas seguras para reintento con idempotencia y límites.", "Permite resistir desconexiones sin fingir persistencia nativa completa."],
   ["browser-agent-core", "Núcleo Browser Agent", "RESEARCH", "PARTIAL", "Genera planes de navegación observables y verificables.", "Separa planificación del navegador de la ejecución concreta del cliente."],
-  ["task-replay-envelope", "Sobre de replay", "AUTOMATION", "AVAILABLE", "Define una transición segura de una tarea reintentable.", "Evita reejecuciones ilimitadas o estados ambiguos."]
+  ["task-replay-envelope", "Sobre de replay", "AUTOMATION", "AVAILABLE", "Define una transición segura de una tarea reintentable.", "Evita reejecuciones ilimitadas o estados ambiguos."],
+  ["skill-repair", "Autorreparación segura de Skills", "AUTOMATION", "AVAILABLE", "Propone solo recuperaciones predefinidas ante fallos transitorios o incompatibilidades.", "Permite recovery útil sin otorgar al modelo ejecución arbitraria."],
+  ["autonomy-fabric", "Tejido de autonomía", "AUTOMATION", "AVAILABLE", "Conecta planificación, consentimiento, Skills, verificación y recovery.", "Da a Polaris un camino coherente de intención a ejecución controlada."]
 ].map(([id, name, category, status, description, whyItMatters]) => ({
   id,
   name,

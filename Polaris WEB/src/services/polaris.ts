@@ -62,6 +62,18 @@ export type Device = {
   created_at: string;
 };
 
+export type RelayCommand = {
+  id: string;
+  target_device_id: string;
+  capability_id: string;
+  action: string;
+  payload: Record<string, unknown>;
+  status: 'PENDING' | 'CLAIMED' | 'RUNNING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED' | 'EXPIRED';
+  requires_confirmation: boolean;
+  result: Record<string, unknown>;
+  error_message: string | null;
+};
+
 function token(session: Session): string {
   return session.access_token;
 }
@@ -112,6 +124,37 @@ export const polarisApi = {
       body: JSON.stringify(input),
     }),
   listDevices: (session: Session) => apiRequest<Device[]>('/devices', token(session)),
+  listRelayCommands: (session: Session, targetDeviceId: string) =>
+    apiRequest<RelayCommand[]>(
+      `/relay/commands?targetDeviceId=${encodeURIComponent(targetDeviceId)}`,
+      token(session),
+    ),
+  claimRelayCommand: (session: Session, commandId: string, targetDeviceId: string) =>
+    apiRequest<RelayCommand>(
+      `/relay/commands/${encodeURIComponent(commandId)}/claim`,
+      token(session),
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ targetDeviceId }),
+      },
+    ),
+  updateRelayCommand: (
+    session: Session,
+    commandId: string,
+    status: RelayCommand['status'],
+    result: Record<string, unknown> = {},
+    errorMessage: string | null = null,
+  ) =>
+    apiRequest<RelayCommand>(
+      `/relay/commands/${encodeURIComponent(commandId)}`,
+      token(session),
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ status, result, errorMessage }),
+      },
+    ),
   registerDevice: (
     session: Session,
     input: {

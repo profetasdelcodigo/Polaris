@@ -647,6 +647,20 @@ function ChatView({
   async function send(retryMessage?: string) {
     const content = (retryMessage ?? draft).trim();
     if (!content || streaming) return;
+
+    const directWebUrl =
+      content.match(/^(?:abre|abrir|open)(?:\\s+en\\s+(?:web|esta\\s+pestaña|el\\s+navegador))?\\s+(https?:\\/\\/\\S+?)(?:\\s+en\\s+(?:otra\\s+)?pestaña)?$/iu)?.[1]
+      ?? content.match(/^(?:abre|abrir|open)\\s+(https?:\\/\\/\\S+)$/iu)?.[1];
+
+    if (directWebUrl) {
+      const url = directWebUrl.replace(/[),.;!?]+$/u, '');
+      if (!/^https?:\\/\\//i.test(url)) return;
+      const opened = window.open(url, '_blank', 'noopener,noreferrer');
+      if (!opened) window.location.assign(url);
+      onNotice(opened ? `Polaris abrió ${url} en otra pestaña.` : `Polaris navegó a ${url} en esta pestaña.`);
+      setDraft('');
+      return;
+    }
     if (!navigator.onLine) {
       onProblem('Estás sin conexión. Polaris no enviará ni inventará una respuesta.');
       return;

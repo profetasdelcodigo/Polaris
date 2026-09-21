@@ -36,7 +36,7 @@ class PolarisAccessibilityService : AccessibilityService() {
         LocalAutomationAction.OPEN_SOUND_SETTINGS -> openSystemSettings(android.provider.Settings.ACTION_SOUND_SETTINGS, "los ajustes de sonido")
         LocalAutomationAction.OPEN_BATTERY_SETTINGS -> openSystemSettings(android.provider.Settings.ACTION_BATTERY_SAVER_SETTINGS, "los ajustes de batería")
         LocalAutomationAction.OPEN_LOCATION_SETTINGS -> openSystemSettings(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS, "los ajustes de ubicación")
-        LocalAutomationAction.OPEN_NOTIFICATION_SETTINGS -> openSystemSettings(android.provider.Settings.ACTION_NOTIFICATION_SETTINGS, "los ajustes de notificaciones")
+        LocalAutomationAction.OPEN_NOTIFICATION_SETTINGS -> openSystemSettings("android.settings.NOTIFICATION_SETTINGS", "los ajustes de notificaciones")
         LocalAutomationAction.OPEN_ACCESSIBILITY_SETTINGS -> openSystemSettings(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS, "los ajustes de accesibilidad")
         LocalAutomationAction.OPEN_LANGUAGE_SETTINGS -> openSystemSettings(android.provider.Settings.ACTION_LOCALE_SETTINGS, "los ajustes de idioma")
         LocalAutomationAction.OPEN_INPUT_SETTINGS -> openSystemSettings(android.provider.Settings.ACTION_INPUT_METHOD_SETTINGS, "los ajustes de teclado")

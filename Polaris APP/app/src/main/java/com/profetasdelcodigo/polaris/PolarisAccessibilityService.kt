@@ -32,6 +32,15 @@ class PolarisAccessibilityService : AccessibilityService() {
         LocalAutomationAction.OPEN_SETTINGS -> openSystemSettings(android.provider.Settings.ACTION_SETTINGS, "Ajustes")
         LocalAutomationAction.OPEN_WIFI_SETTINGS -> openSystemSettings(android.provider.Settings.ACTION_WIFI_SETTINGS, "los ajustes de Wi-Fi")
         LocalAutomationAction.OPEN_BLUETOOTH_SETTINGS -> openSystemSettings(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS, "los ajustes de Bluetooth")
+        LocalAutomationAction.OPEN_DISPLAY_SETTINGS -> openSystemSettings(android.provider.Settings.ACTION_DISPLAY_SETTINGS, "los ajustes de pantalla")
+        LocalAutomationAction.OPEN_SOUND_SETTINGS -> openSystemSettings(android.provider.Settings.ACTION_SOUND_SETTINGS, "los ajustes de sonido")
+        LocalAutomationAction.OPEN_BATTERY_SETTINGS -> openSystemSettings(android.provider.Settings.ACTION_BATTERY_SAVER_SETTINGS, "los ajustes de batería")
+        LocalAutomationAction.OPEN_LOCATION_SETTINGS -> openSystemSettings(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS, "los ajustes de ubicación")
+        LocalAutomationAction.OPEN_NOTIFICATION_SETTINGS -> openSystemSettings(android.provider.Settings.ACTION_NOTIFICATION_SETTINGS, "los ajustes de notificaciones")
+        LocalAutomationAction.OPEN_ACCESSIBILITY_SETTINGS -> openSystemSettings(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS, "los ajustes de accesibilidad")
+        LocalAutomationAction.OPEN_LANGUAGE_SETTINGS -> openSystemSettings(android.provider.Settings.ACTION_LOCALE_SETTINGS, "los ajustes de idioma")
+        LocalAutomationAction.OPEN_INPUT_SETTINGS -> openSystemSettings(android.provider.Settings.ACTION_INPUT_METHOD_SETTINGS, "los ajustes de teclado")
+        LocalAutomationAction.DESCRIBE_SCREEN -> describeScreen()
         LocalAutomationAction.SCROLL_DOWN -> scroll(false)
         LocalAutomationAction.SCROLL_UP -> scroll(true)
         is LocalAutomationAction.TAP_TEXT -> tapVisibleText(action.text)
@@ -46,6 +55,46 @@ class PolarisAccessibilityService : AccessibilityService() {
         LocalAutomationResult(true, "Abrí $label.")
     } catch (_: Throwable) {
         LocalAutomationResult(false, "Android no pudo abrir $label.")
+    }
+
+    private fun describeScreen(): LocalAutomationResult {
+        val root = rootInActiveWindow ?: return LocalAutomationResult(false, "No pude observar la pantalla actual.")
+        val visible = mutableListOf<String>()
+
+        fun collect(node: AccessibilityNodeInfo) {
+            if (visible.size >= 40 || !node.isVisibleToUser) return
+
+            val text = node.text?.toString()?.trim().orEmpty()
+            val description = node.contentDescription?.toString()?.trim().orEmpty()
+            val candidate = when {
+                text.isNotBlank() -> text
+                description.isNotBlank() -> description
+                else -> ""
+            }
+
+            if (candidate.isNotBlank() && candidate.length <= 180 &&
+                visible.none { it.equals(candidate, ignoreCase = true) }) {
+                visible += candidate
+            }
+
+            for (index in 0 until node.childCount) {
+                val child = node.getChild(index) ?: continue
+                collect(child)
+            }
+        }
+
+        collect(root)
+        val summary = visible.joinToString(" · ").take(2_400)
+        val message = if (summary.isBlank()) {
+            "Pantalla observada, pero no expone texto accesible."
+        } else {
+            "Veo: " + summary
+        }
+        return LocalAutomationResult(
+            true,
+            message,
+            verification = "Accesibilidad devolvió " + visible.size + " elementos visibles."
+        )
     }
 
     private fun scroll(up: Boolean): LocalAutomationResult {
@@ -109,9 +158,22 @@ sealed interface LocalAutomationAction {
     data object OPEN_SETTINGS : LocalAutomationAction
     data object OPEN_WIFI_SETTINGS : LocalAutomationAction
     data object OPEN_BLUETOOTH_SETTINGS : LocalAutomationAction
+    data object OPEN_DISPLAY_SETTINGS : LocalAutomationAction
+    data object OPEN_SOUND_SETTINGS : LocalAutomationAction
+    data object OPEN_BATTERY_SETTINGS : LocalAutomationAction
+    data object OPEN_LOCATION_SETTINGS : LocalAutomationAction
+    data object OPEN_NOTIFICATION_SETTINGS : LocalAutomationAction
+    data object OPEN_ACCESSIBILITY_SETTINGS : LocalAutomationAction
+    data object OPEN_LANGUAGE_SETTINGS : LocalAutomationAction
+    data object OPEN_INPUT_SETTINGS : LocalAutomationAction
+    data object DESCRIBE_SCREEN : LocalAutomationAction
     data object SCROLL_DOWN : LocalAutomationAction
     data object SCROLL_UP : LocalAutomationAction
     data class TAP_TEXT(val text: String) : LocalAutomationAction
 }
 
-data class LocalAutomationResult(val success: Boolean, val message: String)
+data class LocalAutomationResult(
+    val success: Boolean,
+    val message: String,
+    val verification: String? = null
+)

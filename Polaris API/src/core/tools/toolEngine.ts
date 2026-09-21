@@ -61,6 +61,10 @@ const safeHandoffSchema = z.object({
   targetDeviceId: z.string().uuid().optional(),
   action: z.enum([
     "web.open_url",
+    "web.copy_text",
+    "web.scroll_top",
+    "web.scroll_bottom",
+    "web.focus_chat",
     "desktop.open_url",
     "android.back",
     "android.home",
@@ -86,6 +90,10 @@ const relayCommandSchema = z.object({
   targetDeviceId: z.string().uuid().optional(),
   action: z.enum([
     "web.open_url",
+    "web.copy_text",
+    "web.scroll_top",
+    "web.scroll_bottom",
+    "web.focus_chat",
     "desktop.open_url",
     "desktop.reveal_path",
     "desktop.system_info",

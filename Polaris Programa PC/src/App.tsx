@@ -200,6 +200,7 @@ function App() {
           ? [registered, ...nextDevices.filter((device) => device.id !== registered.id)]
           : nextDevices
       );
+      setDesktopDeviceId(registered?.id ?? nextDevices.find((device) => device.type === "DESKTOP")?.id ?? null);
       setPreferences(nextPreferences);
       setProfile(nextProfile);
     } catch (cause) {
@@ -270,7 +271,7 @@ function App() {
       setError(message);
       setPolarisState("ERROR");
     } finally {
-      if (polarisState !== "ERROR") setPolarisState("IDLE");
+      setPolarisState("IDLE");
     }
   }
 

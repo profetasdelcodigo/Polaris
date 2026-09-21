@@ -30,7 +30,7 @@ import { PolarisApiError, type SseEvent } from '../services/api';
 import { getSupabaseClient } from '../services/supabase';
 import { PolarisOrbit } from './PolarisOrbit';
 
-type View = 'home' | 'chat' | 'history' | 'memories' | 'profile' | 'settings' | 'devices';
+type View = 'home' | 'chat' | 'history' | 'memories' | 'profile' | 'settings' | 'devices' | 'capabilities';
 type AuthView = 'sign-in' | 'sign-up' | 'recover' | 'update-password';
 
 const memoryCategories: MemoryCategory[] = ['PERSONAL', 'PREFERENCE', 'PROJECT', 'CONTEXT', 'FACT', 'GOAL'];
@@ -111,9 +111,9 @@ export function App() {
       if (key === 'k') {
         event.preventDefault();
         setView('chat');
-      } else if (key >= '1' && key <= '7') {
+      } else if (key >= '1' && key <= '8') {
         event.preventDefault();
-        const views: View[] = ['home', 'chat', 'history', 'memories', 'devices', 'profile', 'settings'];
+        const views: View[] = ['home', 'chat', 'history', 'memories', 'devices', 'capabilities', 'profile', 'settings'];
         setView(views[Number(key) - 1]);
       }
     };
@@ -537,6 +537,7 @@ function Workspace({
         {view === 'profile' && <ProfileView session={session} profile={profile} setProfile={setProfile} onProblem={setProblem} onNotice={setNotice} />}
         {view === 'settings' && <SettingsView session={session} preferences={preferences} setPreferences={setPreferences} onProblem={setProblem} onNotice={setNotice} />}
         {view === 'devices' && <DevicesView devices={devices} onRefresh={() => void refresh()} />}
+        {view === 'capabilities' && <CapabilitiesView session={session} onProblem={setProblem} onNotice={setNotice} />}
       </section>
     </main>
   );
@@ -557,7 +558,7 @@ function Sidebar({
 }) {
   const items: Array<[View, string, string]> = [
     ['home', 'Inicio', '✦'], ['chat', 'Conversar', '◌'], ['history', 'Historial', '◫'],
-    ['memories', 'Memorias', '◇'], ['devices', 'Dispositivos', '⌘'], ['profile', 'Perfil', '○'], ['settings', 'Ajustes', '⚙'],
+    ['memories', 'Memorias', '◇'], ['devices', 'Dispositivos', '⌘'], ['capabilities', 'Capacidades', '✦'], ['profile', 'Perfil', '○'], ['settings', 'Ajustes', '⚙'],
   ];
   return (
     <aside className="workspace-sidebar">
@@ -613,7 +614,7 @@ function Dashboard({
       </section>
       <section className="transparency">
         <div><span className="eyebrow">TRANSPARENCIA</span><h2>Capacidades que existen, no promesas vacías.</h2><p>Las respuestas llegan en streaming si el proveedor está configurado. Cuando no lo está, Polaris conserva tu mensaje y explica el límite.</p></div>
-        <ul><li>✓ Contexto y memoria</li><li>✓ Herramientas seguras</li><li>✓ Sesión persistente</li><li className="muted">○ Voz próximamente</li><li className="muted">○ Visión próximamente</li><li className="muted">○ Robot próximamente</li></ul>
+        <ul><li>✓ Contexto y memoria controlables</li><li>✓ Skill Runtime con allowlist</li><li>✓ Relay entre Web, Android y PC</li><li>✓ Brain unificado y políticas de seguridad</li><li>✓ Capability Fabric con catálogo navegable</li><li>✓ Identidad visual 3D por estado</li></ul>
       </section>
     </div>
   );
@@ -952,6 +953,157 @@ function ProfileView({
   );
 }
 
+
+function CapabilitiesView({
+  session,
+  onProblem,
+  onNotice,
+}: {
+  session: Session;
+  onProblem(message: string): void;
+  onNotice(message: string): void;
+}) {
+  type FabricItem = {
+    id: string;
+    name: string;
+    platform: 'CORE' | 'WEB' | 'DESKTOP' | 'ANDROID';
+    domain: string;
+    description: string;
+    mode: 'CORE' | 'RELAY';
+    risk: 'LOW' | 'MEDIUM' | 'HIGH';
+    requiresConfirmation: boolean;
+    input: 'none' | 'text' | 'number' | 'json';
+  };
+
+  type CatalogResponse = {
+    count?: number;
+    byPlatform?: Partial<Record<FabricItem['platform'], number>>;
+    returned?: number;
+    offset?: number;
+    limit?: number;
+    nextOffset?: number | null;
+    functions?: FabricItem[];
+  };
+
+  const [query, setQuery] = useState('');
+  const [platform, setPlatform] = useState<'ALL' | FabricItem['platform']>('ALL');
+  const [catalog, setCatalog] = useState<CatalogResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [previewing, setPreviewing] = useState<string | null>(null);
+
+  async function load(offset = 0): Promise<void> {
+    setLoading(true);
+    try {
+      const data = await polarisApi.getFabricCatalog(session, {
+        q: query.trim() || undefined,
+        platform: platform === 'ALL' ? undefined : platform,
+        offset,
+      });
+      setCatalog(data as CatalogResponse);
+    } catch (cause) {
+      onProblem(errorText(cause));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(0), query ? 220 : 0);
+    return () => window.clearTimeout(timer);
+  }, [session.access_token, query, platform]);
+
+  async function preview(item: FabricItem): Promise<void> {
+    setPreviewing(item.id);
+    try {
+      const input = item.input === 'number' ? 5 : item.input === 'json' ? {} : item.input === 'text' ? 'Polaris' : undefined;
+      const result = await polarisApi.previewFabricFunction(session, item.id, input);
+      onNotice(item.name + ': vista previa generada. ' + JSON.stringify(result.result ?? result.payload ?? result));
+    } catch (cause) {
+      onProblem(errorText(cause));
+    } finally {
+      setPreviewing(null);
+    }
+  }
+
+  const items = catalog?.functions ?? [];
+  const pageStart = catalog?.offset ?? 0;
+  const pageEnd = pageStart + items.length;
+  const hasPrevious = pageStart > 0;
+  const hasNext = catalog?.nextOffset != null;
+
+  return (
+    <div className="page">
+      <header className="section-heading">
+        <div>
+          <span className="eyebrow">CAPABILITY FABRIC</span>
+          <h1>Todas las capacidades reales</h1>
+          <p>Catálogo del núcleo con operaciones ejecutables o enroutables. No se muestran funciones de relleno ni estados futuros.</p>
+        </div>
+        <button type="button" className="secondary-button" onClick={() => void load(pageStart)}>Actualizar</button>
+      </header>
+
+      <section className="summary-grid">
+        <Summary title="Total" value={String(catalog?.count ?? '—')} hint="Funciones registradas" />
+        <Summary title="CORE" value={String(catalog?.byPlatform?.CORE ?? '—')} hint="Determinísticas" />
+        <Summary title="Web / PC / Android" value={catalog ? String(catalog.byPlatform?.WEB ?? 0) + ' / ' + String(catalog.byPlatform?.DESKTOP ?? 0) + ' / ' + String(catalog.byPlatform?.ANDROID ?? 0) : '—'} hint="Handles de cliente" />
+      </section>
+
+      <section className="detail-card">
+        <div className="setting-row">
+          <div>
+            <h2>Explorar y probar</h2>
+            <p>La vista previa ejecuta funciones CORE en el servidor de forma determinista y compila relays sin activar hardware por sorpresa.</p>
+          </div>
+        </div>
+        <div className="theme-picker" style={{ marginTop: 16, flexWrap: 'wrap' }}>
+          {(['ALL', 'CORE', 'WEB', 'DESKTOP', 'ANDROID'] as const).map((item) => (
+            <button key={item} type="button" className={platform === item ? 'active' : ''} onClick={() => setPlatform(item)}>
+              {item === 'ALL' ? 'Todo' : item}
+            </button>
+          ))}
+        </div>
+        <input
+          aria-label="Buscar capacidades"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Buscar por nombre, dominio o función…"
+          style={{ marginTop: 16, width: '100%' }}
+        />
+      </section>
+
+      <section className="memory-library">
+        <header>
+          <div><h2>Funciones {catalog ? String(pageStart + 1) + '–' + String(pageEnd) : ''}</h2><span>{loading ? 'Cargando…' : String(items.length) + ' en esta página'}</span></div>
+        </header>
+        {items.length === 0 && !loading ? (
+          <Empty title="No hay coincidencias" description="Prueba otro término o cambia la plataforma." />
+        ) : (
+          <div className="memory-cards">
+            {items.map((item) => (
+              <article key={item.id}>
+                <div><span>{item.platform} · {item.domain}</span><strong>{item.risk}</strong></div>
+                <h3>{item.name}</h3>
+                <p>{item.description}</p>
+                <footer>
+                  <small>{item.mode === 'CORE' ? 'Ejecutable en Core' : 'Relay ' + item.platform} · entrada: {item.input}{item.requiresConfirmation ? ' · confirma antes de ejecutar' : ''}</small>
+                  <button type="button" onClick={() => void preview(item)} disabled={previewing === item.id}>
+                    {previewing === item.id ? 'Probando…' : 'Vista previa'}
+                  </button>
+                </footer>
+              </article>
+            ))}
+          </div>
+        )}
+        <div className="detail-card" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 16 }}>
+          <button type="button" className="secondary-button" disabled={!hasPrevious || loading} onClick={() => void load(Math.max(0, pageStart - (catalog?.limit ?? 200)))}>← Anterior</button>
+          <span style={{ alignSelf: 'center' }}>{catalog ? String(pageStart + 1) + '–' + String(pageEnd) + ' / ' + String(catalog.count ?? pageEnd) : '—'}</span>
+          <button type="button" className="secondary-button" disabled={!hasNext || loading} onClick={() => void load(catalog?.nextOffset ?? pageEnd)}>Siguiente →</button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function SettingsView({
   session,
   preferences,
@@ -973,7 +1125,7 @@ function SettingsView({
     } catch (cause) { onProblem(errorText(cause)); }
   }
 
-  return <div className="page narrow"><header className="section-heading"><div><span className="eyebrow">CONTROL</span><h1>Ajustes</h1><p>Preferencias guardadas con tu cuenta, no con un dispositivo aislado.</p></div></header><section className="detail-card setting-row"><div><h2>Tema</h2><p>La experiencia prioriza oscuro, pero tu elección se sincroniza.</p></div><div className="theme-picker">{(['dark', 'light', 'system'] as const).map((theme) => <button type="button" className={preferences?.theme === theme ? 'active' : ''} onClick={() => void update(theme)} key={theme}>{theme === 'dark' ? 'Oscuro' : theme === 'light' ? 'Claro' : 'Sistema'}</button>)}</div></section><section className="detail-card"><h2>Privacidad</h2><p>Las claves privadas de IA no se incluyen en la web. Tus permisos y datos se restringen mediante identidad y RLS.</p></section><section className="detail-card"><h2>Voz, visión y automatización</h2><p>Estas capacidades están preparadas, pero aún no se muestran como activas porque no hay proveedores ni permisos reales.</p><button type="button" className="disabled-button" disabled>Próximamente</button></section></div>;
+  return <div className="page narrow"><header className="section-heading"><div><span className="eyebrow">CONTROL</span><h1>Ajustes</h1><p>Preferencias guardadas con tu cuenta, no con un dispositivo aislado.</p></div></header><section className="detail-card setting-row"><div><h2>Tema</h2><p>La experiencia prioriza oscuro, pero tu elección se sincroniza.</p></div><div className="theme-picker">{(['dark', 'light', 'system'] as const).map((theme) => <button type="button" className={preferences?.theme === theme ? 'active' : ''} onClick={() => void update(theme)} key={theme}>{theme === 'dark' ? 'Oscuro' : theme === 'light' ? 'Claro' : 'Sistema'}</button>)}</div></section><section className="detail-card"><h2>Privacidad</h2><p>Las claves privadas de IA no se incluyen en la web. Tus permisos y datos se restringen mediante identidad y RLS.</p></section><section className="detail-card"><h2>Capacidades conectadas</h2><div className="summary-grid"><Summary title="Voz Android" value="ACTIVA" hint="VoiceInteractionService" /><Summary title="Automatización" value="ACTIVA" hint="Skills + Scenes seguras" /><Summary title="Control doméstico" value="CONFIGURABLE" hint="Home Assistant REST" /></div><p style={{ marginTop: 16 }}>Los límites de hardware, permisos y gateways se muestran de forma explícita. Polaris no presenta integraciones desconectadas como si estuvieran activas.</p></section></div>;
 }
 
 function DevicesView({ devices, onRefresh }: { devices: Device[]; onRefresh(): void }) {

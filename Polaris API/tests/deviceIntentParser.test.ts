@@ -12,4 +12,4 @@ describe("device intent parser", () => {
   it("does not guess a family when none is mentioned", () => {
     expect(() => parseDeviceIntent("haz algo")).toThrow();
   });
-}
+});

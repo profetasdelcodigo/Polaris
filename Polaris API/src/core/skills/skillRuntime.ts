@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import { PolarisError } from "../../errors.js";
 
 export const skillStepSchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("open_url"), url: z.string().url().refine((value) => /^https?:\\/\\//i.test(value), "Solo se permiten URLs HTTP/HTTPS.") }),
+  z.object({ action: z.literal("open_url"), url: z.string().url().refine((value) => /^https?:\/\//i.test(value), "Solo se permiten URLs HTTP/HTTPS.") }),
   z.object({ action: z.literal("reveal_path"), path: z.string().trim().min(1).max(4096) }),
   z.object({ action: z.literal("system_info") }),
   z.object({ action: z.literal("copy_text"), text: z.string().max(20_000) }),

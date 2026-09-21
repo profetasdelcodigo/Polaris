@@ -43,6 +43,7 @@ export interface Memory {
 
 export interface Device {
   id: string;
+  client_id?: string | null;
   name: string;
   type: "WEB" | "ANDROID" | "DESKTOP" | "ROBOT";
   platform: string;
@@ -70,4 +71,33 @@ export interface Profile {
   timezone: string;
   created_at: string;
   updated_at: string;
+}
+
+
+export type RelayCommandStatus =
+  | "PENDING"
+  | "CLAIMED"
+  | "RUNNING"
+  | "SUCCEEDED"
+  | "FAILED"
+  | "CANCELLED"
+  | "EXPIRED";
+
+export interface RelayCommand {
+  id: string;
+  user_id: string;
+  source_device_id: string | null;
+  target_device_id: string;
+  capability_id: string;
+  action: string;
+  payload: Record<string, unknown>;
+  status: RelayCommandStatus;
+  requires_confirmation: boolean;
+  confirmation_at: string | null;
+  result: Record<string, unknown>;
+  error_message: string | null;
+  created_at: string;
+  expires_at: string;
+  claimed_at: string | null;
+  completed_at: string | null;
 }

@@ -24,6 +24,7 @@ import {
   type Message,
   type Preferences,
   type Profile,
+  type RelayCommand,
 } from '../services/polaris';
 import { PolarisApiError, type SseEvent } from '../services/api';
 import { getSupabaseClient } from '../services/supabase';
@@ -297,6 +298,8 @@ function Workspace({
   const [devices, setDevices] = useState<Device[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [preferences, setPreferences] = useState<Preferences | null>(null);
+  const [webDeviceId, setWebDeviceId] = useState<string | null>(null);
+  const relayBusy = useRef(false);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [problem, setProblem] = useState<string | null>(null);
@@ -335,6 +338,7 @@ function Workspace({
         registered,
         ...current.filter((device) => device.id !== registered.id),
       ]);
+      setWebDeviceId(registered.id);
     } catch (cause) {
       setProblem(errorText(cause));
     } finally {
@@ -343,6 +347,89 @@ function Workspace({
   };
 
   useEffect(() => { void refresh(); }, [session.access_token]);
+
+  useEffect(() => {
+    if (!webDeviceId) return;
+
+    let disposed = false;
+
+    const executeRelayCommand = async (command: RelayCommand) => {
+      if (command.requires_confirmation) {
+        setNotice(`Polaris Web recibió una orden que requiere confirmación: ${command.action}`);
+        return;
+      }
+
+      if (command.action !== 'web.open_url') {
+        await polarisApi.updateRelayCommand(
+          session,
+          command.id,
+          'FAILED',
+          {},
+          `Acción Web no implementada en este cliente: ${command.action}`,
+        );
+        return;
+      }
+
+      const rawUrl = command.payload.url;
+      if (typeof rawUrl !== 'string' || !/^https?:\/\//i.test(rawUrl)) {
+        await polarisApi.updateRelayCommand(
+          session,
+          command.id,
+          'FAILED',
+          {},
+          'La orden web.open_url no contiene una URL HTTP/HTTPS válida.',
+        );
+        return;
+      }
+
+      await polarisApi.updateRelayCommand(session, command.id, 'RUNNING');
+
+      try {
+        const opened = window.open(rawUrl, '_blank', 'noopener,noreferrer');
+        if (!opened) {
+          window.location.assign(rawUrl);
+        }
+        await polarisApi.updateRelayCommand(session, command.id, 'SUCCEEDED', {
+          opened: true,
+          url: rawUrl,
+          fallbackNavigation: !opened,
+        });
+        setNotice(`Polaris abrió ${rawUrl}`);
+      } catch (cause) {
+        const message = cause instanceof Error ? cause.message : 'El navegador rechazó la apertura.';
+        await polarisApi.updateRelayCommand(session, command.id, 'FAILED', {}, message);
+        setProblem(message);
+      }
+    };
+
+    const poll = async () => {
+      if (disposed || relayBusy.current) return;
+      relayBusy.current = true;
+      try {
+        const commands = await polarisApi.listRelayCommands(session, webDeviceId);
+        for (const command of commands.slice(0, 3)) {
+          if (disposed) break;
+          try {
+            const claimed = await polarisApi.claimRelayCommand(session, command.id, webDeviceId);
+            await executeRelayCommand(claimed);
+          } catch {
+            // Otro cliente Polaris puede haber reclamado la orden.
+          }
+        }
+      } catch {
+        // Relay is optional; chat remains usable.
+      } finally {
+        relayBusy.current = false;
+      }
+    };
+
+    void poll();
+    const timer = window.setInterval(() => void poll(), 2500);
+    return () => {
+      disposed = true;
+      window.clearInterval(timer);
+    };
+  }, [session, webDeviceId]);
 
   useEffect(() => {
     const client = getSupabaseClient();

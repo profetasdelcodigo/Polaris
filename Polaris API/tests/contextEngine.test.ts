@@ -24,6 +24,19 @@ function fakeDb(messageRows: FakeRow[]) {
       if (table === "conversations") return queryFor([{ id: "conversation" }]);
       if (table === "messages") return queryFor(messageRows);
       if (table === "memories") return queryFor([]);
+      if (table === "user_preferences") return queryFor([{
+        user_id: "user",
+        language: "es",
+        theme: "dark",
+        tone: "natural",
+        response_style: "equilibrado"
+      }]);
+      if (table === "profiles") return queryFor([{
+        id: "user",
+        display_name: "Polaris User",
+        language: "es",
+        timezone: "America/Lima"
+      }]);
       throw new Error(`Unexpected table: ${table}`);
     }
   };

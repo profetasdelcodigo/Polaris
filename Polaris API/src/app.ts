@@ -447,13 +447,33 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
       throw new PolarisError("PERMISSION_DENIED", "La entrada contiene instrucciones que no pueden convertirse automáticamente en una acción privilegiada.", 403);
     }
 
+    const preferredDevice =
+      typeof body.preferredDevice === "string"
+        ? body.preferredDevice.toUpperCase() as DeviceType
+        : undefined;
+    const preferredMode = typeof body.preferredMode === "string" ? body.preferredMode : undefined;
     const plan = planAgentTask({
       task: boundary.sanitized,
-      ...(typeof body.preferredDevice === "string"
-        ? { preferredDevice: body.preferredDevice.toUpperCase() as DeviceType }
-        : {}),
-      ...(typeof body.preferredMode === "string" ? { preferredMode: body.preferredMode } : {}),
+      ...(preferredDevice ? { preferredDevice } : {}),
+      ...(preferredMode ? { preferredMode } : {}),
       requireVerification: body.requireVerification !== false
+    });
+    const [profile, preferences, memories, devices] = await Promise.all([
+      getProfile(context),
+      getPreferences(context),
+      listMemories(context, boundary.sanitized),
+      listDevices(context)
+    ]);
+    const brain = preparePolarisBrain({
+      task: boundary.sanitized,
+      ...(preferredDevice ? { preferredDevice } : {}),
+      ...(preferredMode ? { preferredMode } : {}),
+      preferences: {
+        tone: preferences.tone,
+        response_style: preferences.response_style
+      },
+      memories,
+      devices
     });
     const latencyMode =
       plan.mode === "RESEARCH" ? "RESEARCH" :
@@ -463,6 +483,11 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
     return {
       ...plan,
       intent,
+      brain: {
+        ...brain,
+        profile,
+        preferences
+      },
       latencyBudget: createLatencyBudget(latencyMode)
     };
   });

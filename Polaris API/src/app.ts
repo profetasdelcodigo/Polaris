@@ -856,6 +856,42 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
     });
   });
 
+  app.post("/v1/devices/fabric/execute", async (request, reply) => {
+    const context = await contextFor(request, config);
+    const body = request.body as {
+      targetDeviceId?: unknown;
+      device?: unknown;
+      action?: unknown;
+      value?: unknown;
+      confirmed?: unknown;
+    };
+    if (typeof body.targetDeviceId !== "string" ||
+        !body.device || typeof body.device !== "object" ||
+        typeof body.action !== "string") {
+      throw new PolarisError("VALIDATION_ERROR", "targetDeviceId, device y action son obligatorios.", 400);
+    }
+    const device = body.device as SmartDevice;
+    if (!deviceActions.includes(body.action as DeviceAction)) {
+      throw new PolarisError("VALIDATION_ERROR", "Acción de dispositivo no soportada.", 400);
+    }
+    const command = compileDeviceCommand({
+      device,
+      action: body.action as DeviceAction,
+      ...(typeof body.value === "string" || typeof body.value === "number" || typeof body.value === "boolean"
+        ? { value: body.value }
+        : {}),
+      confirmed: body.confirmed === true
+    });
+    const relay = await createRelayCommand(context, {
+      targetDeviceId: identifierSchema.parse(body.targetDeviceId),
+      capabilityId: "device.fabric",
+      action: `device.${command.action.toLowerCase()}`,
+      payload: command as unknown as Record<string, unknown>,
+      requiresConfirmation: ["REBOOT", "LOCK", "UNLOCK"].includes(command.action)
+    });
+    return reply.status(201).send({ command, relay });
+  });
+
   app.post("/v1/relay/commands", async (request, reply) => {
     const context = await contextFor(request, config);
     const body = request.body as Record<string, unknown>;

@@ -200,6 +200,32 @@ export const api = {
     });
   },
 
+  getExperienceBrief(input: {
+    task: string;
+    preferredDevice?: string;
+    preferredMode?: string;
+    tone?: string;
+    responseStyle?: string;
+  }): Promise<JsonObject> {
+    return request("/v1/experience/brief", { method: "POST", body: JSON.stringify(input) });
+  },
+
+  resolveDevice(query: string): Promise<JsonObject> {
+    return request("/v1/devices/resolve", { method: "POST", body: JSON.stringify({ query }) });
+  },
+
+  compileScene(scene: JsonObject): Promise<JsonObject> {
+    return request("/v1/automation/scene/compile", { method: "POST", body: JSON.stringify(scene) });
+  },
+
+  designSkill(task: string): Promise<JsonObject> {
+    return request("/v1/skills/studio", { method: "POST", body: JSON.stringify({ task }) });
+  },
+
+  getOrbitVisual(mode: string, state: string): Promise<JsonObject> {
+    return request("/v1/visuals/orbit", { method: "POST", body: JSON.stringify({ mode, state }) });
+  },
+
   updateRelayCommand(
     commandId: string,
     status: RelayCommand["status"],

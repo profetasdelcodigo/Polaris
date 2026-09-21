@@ -14,6 +14,13 @@ import { planUniversalTask, universalCatalogStats } from "./core/automation/univ
 import { listSkillCatalog, skillCatalogCapacity, skillCatalogCapacityByDevice } from "./core/skills/skillCatalog.js";
 import { skillFingerprint, validateSkillProgram } from "./core/skills/skillRuntime.js";
 import { composeSkillFromIntent, skillComposerCatalog } from "./core/skills/skillComposer.js";
+import { buildPersonalityProfile, extractMemoryCandidates, summarizeAdaptiveContext } from "./core/context/adaptiveContext.js";
+import { planAgentTask } from "./core/planning/agentPlanner.js";
+import { createExecutionTrace } from "./core/execution/executionTrace.js";
+import { createContinuityCapsule, validateContinuityCapsule } from "./core/continuity/continuityCapsule.js";
+import { planDeepResearch } from "./core/research/deepResearchPlanner.js";
+import { createRoutine, routinePreview } from "./core/routines/routineEngine.js";
+import { featureRegistrySummary, polarisFeatureRegistry } from "./core/features/featureRegistry.js";
 import {
   claimRelayCommand,
   createRelayCommand,
@@ -141,6 +148,153 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
         ? new PolarisError("VALIDATION_ERROR", "La solicitud contiene datos inválidos.", 400, { cause: error })
         : asPolarisError(error);
     void reply.status(mapped.statusCode).send(toProblem(mapped, requestId(request)));
+  });
+
+  app.get("/v1/features", async () => ({
+    registryVersion: "adaptive-features-v1",
+    ...featureRegistrySummary(),
+    features: polarisFeatureRegistry
+  }));
+
+  app.post("/v1/agent/plan", async (request) => {
+    const context = await contextFor(request, config);
+    const body = request.body as {
+      task?: unknown;
+      preferredDevice?: unknown;
+      preferredMode?: unknown;
+      requireVerification?: unknown;
+    };
+    if (typeof body.task !== "string" || !body.task.trim()) {
+      throw new PolarisError("VALIDATION_ERROR", "task es obligatorio.", 400);
+    }
+
+    return planAgentTask({
+      task: body.task,
+      ...(typeof body.preferredDevice === "string"
+        ? { preferredDevice: body.preferredDevice.toUpperCase() as DeviceType }
+        : {}),
+      ...(typeof body.preferredMode === "string" ? { preferredMode: body.preferredMode } : {}),
+      requireVerification: body.requireVerification !== false
+    });
+  });
+
+  app.post("/v1/context/adaptive", async (request) => {
+    const context = await contextFor(request, config);
+    const body = request.body as {
+      task?: unknown;
+      preferredMode?: unknown;
+    };
+    const task = typeof body.task === "string" ? body.task.trim().slice(0, 4_000) : "";
+    const profile = await getProfile(context);
+    const preferences = await getPreferences(context);
+    const memories = await listMemories(context, task || undefined);
+    const devices = await listDevices(context);
+    const personality = buildPersonalityProfile(
+      task,
+      {
+        tone: typeof preferences.tone === "string" ? preferences.tone : null,
+        response_style: typeof preferences.response_style === "string" ? preferences.response_style : null
+      },
+      typeof body.preferredMode === "string" ? body.preferredMode : null
+    );
+    const summary = summarizeAdaptiveContext({ profile, preferences, memories, devices, personality });
+    return {
+      profile,
+      preferences,
+      memories,
+      devices,
+      personality,
+      summary
+    };
+  });
+
+  app.post("/v1/memory/candidates", async (request, reply) => {
+    const context = await contextFor(request, config);
+    const body = request.body as {
+      message?: unknown;
+      persist?: unknown;
+    };
+    if (typeof body.message !== "string" || !body.message.trim()) {
+      throw new PolarisError("VALIDATION_ERROR", "message es obligatorio.", 400);
+    }
+
+    const candidates = extractMemoryCandidates(body.message);
+    if (body.persist !== true || candidates.length === 0) {
+      return {
+        persisted: false,
+        requiresExplicitPersist: true,
+        candidates
+      };
+    }
+
+    const persisted = [];
+    for (const candidate of candidates) {
+      persisted.push(await createMemory(context, {
+        category: candidate.category,
+        content: candidate.content,
+        importance: candidate.importance,
+        source: "user",
+        metadata: { reason: candidate.reason, adaptiveMemory: true }
+      }));
+    }
+
+    return reply.status(201).send({
+      persisted: true,
+      candidates,
+      memories: persisted
+    });
+  });
+
+  app.post("/v1/research/plan", async (request) => {
+    await contextFor(request, config);
+    const body = request.body as { question?: unknown };
+    if (typeof body.question !== "string" || !body.question.trim()) {
+      throw new PolarisError("VALIDATION_ERROR", "question es obligatorio.", 400);
+    }
+    return planDeepResearch(body.question);
+  });
+
+  app.post("/v1/continuity/capsule", async (request) => {
+    await contextFor(request, config);
+    const body = request.body as {
+      task?: unknown;
+      conversationId?: unknown;
+      sourceDevice?: unknown;
+      targetDevice?: unknown;
+      state?: unknown;
+      pendingSkills?: unknown;
+      ttlSeconds?: unknown;
+    };
+    if (typeof body.task !== "string" || !body.task.trim()) {
+      throw new PolarisError("VALIDATION_ERROR", "task es obligatorio.", 400);
+    }
+    const state = body.state && typeof body.state === "object" && !Array.isArray(body.state)
+      ? body.state as Record<string, unknown>
+      : {};
+    const pendingSkills = Array.isArray(body.pendingSkills)
+      ? body.pendingSkills.filter((value): value is string => typeof value === "string").slice(0, 20)
+      : [];
+
+    return createContinuityCapsule({
+      task: body.task,
+      ...(typeof body.conversationId === "string" ? { conversationId: body.conversationId } : {}),
+      ...(typeof body.sourceDevice === "string" ? { sourceDevice: body.sourceDevice.toUpperCase() as DeviceType } : {}),
+      ...(typeof body.targetDevice === "string" ? { targetDevice: body.targetDevice.toUpperCase() as DeviceType } : {}),
+      state,
+      pendingSkills,
+      ...(typeof body.ttlSeconds === "number" ? { ttlSeconds: body.ttlSeconds } : {})
+    });
+  });
+
+  app.post("/v1/continuity/validate", async (request) => {
+    await contextFor(request, config);
+    return validateContinuityCapsule(request.body);
+  });
+
+  app.post("/v1/routines/preview", async (request) => {
+    await contextFor(request, config);
+    const routine = createRoutine(request.body);
+    return routinePreview(routine);
   });
 
   app.get("/v1/health", async () => ({
@@ -273,6 +427,12 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
 
     const program = composeSkillFromIntent(body.task);
     const fingerprint = skillFingerprint(program);
+    const trace = createExecutionTrace({
+      task: body.task.trim(),
+      fingerprint,
+      targetDeviceId: target.id,
+      actions: program.steps.map((step) => ({ action: step.action, device: target.type as DeviceType }))
+    });
     const action = target.type === "ANDROID"
       ? "android.run_skill"
       : target.type === "WEB"
@@ -286,7 +446,8 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
       payload: {
         program,
         task: body.task.trim(),
-        fingerprint
+        fingerprint,
+        trace
       },
       requiresConfirmation: body.requireConfirmation === true,
       ttlSeconds: 120
@@ -296,6 +457,7 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
       queued: true,
       runtime: "polaris-skill-v1",
       fingerprint,
+      trace,
       target: {
         id: target.id,
         name: target.name,

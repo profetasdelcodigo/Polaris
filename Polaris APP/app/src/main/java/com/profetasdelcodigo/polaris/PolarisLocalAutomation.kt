@@ -42,6 +42,15 @@ object PolarisLocalAutomation {
             text.matches(Regex("(abre|abrir) ajustes")) || text == "ajustes" || text == "configuración" || text == "configuracion" -> LocalAutomationAction.OPEN_SETTINGS
             text.matches(Regex("(abre|abrir) ajustes de wifi")) || text == "wifi" || text == "wi-fi" -> LocalAutomationAction.OPEN_WIFI_SETTINGS
             text.matches(Regex("(abre|abrir) bluetooth")) || text == "bluetooth" -> LocalAutomationAction.OPEN_BLUETOOTH_SETTINGS
+            text.matches(Regex("(abre|abrir) ajustes de (pantalla|display)")) || text == "pantalla" -> LocalAutomationAction.OPEN_DISPLAY_SETTINGS
+            text.matches(Regex("(abre|abrir) ajustes de sonido")) || text == "sonido" || text == "audio" -> LocalAutomationAction.OPEN_SOUND_SETTINGS
+            text.matches(Regex("(abre|abrir) ajustes de bateria")) || text == "bateria" -> LocalAutomationAction.OPEN_BATTERY_SETTINGS
+            text.matches(Regex("(abre|abrir) ajustes de ubicacion")) || text == "ubicacion" -> LocalAutomationAction.OPEN_LOCATION_SETTINGS
+            text.matches(Regex("(abre|abrir) ajustes de notificaciones")) -> LocalAutomationAction.OPEN_NOTIFICATION_SETTINGS
+            text.matches(Regex("(abre|abrir) accesibilidad")) -> LocalAutomationAction.OPEN_ACCESSIBILITY_SETTINGS
+            text.matches(Regex("(abre|abrir) ajustes de idioma")) || text == "idioma" -> LocalAutomationAction.OPEN_LANGUAGE_SETTINGS
+            text.matches(Regex("(abre|abrir) ajustes de teclado")) || text == "teclado" -> LocalAutomationAction.OPEN_INPUT_SETTINGS
+            text.matches(Regex("(que hay en mi pantalla|que ves|describe mi pantalla|lee mi pantalla|observar pantalla)")) -> LocalAutomationAction.DESCRIBE_SCREEN
             text.matches(Regex("(baja|bajar|desplaza hacia abajo|haz scroll hacia abajo|scroll abajo)")) -> LocalAutomationAction.SCROLL_DOWN
             text.matches(Regex("(sube|subir|desplaza hacia arriba|haz scroll hacia arriba|scroll arriba)")) -> LocalAutomationAction.SCROLL_UP
             else -> parseTap(text)

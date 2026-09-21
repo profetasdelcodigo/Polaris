@@ -11,6 +11,12 @@ import { ConversationEngine } from "./core/conversation/conversationEngine.js";
 import { ToolEngine, type RegisteredToolName } from "./core/tools/toolEngine.js";
 import { capabilityRegistry, routeCapabilities } from "./core/capabilities/capabilityRegistry.js";
 import { listSkillCatalog, skillCatalogCapacity } from "./core/skills/skillCatalog.js";
+import {
+  claimRelayCommand,
+  createRelayCommand,
+  listPendingRelayCommands,
+  updateRelayCommand
+} from "./core/relay/deviceCommandRepository.js";
 import { hasSupabaseConfiguration, loadConfig, type PolarisConfig } from "./config.js";
 import {
   createConversation,
@@ -220,6 +226,78 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
         : undefined,
       requiredCapabilities,
       allowRemote: body.allowRemote !== false
+    });
+  });
+
+  app.post("/v1/relay/commands", async (request, reply) => {
+    const context = await contextFor(request, config);
+    const body = request.body as Record<string, unknown>;
+    if (typeof body.targetDeviceId !== "string" ||
+        typeof body.capabilityId !== "string" ||
+        typeof body.action !== "string") {
+      throw new PolarisError("VALIDATION_ERROR", "Se requiere targetDeviceId, capabilityId y action.", 400);
+    }
+
+    const payload = body.payload;
+    if (payload !== undefined && (typeof payload !== "object" || payload === null || Array.isArray(payload))) {
+      throw new PolarisError("VALIDATION_ERROR", "payload debe ser un objeto JSON.", 400);
+    }
+
+    const command = await createRelayCommand(context, {
+      targetDeviceId: identifierSchema.parse(body.targetDeviceId),
+      sourceDeviceId: body.sourceDeviceId === undefined ? undefined : identifierSchema.parse(body.sourceDeviceId),
+      capabilityId: body.capabilityId.slice(0, 160),
+      action: body.action.slice(0, 160),
+      payload: payload as Record<string, unknown> | undefined,
+      requiresConfirmation: body.requiresConfirmation !== false,
+      ttlSeconds: typeof body.ttlSeconds === "number" ? body.ttlSeconds : undefined
+    });
+
+    return reply.status(201).send(command);
+  });
+
+  app.get("/v1/relay/commands", async (request) => {
+    const context = await contextFor(request, config);
+    const query = request.query as { targetDeviceId?: unknown; limit?: unknown };
+    if (typeof query.targetDeviceId !== "string") {
+      throw new PolarisError("VALIDATION_ERROR", "targetDeviceId es obligatorio.", 400);
+    }
+    const limit = typeof query.limit === "string" ? Number(query.limit) : 20;
+    return listPendingRelayCommands(
+      context,
+      identifierSchema.parse(query.targetDeviceId),
+      Number.isFinite(limit) ? limit : 20
+    );
+  });
+
+  app.post("/v1/relay/commands/:id/claim", async (request) => {
+    const context = await contextFor(request, config);
+    const id = identifierSchema.parse((request.params as { id?: unknown }).id);
+    const body = request.body as { targetDeviceId?: unknown };
+    if (typeof body.targetDeviceId !== "string") {
+      throw new PolarisError("VALIDATION_ERROR", "targetDeviceId es obligatorio.", 400);
+    }
+    return claimRelayCommand(context, id, identifierSchema.parse(body.targetDeviceId));
+  });
+
+  app.patch("/v1/relay/commands/:id", async (request) => {
+    const context = await contextFor(request, config);
+    const id = identifierSchema.parse((request.params as { id?: unknown }).id);
+    const body = request.body as Record<string, unknown>;
+    const allowed = ["PENDING", "CLAIMED", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED", "EXPIRED"] as const;
+    if (typeof body.status !== "string" || !allowed.includes(body.status as (typeof allowed)[number])) {
+      throw new PolarisError("VALIDATION_ERROR", "Estado de orden no válido.", 400);
+    }
+
+    const result = body.result;
+    if (result !== undefined && (typeof result !== "object" || result === null || Array.isArray(result))) {
+      throw new PolarisError("VALIDATION_ERROR", "result debe ser un objeto JSON.", 400);
+    }
+
+    return updateRelayCommand(context, id, {
+      status: body.status as never,
+      result: result as Record<string, unknown> | undefined,
+      errorMessage: typeof body.errorMessage === "string" ? body.errorMessage.slice(0, 2000) : null
     });
   });
 

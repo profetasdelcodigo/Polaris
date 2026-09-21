@@ -49,6 +49,16 @@ export const capabilityRegistry: readonly PolarisCapability[] = [
     composable: true
   },
   {
+    id: "web.open_url",
+    name: "Abrir URL Web",
+    description: "Abrir una URL HTTP/HTTPS en una sesión Web Polaris autenticada.",
+    kinds: all("WEB", "REMOTE"),
+    availability: { WEB: "AVAILABLE", ANDROID: "NOT_IMPLEMENTED", DESKTOP: "AVAILABLE", ROBOT: "NOT_IMPLEMENTED" },
+    requiresConfirmation: false,
+    danger: "LOW",
+    composable: true
+  },
+  {
     id: "web.search",
     name: "Búsqueda web",
     description: "Consultar información pública en Internet.",

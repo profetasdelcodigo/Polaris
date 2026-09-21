@@ -260,3 +260,59 @@ export function executeDeviceCommand(
     body: JSON.stringify(input),
   });
 }
+
+export function getExperienceBrief(
+  accessToken: string,
+  input: { task: string; preferredDevice?: string; preferredMode?: string; tone?: string; responseStyle?: string },
+): Promise<Record<string, unknown>> {
+  return apiRequest('/v1/experience/brief', accessToken, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+}
+
+export function resolveDevice(
+  accessToken: string,
+  query: string,
+): Promise<Record<string, unknown>> {
+  return apiRequest('/v1/devices/resolve', accessToken, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ query }),
+  });
+}
+
+export function compileScene(
+  accessToken: string,
+  scene: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  return apiRequest('/v1/automation/scene/compile', accessToken, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(scene),
+  });
+}
+
+export function designSkill(
+  accessToken: string,
+  task: string,
+): Promise<Record<string, unknown>> {
+  return apiRequest('/v1/skills/studio', accessToken, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ task }),
+  });
+}
+
+export function getOrbitVisual(
+  accessToken: string,
+  mode: string,
+  state: string,
+): Promise<Record<string, unknown>> {
+  return apiRequest('/v1/visuals/orbit', accessToken, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ mode, state }),
+  });
+}

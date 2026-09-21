@@ -36,11 +36,11 @@ jobs:
       - name: Package Web
         run: |
           cd "Polaris WEB"
-          zip -r "../Polaris-WEB-${{ github.ref_name }}.zip" dist
+          zip -r "../Polaris-WEB-0.9.0.zip" dist
       - uses: actions/upload-artifact@v4
         with:
           name: polaris-web-${{ github.ref_name }}
-          path: "Polaris-WEB-${{ github.ref_name }}.zip"
+          path: "Polaris-WEB-0.9.0.zip"
 
   android:
     name: Android APK
@@ -62,11 +62,11 @@ jobs:
       - name: Collect APKs
         run: |
           mkdir -p ../android-release
-          cp app/build/outputs/apk/debug/app-debug.apk ../android-release/Polaris-${{ github.ref_name }}-debug.apk
-          cp app/build/outputs/apk/release/app-release-unsigned.apk ../android-release/Polaris-${{ github.ref_name }}-release-unsigned.apk
+          cp app/build/outputs/apk/debug/app-debug.apk ../android-release/Polaris-0.9.0-debug.apk
+          cp app/build/outputs/apk/release/app-release-unsigned.apk ../android-release/Polaris-0.9.0-release-unsigned.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: polaris-android-${{ github.ref_name }}
+          name: polaris-android-0.9.0
           path: "android-release/*.apk"
 
   desktop:
@@ -101,7 +101,7 @@ jobs:
         run: pnpm tauri build
       - uses: actions/upload-artifact@v4
         with:
-          name: polaris-desktop-${{ runner.os }}-${{ github.ref_name }}
+          name: polaris-desktop-${{ runner.os }}-0.9.0
           path: ${{ matrix.bundle_glob }}
           if-no-files-found: error
 

@@ -3,7 +3,7 @@ import { inspectPromptBoundary } from "../security/promptBoundary.js";
 import { classifyIntent } from "../intent/intentClassifier.js";
 import { createLatencyBudget } from "../performance/latencyBudget.js";
 import { buildExperienceBrief } from "../experience/experienceEngine.js";
-import { buildPersonalityProfile, type PersonaProfile } from "../personality/personaEngine.js";
+import { buildPersonaProfile, type PersonaProfile } from "../personality/personaEngine.js";
 import { buildMemoryLifecycleReport, type MemoryLike } from "../memory/memoryLifecycle.js";
 import { extractMemoryCandidates, buildPersonalityProfile as buildAdaptivePersonality } from "../context/adaptiveContext.js";
 
@@ -37,7 +37,7 @@ export function preparePolarisBrain(input: BrainInput) {
     input.preferences ?? {},
     input.preferredMode
   );
-  const persona: PersonaProfile = buildPersonalityProfile({
+  const persona: PersonaProfile = buildPersonaProfile({
     task: boundary.sanitized,
     preferredMode: input.preferredMode,
     tone: input.tone ?? input.preferences?.tone,

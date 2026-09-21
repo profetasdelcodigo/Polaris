@@ -1,4 +1,5 @@
 import { z } from "zod";
+import crypto from "node:crypto";
 import { PolarisError } from "../../errors.js";
 
 export const skillStepSchema = z.discriminatedUnion("action", [
@@ -38,4 +39,11 @@ export function validateSkillProgram(raw: unknown): PolarisSkillProgram {
   }
 
   return parsed.data;
+}
+
+export function skillFingerprint(program: PolarisSkillProgram): string {
+  return crypto.createHash("sha256")
+    .update(JSON.stringify(program))
+    .digest("hex")
+    .slice(0, 16);
 }

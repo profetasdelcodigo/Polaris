@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import type {
   DeviceType,
   ExecutionBackend,
-  PolarisCapability,
+  CapabilityAvailability,
   UniversalTaskPlan,
   UniversalTaskRequest,
   UniversalTaskRisk,
@@ -20,7 +20,7 @@ type CapabilityRecord = {
   id: string;
   name: string;
   description: string;
-  availability: PolarisCapability["availability"];
+  availability: Record<DeviceType, CapabilityAvailability>;
   requiresConfirmation: boolean;
   danger: UniversalTaskRisk;
   composable: boolean;

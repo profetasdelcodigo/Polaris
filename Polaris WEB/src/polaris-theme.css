@@ -198,3 +198,100 @@ a:focus-visible {
     display: none;
   }
 }
+
+
+/* Polaris living-core visual layer */
+.dashboard-orbit-shell {
+  position: relative;
+  min-height: 300px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  margin: 0 0 1.5rem;
+  border: 1px solid rgba(125, 222, 255, .12);
+  border-radius: 2rem;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(93, 230, 255, .09), transparent 12rem),
+    linear-gradient(140deg, rgba(93,230,255,.035), rgba(155,130,255,.04));
+}
+.dashboard-orbit-copy {
+  display: grid;
+  gap: .45rem;
+  min-width: 180px;
+}
+.dashboard-orbit-copy strong { font-size: 1.15rem; letter-spacing: -.02em; }
+.dashboard-orbit-copy span:last-child { color: var(--muted, #96a4b8); font-size: .82rem; line-height: 1.5; }
+
+.polaris-orbit-3d {
+  --orbit-x: 0deg;
+  --orbit-y: 0deg;
+  --orbit-accent: #65e7ff;
+  position: relative;
+  width: 220px;
+  height: 220px;
+  display: grid;
+  place-items: center;
+  perspective: 900px;
+  transform: rotateX(var(--orbit-y)) rotateY(var(--orbit-x));
+  transition: transform .25s ease;
+  isolation: isolate;
+}
+.polaris-orbit-3d.mode-creative { --orbit-accent: #b48cff; }
+.polaris-orbit-3d.mode-research { --orbit-accent: #8da8ff; }
+.polaris-orbit-3d.mode-operator { --orbit-accent: #61f4c3; }
+.polaris-orbit-3d.mode-calm { --orbit-accent: #9de9ff; }
+.polaris-orbit-3d.state-warning { --orbit-accent: #ffca70; }
+.polaris-orbit-3d.state-error { --orbit-accent: #ff8fa8; }
+.polaris-orbit-3d.state-offline { --orbit-accent: #8994a7; }
+.polaris-orbit-glow {
+  position: absolute;
+  width: 110px; height: 110px; border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--orbit-accent) 45%, transparent), transparent 68%);
+  filter: blur(5px);
+  animation: polaris-core-breathe 3.4s ease-in-out infinite;
+}
+.polaris-orbit-ring {
+  position: absolute;
+  border: 1px solid color-mix(in srgb, var(--orbit-accent) 55%, transparent);
+  border-radius: 50%;
+  transform-style: preserve-3d;
+  box-shadow: 0 0 26px color-mix(in srgb, var(--orbit-accent) 10%, transparent);
+}
+.polaris-orbit-ring.ring-a { width: 170px; height: 170px; transform: rotateX(67deg) rotateZ(12deg); animation: polaris-orbit-a 8s linear infinite; }
+.polaris-orbit-ring.ring-b { width: 145px; height: 190px; transform: rotateY(62deg) rotateZ(-25deg); animation: polaris-orbit-b 11s linear infinite reverse; }
+.polaris-orbit-ring.ring-c { width: 190px; height: 120px; transform: rotateX(26deg) rotateZ(71deg); animation: polaris-orbit-c 14s linear infinite; }
+.polaris-orbit-core {
+  width: 74px; height: 74px; border-radius: 24px; z-index: 3;
+  display: grid; place-items: center;
+  background: linear-gradient(145deg, #dffbff 0%, #8ee8ff 35%, #7e8fff 100%);
+  color: #06101d;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 0 36px color-mix(in srgb, var(--orbit-accent) 30%, transparent);
+  transform: translateZ(42px);
+}
+.polaris-orbit-star { font-size: 1.8rem; filter: drop-shadow(0 0 7px rgba(255,255,255,.55)); }
+.polaris-orbit-particle {
+  --angle: calc(var(--particle-i) * 20deg);
+  position: absolute;
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--orbit-accent);
+  box-shadow: 0 0 12px var(--orbit-accent);
+  transform: rotate(var(--angle)) translateX(calc(58px + var(--particle-i) * 2px)) rotate(calc(var(--angle) * -1));
+  opacity: calc(.28 + (var(--particle-i) / 30));
+}
+.polaris-orbit-label {
+  position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+  font-size: .58rem; letter-spacing: .26em; color: color-mix(in srgb, var(--orbit-accent) 68%, #fff);
+}
+@keyframes polaris-core-breathe { 0%,100% { transform: scale(.92); opacity: .65; } 50% { transform: scale(1.08); opacity: 1; } }
+@keyframes polaris-orbit-a { to { transform: rotateX(67deg) rotateZ(372deg); } }
+@keyframes polaris-orbit-b { to { transform: rotateY(62deg) rotateZ(-385deg); } }
+@keyframes polaris-orbit-c { to { transform: rotateX(26deg) rotateZ(431deg); } }
+@media (max-width: 780px) {
+  .dashboard-orbit-shell { min-height: 250px; }
+  .dashboard-orbit-copy { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .polaris-orbit-ring, .polaris-orbit-glow { animation: none !important; }
+}

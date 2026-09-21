@@ -236,3 +236,27 @@ export async function streamChat(
     reader.releaseLock();
   }
 }
+
+
+export type SmartDeviceCommandInput = {
+  targetDeviceId: string;
+  device: Record<string, unknown>;
+  action: string;
+  value?: string | number | boolean;
+  confirmed?: boolean;
+};
+
+export function getDeviceFabricProtocols(accessToken: string): Promise<Record<string, unknown>> {
+  return apiRequest('/v1/devices/fabric/protocols', accessToken);
+}
+
+export function executeDeviceCommand(
+  accessToken: string,
+  input: SmartDeviceCommandInput,
+): Promise<Record<string, unknown>> {
+  return apiRequest('/v1/devices/fabric/execute', accessToken, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+}

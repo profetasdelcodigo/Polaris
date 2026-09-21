@@ -491,6 +491,15 @@ private fun HomeScreen(
                             "android.open_settings" -> LocalAutomationAction.OPEN_SETTINGS
                             "android.open_wifi" -> LocalAutomationAction.OPEN_WIFI_SETTINGS
                             "android.open_bluetooth" -> LocalAutomationAction.OPEN_BLUETOOTH_SETTINGS
+                            "android.open_display" -> LocalAutomationAction.OPEN_DISPLAY_SETTINGS
+                            "android.open_sound" -> LocalAutomationAction.OPEN_SOUND_SETTINGS
+                            "android.open_battery" -> LocalAutomationAction.OPEN_BATTERY_SETTINGS
+                            "android.open_location" -> LocalAutomationAction.OPEN_LOCATION_SETTINGS
+                            "android.open_notifications" -> LocalAutomationAction.OPEN_NOTIFICATION_SETTINGS
+                            "android.open_accessibility" -> LocalAutomationAction.OPEN_ACCESSIBILITY_SETTINGS
+                            "android.open_language" -> LocalAutomationAction.OPEN_LANGUAGE_SETTINGS
+                            "android.open_input" -> LocalAutomationAction.OPEN_INPUT_SETTINGS
+                            "android.describe_screen" -> LocalAutomationAction.DESCRIBE_SCREEN
                             "android.scroll_up" -> LocalAutomationAction.SCROLL_UP
                             "android.scroll_down" -> LocalAutomationAction.SCROLL_DOWN
                             "android.tap_text" -> {

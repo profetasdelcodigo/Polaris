@@ -130,6 +130,29 @@ CI:
 - CI Android: SUCCESS en el commit que reparó la automatización; `:app:assembleDebug` completó correctamente.
 - Se corrigieron errores reales detectados por CI: servicio de automatización duplicado, referencias obsoletas, atributos de tema, declaración de botones de la sesión y acceso a Supabase Auth.
 
+
+## Estado universal de automatización
+
+Implementado en esta iteración:
+- Router universal de tareas con ciclo OBSERVE → LOCATE → ACT → VERIFY → RECOVER.
+- Endpoint autenticado `POST /v1/automation/plan`.
+- Relay autenticado entre dispositivos mediante comandos con expiración/claim/resultado.
+- Ejecución remota real en Android para navegación, ajustes, scroll, pulsaciones y observación de pantalla.
+- Ejecución remota real en PC para abrir URLs, revelar rutas y consultar información del sistema.
+- El cliente Android registra su dispositivo y consume órdenes pendientes.
+- El cliente PC registra su dispositivo y consume órdenes pendientes.
+- Catálogo declarativo generado: 48.000 recetas únicas antes de herramientas incorporadas; el endpoint expone capacidad por plataforma.
+- Cobertura de catálogo actual por plataforma: Web 40.800, Android 43.200, Desktop 43.200 y Robot 2.400 recetas declarativas.
+- Se mantiene separación explícita entre `AVAILABLE`, `PARTIAL` y `PLANNED`; una receta de catálogo no se considera una función ejecutable por sí sola.
+
+Dirección del siguiente bloque:
+- ampliar observación/visión y localización semántica,
+- cerrar más acciones nativas de PC con permisos explícitos,
+- conectar más comandos Android con el relay,
+- añadir ejecución verificada multi-paso con recuperación,
+- integrar el activo 3D real y mapear sus animaciones a estados del Core,
+- ampliar herramientas Web con APIs del navegador y companions cuando los permisos estén disponibles.
+
 ## Próximo objetivo
 
 Cerrar Fase 1 con una prueba real del proveedor de IA y contratos/tests finales. Después, ejecutar la prueba real Web → Android → PC y verificar expiración/refresh de sesión. Luego completar el planificador de automatización multi-paso, observación/localización/verificación/recuperación y el puente seguro Android ↔ Core. Después: voz continua/TTS, memoria semántica, visión/OCR, automatización PC con permisos, sincronización realtime cuando aporte valor y una pasada final de diseño, accesibilidad, rendimiento, pruebas y empaquetado. No se declarará 100% hasta que cada bloque tenga implementación y verificación real. CI Android volvió a confirmar `:app:assembleDebug` después de TTS y modo continuo. CI Node/Web/PC: SUCCESS tras integrar Realtime Web. Las capacidades de sistema/automatización inspiradas en ARTEMIS quedan separadas como módulo posterior y requieren permisos explícitos.

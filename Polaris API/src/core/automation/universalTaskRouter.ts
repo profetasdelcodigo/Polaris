@@ -44,7 +44,14 @@ const intents: Array<{
   { phrases: ["navegador", "web", "página", "sitio", "youtube", "google"], capabilityIds: ["web.browser"], fallbackIds: ["core.chat"], preferred: "WEB", risk: "MEDIUM" },
   { phrases: ["buscar", "investiga", "consulta internet"], capabilityIds: ["web.search"], fallbackIds: ["core.chat"], preferred: "WEB", risk: "LOW" },
   { phrases: ["robot", "mueve", "mover brazo", "sensor"], capabilityIds: ["robot.motion"], fallbackIds: ["remote.relay"], preferred: "ROBOT", risk: "CRITICAL" },
-  { phrases: ["recuerda", "memoriza", "olvida"], capabilityIds: ["core.memory"], fallbackIds: ["core.chat"], risk: "MEDIUM" }
+  { phrases: ["recuerda", "memoriza", "olvida"], capabilityIds: ["core.memory"], fallbackIds: ["core.chat"], risk: "MEDIUM" },
+  { phrases: ["continua", "continúa", "reanuda", "sigue desde donde quede", "retoma"], capabilityIds: ["task.continuity"], fallbackIds: ["remote.relay", "core.context"], risk: "LOW" },
+  { phrases: ["handoff", "pásalo al", "pasalo al", "continua en mi pc", "continúa en mi pc", "continua en mi celular", "continúa en mi celular"], capabilityIds: ["task.continuity", "remote.safe_handoff"], fallbackIds: ["core.chat"], risk: "MEDIUM" },
+  { phrases: ["modo estudio", "concentracion", "concentración", "sin distracciones"], capabilityIds: ["core.context", "desktop.local_control", "android.accessibility"], fallbackIds: ["core.chat"], risk: "MEDIUM" },
+  { phrases: ["modo urgente", "urgente", "ahora mismo"], capabilityIds: ["core.context", "core.skill_runtime"], fallbackIds: ["core.chat"], risk: "MEDIUM" },
+  { phrases: ["investiga a fondo", "investiga profundamente", "investigacion profunda", "investigación profunda"], capabilityIds: ["research.deep_plan", "research.contradiction_check"], fallbackIds: ["core.chat"], preferred: "WEB", risk: "LOW" },
+  { phrases: ["hazme una rutina", "crea una rutina", "automatiza esto", "guarda este comando"], capabilityIds: ["core.chat", "core.audit"], fallbackIds: ["core.chat"], risk: "MEDIUM" },
+  { phrases: ["detente", "para todo", "cancela la automatizacion", "cancela la automatización"], capabilityIds: ["security.emergency_stop"], fallbackIds: ["core.chat"], risk: "LOW" }
 ];
 
 function normalize(text: string): string {

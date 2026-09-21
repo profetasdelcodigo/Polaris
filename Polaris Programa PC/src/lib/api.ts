@@ -156,7 +156,7 @@ export const api = {
     return request(
       `/v1/relay/commands?targetDeviceId=${encodeURIComponent(targetDeviceId)}`
     );
-  }
+  },
 
   claimRelayCommand(commandId: string, targetDeviceId: string): Promise<RelayCommand> {
     return request(`/v1/relay/commands/${encodeURIComponent(commandId)}/claim`, {

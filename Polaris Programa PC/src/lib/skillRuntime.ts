@@ -26,6 +26,7 @@ export interface DesktopSkillResult {
 const MAX_STEPS = 12;
 const MAX_TEXT = 20_000;
 const MAX_WAIT = 10_000;
+const MAX_TOTAL_RUNTIME = 30_000;
 
 export function validateDesktopSkill(program: unknown): DesktopSkillProgram {
   if (!program || typeof program !== "object") throw new Error("El skill no es un objeto válido.");
@@ -96,8 +97,12 @@ export async function executeDesktopSkill(
 ): Promise<DesktopSkillResult> {
   const skill = validateDesktopSkill(program);
   const results: Array<Record<string, unknown>> = [];
+  const startedAt = Date.now();
 
   for (let index = 0; index < skill.steps.length; index += 1) {
+    if (Date.now() - startedAt > MAX_TOTAL_RUNTIME) {
+      throw new Error(`El skill superó el tiempo máximo de ejecución de ${MAX_TOTAL_RUNTIME / 1000}s.`);
+    }
     const step = skill.steps[index];
     switch (step.action) {
       case "open_url":

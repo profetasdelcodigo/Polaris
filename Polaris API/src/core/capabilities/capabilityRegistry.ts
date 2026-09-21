@@ -189,6 +189,16 @@ export const capabilityRegistry: readonly PolarisCapability[] = [
     composable: true
   },
   {
+    id: "remote.safe_handoff",
+    name: "Handoff seguro",
+    description: "Delegación automática entre dispositivos para acciones de bajo riesgo como abrir URL o abrir superficies del sistema.",
+    kinds: all("REMOTE", "CORE"),
+    availability: { WEB: "AVAILABLE", ANDROID: "AVAILABLE", DESKTOP: "AVAILABLE", ROBOT: "NOT_IMPLEMENTED" },
+    requiresConfirmation: false,
+    danger: "MEDIUM",
+    composable: true
+  },
+  {
     id: "remote.relay",
     name: "Relay entre dispositivos",
     description: "Enviar un plan aprobado a otro dispositivo Polaris autenticado.",

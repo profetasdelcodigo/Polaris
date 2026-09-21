@@ -34,7 +34,7 @@ describe("adaptive core", () => {
       { content: "comida favorita", importance: 5 },
       { content: "Polaris se ejecuta en mi PC", importance: 3 }
     ]);
-    expect(ranked[0].content).toContain("Polaris");
+    expect(ranked[0]!.content).toContain("Polaris");
   });
 
   it("requires confirmation for medium risk automation without approval", () => {

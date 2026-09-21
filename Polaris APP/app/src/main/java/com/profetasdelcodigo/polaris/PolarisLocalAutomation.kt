@@ -18,6 +18,19 @@ object PolarisLocalAutomation {
         return actions.takeIf { it.size <= 8 } ?: emptyList()
     }
 
+    fun executePlan(plan: List<LocalAutomationAction>): List<LocalAutomationResult> {
+        if (plan.isEmpty()) return emptyList()
+        if (plan.size > 8) return listOf(LocalAutomationResult(false, "El plan supera el límite seguro de 8 acciones."))
+
+        val results = mutableListOf<LocalAutomationResult>()
+        for (action in plan) {
+            val result = PolarisAccessibilityService.execute(action)
+            results += result
+            if (!result.success) break
+        }
+        return results
+    }
+
     fun parse(raw: String): LocalAutomationAction? {
         val text = raw.trim().lowercase().replace(Regex("\\s+"), " ")
         return when {

@@ -210,10 +210,15 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
       ...(typeof body.preferredMode === "string" ? { preferredMode: body.preferredMode } : {}),
       requireVerification: body.requireVerification !== false
     });
+    const latencyMode =
+      plan.mode === "RESEARCH" ? "RESEARCH" :
+      plan.mode === "URGENT" ? "URGENT" :
+      plan.mode === "HANDS_FREE" ? "HANDS_FREE" :
+      "NORMAL";
     return {
       ...plan,
       intent,
-      latencyBudget: createLatencyBudget(plan.mode)
+      latencyBudget: createLatencyBudget(latencyMode)
     };
   });
 
@@ -236,7 +241,14 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
       },
       typeof body.preferredMode === "string" ? body.preferredMode : null
     );
-    const summary = summarizeAdaptiveContext({ profile, preferences, memories, devices, personality });
+    const adaptiveDevices = devices.map((device) => ({
+      id: device.id,
+      name: device.name,
+      type: device.type as DeviceType,
+      status: device.status,
+      platform: device.platform
+    }));
+    const summary = summarizeAdaptiveContext({ profile, preferences, memories, devices: adaptiveDevices, personality });
     return {
       profile,
       preferences,
@@ -327,7 +339,7 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
 
   app.post("/v1/continuity/validate", async (request) => {
     await contextFor(request, config);
-    return validateContinuityCapsule(request.body);
+    return validateContinuityCapsule(request.body as Parameters<typeof validateContinuityCapsule>[0]);
   });
 
   app.post("/v1/routines/preview", async (request) => {

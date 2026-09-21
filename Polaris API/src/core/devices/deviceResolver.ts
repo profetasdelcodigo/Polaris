@@ -114,7 +114,15 @@ export function resolveDeviceReference(query: string, devices: SmartDevice[]): D
     };
   }
 
-  const [top, second] = viable;
+  const top = viable[0];
+  const second = viable[1];
+  if (!top) {
+    return {
+      status: "NOT_FOUND",
+      candidates,
+      question: "No pude seleccionar un dispositivo seguro."
+    };
+  }
   if (top.score >= 85 && (!second || top.score - second.score >= 18)) {
     return { status: "RESOLVED", device: top.device, candidates };
   }

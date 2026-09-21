@@ -247,7 +247,6 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
       safeLimit
     );
     const summary = fabricCatalogSummary();
-    const totalMatching = fabricCatalogSummary().count;
     const hasMore = functions.length === safeLimit;
     return {
       ...summary,
@@ -255,7 +254,6 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
       offset: safeOffset,
       limit: safeLimit,
       nextOffset: hasMore ? safeOffset + functions.length : null,
-      totalMatching,
       functions
     };
   });

@@ -13,6 +13,7 @@ import { capabilityRegistry, routeCapabilities } from "./core/capabilities/capab
 import { planUniversalTask, universalCatalogStats } from "./core/automation/universalTaskRouter.js";
 import { listSkillCatalog, skillCatalogCapacity, skillCatalogCapacityByDevice } from "./core/skills/skillCatalog.js";
 import { validateSkillProgram } from "./core/skills/skillRuntime.js";
+import { composeSkillFromIntent, skillComposerCatalog } from "./core/skills/skillComposer.js";
 import {
   claimRelayCommand,
   createRelayCommand,
@@ -213,6 +214,25 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
     });
 
     return plan;
+  });
+
+  app.get("/v1/skills/catalog", async (request) => {
+    await contextFor(request, config);
+    return skillComposerCatalog();
+  });
+
+  app.post("/v1/skills/compose", async (request) => {
+    await contextFor(request, config);
+    const body = request.body as { task?: unknown };
+    if (typeof body?.task !== "string" || !body.task.trim()) {
+      throw new PolarisError("VALIDATION_ERROR", "task es obligatorio.", 400);
+    }
+    return {
+      valid: true,
+      generated: true,
+      runtime: "polaris-skill-v1",
+      program: composeSkillFromIntent(body.task)
+    };
   });
 
   app.post("/v1/skills/validate", async (request) => {

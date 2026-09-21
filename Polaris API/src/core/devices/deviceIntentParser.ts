@@ -16,7 +16,7 @@ const familyPatterns: Array<[DeviceFamily, RegExp]> = [
   ["PHONE", /celular|móvil|movil|telefono|teléfono/i],
   ["FRIDGE", /refrigerador|nevera|frigorífico|frigorifico/i],
   ["MICROWAVE", /microondas/i],
-  ["AC", /aire acondicionado|aire|clima/i],
+  ["AC", /aire acondicionado|aire|clima/i],
   ["SPEAKER", /altavoz|parlante|bocina|speaker/i],
   ["PLUG", /enchufe|tomacorriente/i],
   ["ROUTER", /router|wifi|wi-fi/i]

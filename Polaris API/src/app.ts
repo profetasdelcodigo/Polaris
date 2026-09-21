@@ -288,7 +288,7 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
         task: body.task.trim(),
         fingerprint
       },
-      requiresConfirmation: body.requireConfirmation !== false,
+      requiresConfirmation: body.requireConfirmation === true,
       ttlSeconds: 120
     });
 

@@ -32,7 +32,7 @@ export function planBrowserAgent(task: string, context?: BrowserContext | null):
   }
 
   if (/busca|buscar|investiga|googlea/i.test(normalized)) {
-    const match = normalized.match(/(?:busca|buscar|investiga|googlea)\\s+(.+)/iu);
+    const match = normalized.match(/(?:busca|buscar|investiga|googlea)\s+(.+)/iu);
     if (match?.[1]) steps.push({ action: "SEARCH", query: match[1].trim() });
   }
 

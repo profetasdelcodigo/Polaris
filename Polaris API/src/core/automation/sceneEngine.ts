@@ -63,10 +63,7 @@ export function compileScene(scene: SceneDefinition): CompiledScene {
     throw new Error("Una escena Polaris puede tener entre 1 y 24 pasos.");
   }
 
-  const duplicateIds = scene.steps
-    .map((step) => step.deviceId.trim())
-    .filter((id, index, ids) => id && ids.indexOf(id) !== index);
-  if (duplicateIds.length === 0 && scene.steps.some((step) => !step.deviceId.trim())) {
+  if (scene.steps.some((step) => !step.deviceId.trim())) {
     throw new Error("Cada paso necesita un deviceId.");
   }
 

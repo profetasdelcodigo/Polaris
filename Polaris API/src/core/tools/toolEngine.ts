@@ -8,6 +8,7 @@ import {
   listDevices,
   listRelevantMemories
 } from "../../data/polarisRepository.js";
+import { createRelayCommand } from "../relay/deviceCommandRepository.js";
 import type { AuthenticatedContext } from "../../auth.js";
 import { PolarisError } from "../../errors.js";
 import type { AIToolDefinition } from "../ai/types.js";
@@ -56,6 +57,12 @@ const listConversationsSchema = z.object({});
 const getProfileSchema = z.object({});
 const getPreferencesSchema = z.object({});
 const listDevicesSchema = z.object({});
+const relayCommandSchema = z.object({
+  targetDeviceId: z.string().uuid().optional(),
+  action: z.enum(["desktop.open_url", "desktop.reveal_path", "desktop.system_info"]),
+  payload: z.record(z.string(), z.unknown()).default({}),
+  requiresConfirmation: z.boolean().default(true)
+});
 
 const tools = [
   {
@@ -202,6 +209,48 @@ const tools = [
         status: device.status,
         lastSeen: device.last_seen
       }));
+    }
+  },
+  {
+    name: "queue_device_command",
+    description: "Encola una orden explícita para un dispositivo Polaris del mismo usuario. Solo permite acciones nativas previamente registradas.",
+    category: "AUTOMATION",
+    riskLevel: "HIGH",
+    timeoutMs: 5_000,
+    modelCallable: false,
+    inputSchema: relayCommandSchema,
+    async execute(context: ToolExecutionContext, input: z.infer<typeof relayCommandSchema>, _signal: AbortSignal) {
+      const devices = await listDevices(context, 50, _signal);
+      const target = input.targetDeviceId
+        ? devices.find((device) => device.id === input.targetDeviceId)
+        : devices
+            .filter((device) => device.type === "DESKTOP")
+            .sort((a, b) => Number(b.status === "ONLINE") - Number(a.status === "ONLINE"))[0];
+
+      if (!target) {
+        throw new PolarisError("NOT_FOUND", "No hay un PC Polaris registrado para recibir la orden.", 404);
+      }
+
+      const requiresConfirmation = input.action === "desktop.open_url"
+        ? input.requiresConfirmation && false
+        : true;
+
+      const command = await createRelayCommand(context, {
+        targetDeviceId: target.id,
+        capabilityId: input.action,
+        action: input.action,
+        payload: input.payload,
+        requiresConfirmation
+      });
+
+      return {
+        queued: true,
+        commandId: command.id,
+        targetDeviceId: target.id,
+        targetName: target.name,
+        action: command.action,
+        requiresConfirmation: command.requires_confirmation
+      };
     }
   }
 ] as const;

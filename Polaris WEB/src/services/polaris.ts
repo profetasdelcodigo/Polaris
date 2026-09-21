@@ -171,6 +171,46 @@ export const polarisApi = {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(input),
     }),
+  getFabricCatalog: (session: Session, query?: { q?: string; platform?: 'CORE' | 'WEB' | 'DESKTOP' | 'ANDROID' }) => {
+    const params = new URLSearchParams();
+    if (query?.q) params.set('q', query.q);
+    if (query?.platform) params.set('platform', query.platform);
+    const suffix = params.toString() ? `?${params.toString()}` : '';
+    return apiRequest<Record<string, unknown>>(`/fabric/catalog${suffix}`, token(session));
+  },
+  previewFabricFunction: (session: Session, id: string, input?: unknown) =>
+    apiRequest<Record<string, unknown>>('/fabric/preview', token(session), {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id, input }),
+    }),
+  executeFabricFunction: (session: Session, input: {
+    id: string;
+    input?: unknown;
+    targetDeviceId?: string;
+    confirmed?: boolean;
+  }) =>
+    apiRequest<Record<string, unknown>>('/fabric/execute', token(session), {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(input),
+    }),
+  homeAssistantStatus: (session: Session) =>
+    apiRequest<Record<string, unknown>>('/home/status', token(session)),
+  homeAssistantStates: (session: Session) =>
+    apiRequest<unknown[]>('/home/states', token(session)),
+  executeHomeAssistant: (session: Session, input: {
+    domain: string;
+    service: string;
+    entityId: string | string[];
+    data?: Record<string, unknown>;
+    confirmed?: boolean;
+  }) =>
+    apiRequest<Record<string, unknown>>('/home/execute', token(session), {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(input),
+    }),
   streamChat: (
     session: Session,
     input: { conversationId?: string; message: string },

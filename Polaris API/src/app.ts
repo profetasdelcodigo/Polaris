@@ -693,7 +693,7 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
     return compileScene({
       name: body.name,
       ...(typeof body.description === "string" ? { description: body.description } : {}),
-      steps: body.steps
+      steps: body.steps as Parameters<typeof compileScene>[0]["steps"]
     });
   });
 

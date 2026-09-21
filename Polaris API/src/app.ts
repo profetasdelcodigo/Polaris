@@ -37,6 +37,7 @@ import { createOfflineQueueItem, offlineQueuePreview, nextQueueState, type Offli
 import { planBrowserAgent, browserAgentPreview } from "./core/browser/browserAgent.js";
 import { chooseHandoffTarget, handoffEnvelope, type HandoffDevice } from "./core/multiplatform/handoffPlanner.js";
 import { compileBoundedMacro } from "./core/skills/skillMacro.js";
+import { repairSkillFailure } from "./core/recovery/skillRepair.js";
 import {
   claimRelayCommand,
   createRelayCommand,
@@ -530,11 +531,24 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
     });
   });
 
+  app.post("/v1/skills/repair", async (request) => {
+    await contextFor(request, config);
+    const body = request.body as { program?: unknown; failedStep?: unknown; reason?: unknown };
+    if (!body.program || typeof body.program !== "object" || typeof body.failedStep !== "number" || typeof body.reason !== "string") {
+      throw new PolarisError("VALIDATION_ERROR", "program, failedStep y reason son obligatorios.", 400);
+    }
+    return repairSkillFailure(
+      body.program as Parameters<typeof repairSkillFailure>[0],
+      body.failedStep,
+      body.reason
+    );
+  });
+
   app.get("/v1/health", async () => ({
     backend: "ok",
     database: hasSupabaseConfiguration(config) ? "configured" : "unconfigured",
     provider: provider.available ? "configured" : "unconfigured",
-    version: "0.5.0"
+    version: "0.6.0"
   }));
 
   app.get("/v1/capabilities", async (): Promise<Capabilities> => {

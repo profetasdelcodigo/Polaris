@@ -215,7 +215,7 @@ function addCoreFunctions(target: FabricFunction[]): void {
         mode: "CORE",
         risk: "LOW",
         requiresConfirmation: false,
-        input: timeOps[op].includes("now") || timeOps[op].includes("epoch") ? "none" : "text",
+        input: timeOps[op]!.includes("now") || timeOps[op]!.includes("epoch") ? "none" : "text",
         runner: "TIME",
         variant
       });

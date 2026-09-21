@@ -24,6 +24,37 @@ function inferredTool(message: string): { name: RegisteredToolName; input: unkno
     return { name: "search_memory", input: { query: "" } };
   }
 
+  const androidCommand = message.match(/^(?:en\s+(?:mi\s+)?(?:celular|tel[eé]fono|m[oó]vil|android)[,:]?\s*)?(abre|abrir|ve|ir|vuelve|volver|muestra|mostrar|baja|sube|despl[aá]zate|pulsa|presiona|toca)\s+(.+)\s+(?:en\s+(?:mi\s+)?(?:celular|tel[eé]fono|m[oó]vil|android))$/iu);
+  if (androidCommand?.[1] && androidCommand?.[2]) {
+    const verb = androidCommand[1].toLocaleLowerCase("es-PE");
+    const object = androidCommand[2].trim().replace(/[.!?]+$/u, "").toLocaleLowerCase("es-PE");
+    const action =
+      /^(?:vuelve|volver)\b/.test(verb) ? "android.back" :
+      /^(?:ve|ir)\b/.test(verb) && /inicio|principal/.test(object) ? "android.home" :
+      /^(?:muestra|mostrar|abre|abrir)\b/.test(verb) && /notificaciones/.test(object) ? "android.notifications" :
+      /^(?:muestra|mostrar|abre|abrir)\b/.test(verb) && /ajustes r[aá]pidos/.test(object) ? "android.quick_settings" :
+      /^(?:muestra|mostrar|abre|abrir)\b/.test(verb) && /recientes/.test(object) ? "android.recents" :
+      /^(?:abre|abrir)\b/.test(verb) && /ajustes|configuraci[oó]n/.test(object) ? "android.open_settings" :
+      /^(?:abre|abrir)\b/.test(verb) && /wifi|wi-fi/.test(object) ? "android.open_wifi" :
+      /^(?:abre|abrir)\b/.test(verb) && /bluetooth/.test(object) ? "android.open_bluetooth" :
+      /^(?:baja|despl[aá]zate)\b/.test(verb) ? "android.scroll_down" :
+      /^(?:sube)\b/.test(verb) ? "android.scroll_up" :
+      /^(?:pulsa|presiona|toca)\b/.test(verb)
+        ? "android.tap_text"
+        : null;
+
+    if (action) {
+      return {
+        name: "queue_device_command",
+        input: {
+          action,
+          payload: action === "android.tap_text" ? { text: object } : {},
+          requiresConfirmation: false
+        }
+      };
+    }
+  }
+
   const desktopUrl = message.match(/^(?:abre|abrir|open)\s+(?:en\s+(?:mi\s+)?)?(?:pc|ordenador|computadora)\s+(https?:\/\/[^\s]+)$/iu);
   if (desktopUrl?.[1]) {
     return {

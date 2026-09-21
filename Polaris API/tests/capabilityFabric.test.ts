@@ -4,7 +4,8 @@ import {
   executeCoreFabricFunction,
   fabricCatalog,
   fabricCatalogSummary,
-  getFabricFunction
+  getFabricFunction,
+  searchFabricFunctions
 } from "../src/core/fabric/capabilityFabric.js";
 
 describe("capability fabric", () => {
@@ -16,6 +17,14 @@ describe("capability fabric", () => {
     expect(ids.size).toBe(summary.count);
     expect(summary.byPlatform.WEB).toBeGreaterThan(100);
     expect(summary.byPlatform.DESKTOP).toBeGreaterThan(100);
+  });
+
+  it("paginates the catalog without dropping functions", () => {
+    const first = searchFabricFunctions("", "CORE", 0, 200);
+    const second = searchFabricFunctions("", "CORE", 200, 200);
+    expect(first).toHaveLength(200);
+    expect(second).toHaveLength(200);
+    expect(first[0]?.id).not.toBe(second[0]?.id);
   });
 
   it("executes deterministic core math functions", () => {

@@ -40,6 +40,14 @@ import { compileBoundedMacro } from "./core/skills/skillMacro.js";
 import { repairSkillFailure } from "./core/recovery/skillRepair.js";
 import { compileDeviceCommand, type DeviceCommandEnvelope } from "./core/devices/deviceCommandCompiler.js";
 import { parseDeviceIntent } from "./core/devices/deviceIntentParser.js";
+import { resolveDeviceReference } from "./core/devices/deviceResolver.js";
+import { compileScene } from "./core/automation/sceneEngine.js";
+import { designSkill } from "./core/skills/skillStudio.js";
+import { buildExperienceBrief } from "./core/experience/experienceEngine.js";
+import { buildPersonaProfile } from "./core/personality/personaEngine.js";
+import { buildMemoryLifecycleReport } from "./core/memory/memoryLifecycle.js";
+import { buildVisualScene } from "./core/visuals/visualDirector.js";
+import { suggestNextActions } from "./core/agent/proactiveSuggestions.js";
 import { discoverableProtocolMatrix, deviceActions, deviceFamilies, deviceProtocols, type DeviceAction, type DeviceFamily, type DeviceProtocol, type SmartDevice } from "./core/devices/deviceFabric.js";
 import {
   claimRelayCommand,
@@ -590,11 +598,149 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
     });
   });
 
+  app.post("/v1/experience/brief", async (request) => {
+    const context = await contextFor(request, config);
+    const body = request.body as {
+      task?: unknown;
+      preferredDevice?: unknown;
+      preferredMode?: unknown;
+      tone?: unknown;
+      responseStyle?: unknown;
+    };
+    if (typeof body.task !== "string" || !body.task.trim()) {
+      throw new PolarisError("VALIDATION_ERROR", "task es obligatorio.", 400);
+    }
+    return buildExperienceBrief({
+      task: body.task,
+      ...(typeof body.preferredDevice === "string" ? { preferredDevice: body.preferredDevice.toUpperCase() as DeviceType } : {}),
+      ...(typeof body.preferredMode === "string" ? { preferredMode: body.preferredMode } : {}),
+      ...(typeof body.tone === "string" ? { tone: body.tone } : {}),
+      ...(typeof body.responseStyle === "string" ? { responseStyle: body.responseStyle } : {})
+    });
+  });
+
+  app.post("/v1/experience/persona", async (request) => {
+    await contextFor(request, config);
+    const body = request.body as { task?: unknown; preferredMode?: unknown; tone?: unknown; responseStyle?: unknown };
+    if (typeof body.task !== "string" || !body.task.trim()) {
+      throw new PolarisError("VALIDATION_ERROR", "task es obligatorio.", 400);
+    }
+    return buildPersonaProfile({
+      task: body.task,
+      ...(typeof body.preferredMode === "string" ? { preferredMode: body.preferredMode } : {}),
+      ...(typeof body.tone === "string" ? { tone: body.tone } : {}),
+      ...(typeof body.responseStyle === "string" ? { responseStyle: body.responseStyle } : {})
+    });
+  });
+
+  app.post("/v1/memory/lifecycle", async (request) => {
+    const context = await contextFor(request, config);
+    const body = request.body as { candidate?: unknown };
+    if (!body.candidate || typeof body.candidate !== "object" || Array.isArray(body.candidate)) {
+      throw new PolarisError("VALIDATION_ERROR", "candidate es obligatorio.", 400);
+    }
+    const candidate = body.candidate as {
+      content?: unknown;
+      category?: unknown;
+      importance?: unknown;
+      source?: unknown;
+      created_at?: unknown;
+      updated_at?: unknown;
+    };
+    if (typeof candidate.content !== "string" || typeof candidate.category !== "string") {
+      throw new PolarisError("VALIDATION_ERROR", "candidate.content y candidate.category son obligatorios.", 400);
+    }
+    const existing = await listMemories(context);
+    return buildMemoryLifecycleReport(
+      {
+        content: candidate.content,
+        category: candidate.category,
+        ...(typeof candidate.importance === "number" ? { importance: candidate.importance } : {}),
+        ...(typeof candidate.source === "string" ? { source: candidate.source } : {}),
+        ...(typeof candidate.created_at === "string" ? { created_at: candidate.created_at } : {}),
+        ...(typeof candidate.updated_at === "string" ? { updated_at: candidate.updated_at } : {})
+      },
+      existing
+    );
+  });
+
+  app.post("/v1/devices/resolve", async (request) => {
+    const context = await contextFor(request, config);
+    const body = request.body as { query?: unknown };
+    if (typeof body.query !== "string" || !body.query.trim()) {
+      throw new PolarisError("VALIDATION_ERROR", "query es obligatorio.", 400);
+    }
+    const devices = await listDevices(context);
+    const smartDevices = devices.map((device) => ({
+      id: device.id,
+      name: device.name,
+      family: device.type === "ANDROID" ? "PHONE" : device.type === "DESKTOP" ? "PC" : "OTHER",
+      protocol: device.type === "ANDROID" ? "ANDROID_NATIVE" : device.type === "DESKTOP" ? "DESKTOP_NATIVE" : "HTTP_LOCAL",
+      online: device.status === "ONLINE",
+      local: true,
+      capabilities: [],
+      metadata: { platform: device.platform }
+    }));
+    return resolveDeviceReference(body.query, smartDevices);
+  });
+
+  app.post("/v1/automation/scene/compile", async (request) => {
+    await contextFor(request, config);
+    const body = request.body as { name?: unknown; description?: unknown; steps?: unknown };
+    if (typeof body.name !== "string" || !Array.isArray(body.steps)) {
+      throw new PolarisError("VALIDATION_ERROR", "name y steps son obligatorios.", 400);
+    }
+    return compileScene({
+      name: body.name,
+      ...(typeof body.description === "string" ? { description: body.description } : {}),
+      steps: body.steps
+    });
+  });
+
+  app.post("/v1/skills/studio", async (request) => {
+    await contextFor(request, config);
+    const body = request.body as { task?: unknown };
+    if (typeof body.task !== "string" || !body.task.trim()) {
+      throw new PolarisError("VALIDATION_ERROR", "task es obligatorio.", 400);
+    }
+    return designSkill(body.task);
+  });
+
+  app.post("/v1/visuals/orbit", async (request) => {
+    await contextFor(request, config);
+    const body = request.body as { mode?: unknown; state?: unknown };
+    const allowedModes = ["CALM", "FOCUS", "CREATIVE", "RESEARCH", "OPERATOR", "COMPANION"];
+    const allowedStates = ["IDLE", "LISTENING", "THINKING", "EXECUTING", "SPEAKING", "SUCCESS", "WARNING", "ERROR", "OFFLINE"];
+    const modeValue = String(body.mode ?? "COMPANION").toUpperCase();
+    const stateValue = String(body.state ?? "IDLE").toUpperCase();
+    const mode = allowedModes.includes(modeValue) ? modeValue : "COMPANION";
+    const state = allowedStates.includes(stateValue) ? stateValue : "IDLE";
+    return buildVisualScene(mode, state);
+  });
+
+  app.post("/v1/agent/suggestions", async (request) => {
+    const context = await contextFor(request, config);
+    const body = request.body as { task?: unknown; completed?: unknown };
+    if (typeof body.task !== "string") {
+      throw new PolarisError("VALIDATION_ERROR", "task es obligatorio.", 400);
+    }
+    const [memories, devices] = await Promise.all([listMemories(context), listDevices(context)]);
+    return {
+      suggestions: suggestNextActions({
+        task: body.task,
+        completed: body.completed !== false,
+        hasConversation: true,
+        deviceCount: devices.length,
+        memoryCount: memories.length
+      })
+    };
+  });
+
   app.get("/v1/health", async () => ({
     backend: "ok",
     database: hasSupabaseConfiguration(config) ? "configured" : "unconfigured",
     provider: provider.available ? "configured" : "unconfigured",
-    version: "0.7.0"
+    version: "0.8.0"
   }));
 
   app.get("/v1/capabilities", async (): Promise<Capabilities> => {

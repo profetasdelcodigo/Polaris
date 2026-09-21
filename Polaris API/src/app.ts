@@ -17,6 +17,7 @@ import { composeSkillFromIntent, skillComposerCatalog } from "./core/skills/skil
 import { buildPersonalityProfile, extractMemoryCandidates, summarizeAdaptiveContext } from "./core/context/adaptiveContext.js";
 import { planAgentTask } from "./core/planning/agentPlanner.js";
 import { createExecutionTrace } from "./core/execution/executionTrace.js";
+import { recoveryPolicy } from "./core/recovery/recoveryPolicy.js";
 import { createContinuityCapsule, validateContinuityCapsule } from "./core/continuity/continuityCapsule.js";
 import { planDeepResearch } from "./core/research/deepResearchPlanner.js";
 import { createRoutine, routinePreview } from "./core/routines/routineEngine.js";
@@ -389,6 +390,33 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
     };
   });
 
+  app.post("/v1/skills/preview", async (request) => {
+    await contextFor(request, config);
+    const body = request.body as { task?: unknown };
+    if (typeof body.task !== "string" || !body.task.trim()) {
+      throw new PolarisError("VALIDATION_ERROR", "task es obligatorio.", 400);
+    }
+    const program = composeSkillFromIntent(body.task);
+    const fingerprint = skillFingerprint(program);
+    const trace = createExecutionTrace({
+      task: body.task.trim(),
+      fingerprint,
+      actions: program.steps.map((step) => ({ action: step.action }))
+    });
+    return {
+      runtime: "polaris-skill-v1",
+      dryRun: true,
+      fingerprint,
+      program,
+      trace,
+      recovery: program.steps.map((step) => recoveryPolicy({
+        capability: "skill." + step.action,
+        risk: "LOW",
+        idempotent: step.action === "open_url" || step.action === "wait" || step.action === "scroll_top" || step.action === "scroll_bottom"
+      }))
+    };
+  });
+
   app.post("/v1/skills/execute", async (request, reply) => {
     const context = await contextFor(request, config);
     const body = request.body as {
@@ -396,6 +424,7 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
       targetDeviceId?: unknown;
       preferredDevice?: unknown;
       requireConfirmation?: unknown;
+      dryRun?: unknown;
     };
 
     if (typeof body.task !== "string" || !body.task.trim()) {
@@ -438,6 +467,17 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
       : target.type === "WEB"
         ? "web.run_skill"
         : "desktop.run_skill";
+
+    if (body.dryRun === true) {
+      return reply.status(200).send({
+        queued: false,
+        dryRun: true,
+        runtime: "polaris-skill-v1",
+        fingerprint,
+        trace,
+        program
+      });
+    }
 
     const command = await createRelayCommand(context, {
       targetDeviceId: target.id,

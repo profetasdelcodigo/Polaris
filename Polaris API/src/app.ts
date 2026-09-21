@@ -12,7 +12,7 @@ import { ToolEngine, type RegisteredToolName } from "./core/tools/toolEngine.js"
 import { capabilityRegistry, routeCapabilities } from "./core/capabilities/capabilityRegistry.js";
 import { planUniversalTask, universalCatalogStats } from "./core/automation/universalTaskRouter.js";
 import { listSkillCatalog, skillCatalogCapacity, skillCatalogCapacityByDevice } from "./core/skills/skillCatalog.js";
-import { validateSkillProgram } from "./core/skills/skillRuntime.js";
+import { skillFingerprint, validateSkillProgram } from "./core/skills/skillRuntime.js";
 import { composeSkillFromIntent, skillComposerCatalog } from "./core/skills/skillComposer.js";
 import {
   claimRelayCommand,
@@ -242,7 +242,8 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
       valid: true,
       runtime: "polaris-skill-v1",
       limits: { maxSteps: 12, maxWaitMs: 10_000, maxSerializedBytes: 32_000 },
-      program
+      program,
+      fingerprint: skillFingerprint(program)
     };
   });
 

@@ -14,8 +14,8 @@ android {
         applicationId = "com.profetasdelcodigo.polaris"
         minSdk = 26
         targetSdk = 37
-        versionCode = 2
-        versionName = "0.8.0"
+        versionCode = 9
+        versionName = "0.9.0"
 
         val supabaseUrl = providers.gradleProperty("POLARIS_SUPABASE_URL").orNull.orEmpty()
         val supabaseKey = providers.gradleProperty("POLARIS_SUPABASE_PUBLISHABLE_KEY").orNull.orEmpty()

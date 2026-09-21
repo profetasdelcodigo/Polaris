@@ -95,7 +95,7 @@ function scoreRecency(device: SmartDevice): { score: number; reason?: string } {
 
   const ageMs = Math.max(0, Date.now() - timestamp);
   const ageHours = ageMs / 3_600_000;
-  if (ageHours <= 1) return { score: 14, reason: "usado recientemente" };
+  if (ageHours <= 1) return { score: 18, reason: "usado recientemente" };
   if (ageHours <= 24) return { score: 9, reason: "usado hoy" };
   if (ageHours <= 168) return { score: 4, reason: "usado esta semana" };
   return { score: 0 };
@@ -125,13 +125,13 @@ function scoreDevice(query: string, device: SmartDevice): DeviceResolutionCandid
   const aliases = familyAliases[device.family] ?? [];
   const familyMatch = aliases.some((alias) => hasPhrase(q, normalize(alias)));
   if (familyMatch) {
-    score += 30;
+    score += 32;
     reasons.push("familia coincide");
   }
 
   const room = metadataString(device, "room");
   if (room && hasPhrase(q, room)) {
-    score += 28;
+    score += 30;
     reasons.push("habitación coincide");
   } else if (room) {
     const normalizedRoom = Object.entries(roomAliases).find(([, aliases]) =>

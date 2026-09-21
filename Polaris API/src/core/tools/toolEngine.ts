@@ -60,6 +60,7 @@ const listDevicesSchema = z.object({});
 const relayCommandSchema = z.object({
   targetDeviceId: z.string().uuid().optional(),
   action: z.enum([
+    "web.open_url",
     "desktop.open_url",
     "desktop.reveal_path",
     "desktop.system_info",
@@ -245,7 +246,11 @@ const tools = [
     inputSchema: relayCommandSchema,
     async execute(context: ToolExecutionContext, input: z.infer<typeof relayCommandSchema>, _signal: AbortSignal) {
       const devices = await listDevices(context, 50, _signal);
-      const targetType = input.action.startsWith("android.") ? "ANDROID" : "DESKTOP";
+      const targetType = input.action.startsWith("android.")
+        ? "ANDROID"
+        : input.action.startsWith("web.")
+          ? "WEB"
+          : "DESKTOP";
       const target = input.targetDeviceId
         ? devices.find((device) => device.id === input.targetDeviceId)
         : devices
@@ -253,10 +258,11 @@ const tools = [
             .sort((a, b) => Number(b.status === "ONLINE") - Number(a.status === "ONLINE"))[0];
 
       if (!target) {
-        throw new PolarisError("NOT_FOUND", "No hay un PC Polaris registrado para recibir la orden.", 404);
+        const label = targetType === "ANDROID" ? "teléfono Android" : targetType === "WEB" ? "sesión Web" : "PC Polaris";
+        throw new PolarisError("NOT_FOUND", `No hay un ${label} registrado para recibir la orden.`, 404);
       }
 
-      const requiresConfirmation = input.action === "desktop.open_url"
+      const requiresConfirmation = input.action === "desktop.open_url" || input.action === "web.open_url"
         ? false
         : input.action.startsWith("android.") && input.action !== "android.tap_text"
           ? false

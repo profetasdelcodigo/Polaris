@@ -3,12 +3,14 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
-import type { ApiProblem, Capabilities, ServerSentEventName } from "@polaris/contracts";
+import type { ApiProblem, Capabilities, DeviceType, ServerSentEventName } from "@polaris/contracts";
 import { authenticateRequest, type AuthenticatedContext } from "./auth.js";
 import { createAIProvider } from "./core/ai/providerFactory.js";
 import type { AIProvider } from "./core/ai/types.js";
 import { ConversationEngine } from "./core/conversation/conversationEngine.js";
 import { ToolEngine, type RegisteredToolName } from "./core/tools/toolEngine.js";
+import { capabilityRegistry, routeCapabilities } from "./core/capabilities/capabilityRegistry.js";
+import { listSkillCatalog, skillCatalogCapacity } from "./core/skills/skillCatalog.js";
 import { hasSupabaseConfiguration, loadConfig, type PolarisConfig } from "./config.js";
 import {
   createConversation,
@@ -139,17 +141,87 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
     version: "0.1.0"
   }));
 
-  app.get("/v1/capabilities", async (): Promise<Capabilities> => ({
-    chat: provider.available && hasSupabaseConfiguration(config),
-    streaming: provider.available && hasSupabaseConfiguration(config),
-    memory: hasSupabaseConfiguration(config),
-    voice: false,
-    vision: false,
-    robot: false,
-    webSearch: false,
-    desktopTools: false,
-    calendar: false
-  }));
+  app.get("/v1/capabilities", async (): Promise<Capabilities> => {
+    const matrix = Object.fromEntries(
+      (["WEB", "ANDROID", "DESKTOP", "ROBOT"] as const).map((device) => [
+        device,
+        capabilityRegistry.some((capability) => capability.availability[device] === "AVAILABLE")
+          ? "AVAILABLE"
+          : capabilityRegistry.some((capability) => capability.availability[device] === "PERMISSION_REQUIRED")
+            ? "PERMISSION_REQUIRED"
+            : "NOT_IMPLEMENTED"
+      ])
+    ) as Capabilities["deviceMatrix"];
+
+    return {
+      chat: provider.available && hasSupabaseConfiguration(config),
+      streaming: provider.available && hasSupabaseConfiguration(config),
+      memory: hasSupabaseConfiguration(config),
+      voice: true,
+      vision: false,
+      robot: false,
+      webSearch: false,
+      desktopTools: false,
+      calendar: false,
+      relay: hasSupabaseConfiguration(config),
+      registryVersion: "capabilities-v1",
+      deviceMatrix: matrix,
+      capabilities: capabilityRegistry
+    };
+  });
+
+  app.get("/v1/skills", async (request) => {
+    const query = request.query as { device?: unknown; status?: unknown; q?: unknown };
+    const device = typeof query.device === "string"
+      ? (query.device.toUpperCase() as DeviceType)
+      : undefined;
+    const status = typeof query.status === "string"
+      ? query.status.toUpperCase()
+      : undefined;
+    const search = typeof query.q === "string" ? query.q.trim().toLocaleLowerCase("es-PE") : "";
+
+    const skills = listSkillCatalog().filter((skill) => {
+      if (device && !skill.supportedDevices.includes(device)) return false;
+      if (status && skill.status !== status) return false;
+      if (search && !`${skill.id} ${skill.name} ${skill.description}`.toLocaleLowerCase("es-PE").includes(search)) {
+        return false;
+      }
+      return true;
+    });
+
+    return {
+      registryVersion: "skills-v1",
+      catalogCapacity: skillCatalogCapacity,
+      returned: skills.length,
+      implemented: skills.filter((skill) => skill.status === "AVAILABLE").length,
+      partial: skills.filter((skill) => skill.status === "PARTIAL").length,
+      planned: skills.filter((skill) => skill.status === "PLANNED").length,
+      skills
+    };
+  });
+
+  app.post("/v1/capabilities/route", async (request) => {
+    await contextFor(request, config);
+    const body = request.body as {
+      task?: unknown;
+      preferredDevice?: unknown;
+      requiredCapabilities?: unknown;
+      allowRemote?: unknown;
+    };
+
+    const requiredCapabilities = Array.isArray(body.requiredCapabilities)
+      ? body.requiredCapabilities.filter((value): value is string => typeof value === "string")
+      : undefined;
+
+    return routeCapabilities({
+      task: typeof body.task === "string" ? body.task : "tarea sin descripción",
+      preferredDevice: typeof body.preferredDevice === "string"
+        ? (body.preferredDevice.toUpperCase() as DeviceType)
+        : undefined,
+      requiredCapabilities,
+      allowRemote: body.allowRemote !== false
+    });
+  });
 
   app.get("/v1/profile", async (request) => {
     const context = await contextFor(request, config);

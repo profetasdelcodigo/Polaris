@@ -1,11 +1,11 @@
 import type { FabricFunction } from "./capabilityFabric.js";
-import { fabricCatalog, getFabricFunction } from "./capabilityFabric.js";
+import { fabricCatalog } from "./capabilityFabric.js";
 
 function normalize(value: string): string {
   return value
     .toLocaleLowerCase("es-PE")
     .normalize("NFD")
-    .replace(/[\\u0300-\\u036f]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }

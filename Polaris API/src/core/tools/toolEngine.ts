@@ -284,7 +284,7 @@ const tools = [
     modelCallable: true,
     inputSchema: safeHandoffSchema,
     async execute(context: ToolExecutionContext, input: z.infer<typeof safeHandoffSchema>, _signal: AbortSignal) {
-      const devices = await listDevices(context, 50, _signal);
+      const devices = await listDevices(context);
       const targetType = input.action.startsWith("android.")
         ? "ANDROID"
         : input.action.startsWith("web.")
@@ -355,7 +355,7 @@ const tools = [
     modelCallable: false,
     inputSchema: relayCommandSchema,
     async execute(context: ToolExecutionContext, input: z.infer<typeof relayCommandSchema>, _signal: AbortSignal) {
-      const devices = await listDevices(context, 50, _signal);
+      const devices = await listDevices(context);
       const targetType = input.action.startsWith("android.")
         ? "ANDROID"
         : input.action.startsWith("web.")

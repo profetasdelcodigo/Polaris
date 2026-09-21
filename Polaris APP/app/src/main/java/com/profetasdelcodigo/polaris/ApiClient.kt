@@ -89,6 +89,22 @@ data class DeviceRecord(
 )
 
 @Serializable
+data class SkillExecutionTarget(
+    val id: String,
+    val name: String,
+    val type: String,
+    val status: String
+)
+
+@Serializable
+data class SkillExecutionResponse(
+    val queued: Boolean,
+    val runtime: String,
+    val fingerprint: String,
+    val target: SkillExecutionTarget,
+    val command: RelayCommandRecord
+)
+@Serializable
 data class RelayCommandRecord(
     val id: String,
     val target_device_id: String,
@@ -177,6 +193,24 @@ class PolarisApiClient(
         }.body()
     }
 
+    suspend fun executeSkill(
+        task: String,
+        preferredDevice: String? = null,
+        targetDeviceId: String? = null
+    ): SkillExecutionResponse {
+        return client.post(baseUrl() + "/v1/skills/execute") {
+            configure(this)
+            contentType(ContentType.Application.Json)
+            setBody(
+                buildJsonObject {
+                    put("task", kotlinx.serialization.json.JsonPrimitive(task))
+                    if (preferredDevice != null) put("preferredDevice", kotlinx.serialization.json.JsonPrimitive(preferredDevice))
+                    if (targetDeviceId != null) put("targetDeviceId", kotlinx.serialization.json.JsonPrimitive(targetDeviceId))
+                    put("requireConfirmation", kotlinx.serialization.json.JsonPrimitive(false))
+                }
+            )
+        }.body()
+    }
     suspend fun chat(content: String, conversationId: String?): ChatResponse {
         return client.post(baseUrl() + "/v1/chat") {
             configure(this)

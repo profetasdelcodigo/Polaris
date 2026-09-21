@@ -64,7 +64,7 @@ function inferredTool(message: string): { name: RegisteredToolName; input: unkno
     }
   }
 
-  const webCopy = message.match(/^(?:copia|copiar)\\s+(.+?)(?:\\s+en\\s+(?:la\\s+)?web|\\s+en\\s+el\\s+navegador)$/iu);
+  const webCopy = message.match(/^(?:copia|copiar)\s+(.+?)(?:\s+en\s+(?:la\s+)?web|\s+en\s+el\s+navegador)$/iu);
   if (webCopy?.[1]) {
     return {
       name: "handoff_safe_command",
@@ -75,7 +75,7 @@ function inferredTool(message: string): { name: RegisteredToolName; input: unkno
     };
   }
 
-  if (/^(?:sube|baja|ve)\\s+(?:al|a la)\\s+(?:parte superior|inicio|final|parte inferior)\\s+(?:de la )?(?:web|p[aá]gina)$/iu.test(lowered)) {
+  if (/^(?:sube|baja|ve)\s+(?:al|a la)\s+(?:parte superior|inicio|final|parte inferior)\s+(?:de la )?(?:web|p[aá]gina)$/iu.test(lowered)) {
     const action = /final|parte inferior/iu.test(lowered) ? "web.scroll_bottom" : "web.scroll_top";
     return {
       name: "handoff_safe_command",
@@ -83,7 +83,7 @@ function inferredTool(message: string): { name: RegisteredToolName; input: unkno
     };
   }
 
-  if (/^(?:enfoca|enfocar|focus)\\s+(?:el )?(?:chat|campo de chat)(?: de la web)?$/iu.test(lowered)) {
+  if (/^(?:enfoca|enfocar|focus)\s+(?:el )?(?:chat|campo de chat)(?: de la web)?$/iu.test(lowered)) {
     return {
       name: "handoff_safe_command",
       input: { action: "web.focus_chat", payload: {} }

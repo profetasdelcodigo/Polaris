@@ -16,6 +16,7 @@ import type {
 } from "./lib/models";
 import { clearSecureSession, loadSecureSession, saveSecureSession } from "./lib/secureSession";
 import { desktopNative, type DesktopSystemInfo } from "./lib/native";
+import { executeDesktopSkill } from "./lib/skillRuntime";
 import { supabase } from "./lib/supabase";
 
 type Screen = "home" | "chat" | "history" | "memories" | "profile" | "settings" | "devices";
@@ -274,6 +275,28 @@ function App() {
       } else if (command.action === "desktop.scroll_bottom") {
         window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
         await api.updateRelayCommand(command.id, "SUCCEEDED", { position: "bottom" });
+      } else if (command.action === "desktop.run_skill") {
+        const program = command.payload.program;
+        const result = await executeDesktopSkill(program, {
+          openUrl: (url) => desktopNative.openUrl(url),
+          revealPath: (path) => desktopNative.revealPath(path),
+          systemInfo: async () => {
+            const info = await desktopNative.systemInfo();
+            return info as unknown as Record<string, unknown>;
+          },
+          copyText: async (text) => {
+            if (!navigator.clipboard?.writeText) throw new Error("El portapapeles no está disponible.");
+            await navigator.clipboard.writeText(text);
+          },
+          scrollTop: () => window.scrollTo({ top: 0, behavior: "smooth" }),
+          scrollBottom: () => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" }),
+          focusChat: () => {
+            const target = document.querySelector<HTMLTextAreaElement>('textarea[aria-label="Mensaje para Polaris"]');
+            if (!target) throw new Error("No hay un campo de chat disponible.");
+            target.focus();
+          }
+        });
+        await api.updateRelayCommand(command.id, "SUCCEEDED", { skill: result });
       } else if (command.action === "desktop.focus_chat") {
         const target = document.querySelector<HTMLTextAreaElement>('textarea[aria-label="Mensaje para Polaris"]');
         if (!target) throw new Error("No hay un campo de chat disponible en la vista actual.");

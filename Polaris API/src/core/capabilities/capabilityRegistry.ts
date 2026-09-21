@@ -149,6 +149,16 @@ export const capabilityRegistry: readonly PolarisCapability[] = [
     composable: true
   },
   {
+    id: "desktop.local_control",
+    name: "Control local PC",
+    description: "Control acotado del companion de escritorio: portapapeles, desplazamiento y foco del chat.",
+    kinds: all("DESKTOP", "REMOTE"),
+    availability: { WEB: "NOT_IMPLEMENTED", ANDROID: "NOT_IMPLEMENTED", DESKTOP: "AVAILABLE", ROBOT: "NOT_IMPLEMENTED" },
+    requiresConfirmation: false,
+    danger: "LOW",
+    composable: true
+  },
+  {
     id: "desktop.windows",
     name: "Ventanas PC",
     description: "Consultar y organizar ventanas del escritorio mediante el companion nativo.",

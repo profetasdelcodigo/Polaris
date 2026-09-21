@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.8.0 — Polaris Living Core
+
+### Intelligence
+- Orquestación de personalidad con modos CALM, FOCUS, CREATIVE, RESEARCH, OPERATOR y COMPANION.
+- Experience Brief para unir intención, personalidad, latencia, visuales y guardrails.
+- Sugerencias proactivas reversibles sin ejecución automática.
+- Ciclo de vida de memoria: nueva, reforzada, conflictiva, obsoleta y archivada.
+
+### Automation
+- Device Resolver para nombres, habitaciones, familias, disponibilidad y protocolos.
+- Scene Engine para secuencias y grupos paralelos con evaluación de riesgo.
+- Skill Studio seguro para diseñar y explicar microprogramas allowlisted.
+- Nuevo motor visual de estados y núcleo orbital 3D para Web, PC y Android.
+
+### Device Fabric
+- Contratos normalizados para luces, TV, router, teléfono, PC, nevera, microondas, aire acondicionado, cámaras, robots y otros equipos.
+- Protocolos modelados para Matter, Home Assistant, MQTT, Cast, Alexa bridge, IR, Bluetooth y companions nativos.
+- Las integraciones físicas externas siguen marcadas como PARTIAL cuando dependen de un adaptador o gateway todavía no incluido.
+
+### Clients
+- Web: núcleo orbital 3D interactivo, APIs de experiencia, resolución, escenas y Skill Studio.
+- PC: escena orbital alrededor de la mascota Polaris y APIs de experiencia.
+- Android: núcleo orbital Compose, APIs de experiencia, resolución, escenas y Skill Studio.
+
+### Quality
+- CI utilizada para detectar y corregir varios bloqueos de tipado del Core.
+- Guía integral en `docs/POLARIS_COMPLETE_GUIDE.md`.
+- El registro de capacidades conserva la distinción AVAILABLE/PARTIAL/PLANNED para evitar funciones ficticias.
+
 ## 0.4.0 — Polaris Autonomous Core Foundation
 
 ### Intelligence and control

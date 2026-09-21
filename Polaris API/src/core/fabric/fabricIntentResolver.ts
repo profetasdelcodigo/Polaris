@@ -38,6 +38,16 @@ export function resolveFabricIntent(task: string, preferredDevice?: string): Fab
   const prefix = platformPrefix(preferredDevice);
   const candidates = prefix ? fabricCatalog.filter((item) => item.id.startsWith(prefix)) : fabricCatalog;
   const find = (suffix: string) => candidates.find((item) => item.id === (prefix ?? "") + suffix);
+  const findService = (kind: "open" | "search", service: string) =>
+    candidates.find((item) =>
+      item.id.startsWith((prefix ?? "") + kind + ".service.") &&
+      item.id.endsWith("-" + service)
+    );
+  const matchesService = (requested: string, service: string) =>
+    requested === service ||
+    requested.startsWith(service + "-") ||
+    requested.endsWith("-" + service) ||
+    requested.includes("-" + service + "-");
 
   const openMatch = text.match(/(?:abre|abrir|abreme|abre me|open)\s+(?:el|la|los|las)?\s*(.+)$/i);
   if (openMatch) {
@@ -55,7 +65,7 @@ export function resolveFabricIntent(task: string, preferredDevice?: string): Fab
     const service = normalize(searchMatch[1] ?? "").replace(/\s+/g, "-");
     const query = (searchMatch[2] ?? "").trim();
     if (knownServices.includes(service)) {
-      const item = candidates.find((candidate) => candidate.id.startsWith((prefix ?? "") + "search.service.") && candidate.id.endsWith("-" + service));
+      const item = findService("search", service);
       if (item) return { function: item, input: query, confidence: 0.99, reason: "búsqueda en servicio conocido" };
     }
   }
@@ -73,7 +83,7 @@ export function resolveFabricIntent(task: string, preferredDevice?: string): Fab
     const ms = unit === "s" || unit.startsWith("seg") ? raw * 1000 : raw;
     const variant = Math.round(ms / 250);
     if (variant >= 1 && variant <= 16 && Math.abs(ms - variant * 250) <= 1) {
-      const item = getFabricFunction((prefix ?? "web.") + "wait." + String(variant).padStart(2, "0"));
+      const item = find("wait." + String(variant).padStart(2, "0"));
       if (item) return { function: item, confidence: 0.97, reason: "espera cuantizada y acotada" };
     }
   }

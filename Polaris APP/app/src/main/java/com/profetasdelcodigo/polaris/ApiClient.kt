@@ -285,6 +285,92 @@ class PolarisApiClient(
             })
         }.body()
     }
+    suspend fun getFabricCatalog(query: String? = null): JsonElement {
+        val suffix = buildString {
+            append("?platform=ANDROID")
+            if (!query.isNullOrBlank()) append("&q=" + java.net.URLEncoder.encode(query, "UTF-8"))
+        }
+        return client.get(baseUrl() + "/v1/fabric/catalog" + suffix) {
+            configure(this)
+        }.body()
+    }
+
+    suspend fun previewFabricFunction(id: String, input: JsonElement? = null): JsonElement {
+        return client.post(baseUrl() + "/v1/fabric/preview") {
+            configure(this)
+            contentType(ContentType.Application.Json)
+            setBody(buildJsonObject {
+                put("id", kotlinx.serialization.json.JsonPrimitive(id))
+                if (input != null) put("input", input)
+            })
+        }.body()
+    }
+
+    suspend fun executeFabricFunction(
+        id: String,
+        input: JsonElement? = null,
+        targetDeviceId: String? = null,
+        confirmed: Boolean = false
+    ): JsonElement {
+        return client.post(baseUrl() + "/v1/fabric/execute") {
+            configure(this)
+            contentType(ContentType.Application.Json)
+            setBody(buildJsonObject {
+                put("id", kotlinx.serialization.json.JsonPrimitive(id))
+                if (input != null) put("input", input)
+                if (targetDeviceId != null) put("targetDeviceId", kotlinx.serialization.json.JsonPrimitive(targetDeviceId))
+                put("confirmed", kotlinx.serialization.json.JsonPrimitive(confirmed))
+            })
+        }.body()
+    }
+
+    suspend fun prepareBrain(
+        task: String,
+        preferredMode: String? = null
+    ): JsonElement {
+        return client.post(baseUrl() + "/v1/brain/prepare") {
+            configure(this)
+            contentType(ContentType.Application.Json)
+            setBody(buildJsonObject {
+                put("task", kotlinx.serialization.json.JsonPrimitive(task))
+                put("preferredDevice", kotlinx.serialization.json.JsonPrimitive("ANDROID"))
+                if (preferredMode != null) put("preferredMode", kotlinx.serialization.json.JsonPrimitive(preferredMode))
+            })
+        }.body()
+    }
+
+    suspend fun homeAssistantStatus(): JsonElement {
+        return client.get(baseUrl() + "/v1/home/status") {
+            configure(this)
+        }.body()
+    }
+
+    suspend fun homeAssistantStates(): JsonElement {
+        return client.get(baseUrl() + "/v1/home/states") {
+            configure(this)
+        }.body()
+    }
+
+    suspend fun executeHomeAssistant(
+        domain: String,
+        service: String,
+        entityId: String,
+        data: JsonElement? = null,
+        confirmed: Boolean = false
+    ): JsonElement {
+        return client.post(baseUrl() + "/v1/home/execute") {
+            configure(this)
+            contentType(ContentType.Application.Json)
+            setBody(buildJsonObject {
+                put("domain", kotlinx.serialization.json.JsonPrimitive(domain))
+                put("service", kotlinx.serialization.json.JsonPrimitive(service))
+                put("entityId", kotlinx.serialization.json.JsonPrimitive(entityId))
+                if (data != null) put("data", data)
+                put("confirmed", kotlinx.serialization.json.JsonPrimitive(confirmed))
+            })
+        }.body()
+    }
+
     suspend fun chat(content: String, conversationId: String?): ChatResponse {
         return client.post(baseUrl() + "/v1/chat") {
             configure(this)

@@ -226,6 +226,19 @@ export const api = {
     return request("/v1/visuals/orbit", { method: "POST", body: JSON.stringify({ mode, state }) });
   },
 
+  prepareBrain(input: {
+    task: string;
+    preferredDevice?: "WEB" | "ANDROID" | "DESKTOP";
+    preferredMode?: string;
+    tone?: string;
+    responseStyle?: string;
+  }): Promise<JsonObject> {
+    return request("/v1/brain/prepare", {
+      method: "POST",
+      body: JSON.stringify(input)
+    });
+  },
+
   getFabricCatalog(query?: { q?: string; platform?: "CORE" | "WEB" | "DESKTOP" | "ANDROID" }): Promise<JsonObject> {
     const params = new URLSearchParams();
     if (query?.q) params.set("q", query.q);

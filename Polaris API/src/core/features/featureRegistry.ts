@@ -68,7 +68,16 @@ export const polarisFeatureRegistry: readonly PolarisFeature[] = [
   ["browser-agent-core", "Núcleo Browser Agent", "RESEARCH", "PARTIAL", "Genera planes de navegación observables y verificables.", "Separa planificación del navegador de la ejecución concreta del cliente."],
   ["task-replay-envelope", "Sobre de replay", "AUTOMATION", "AVAILABLE", "Define una transición segura de una tarea reintentable.", "Evita reejecuciones ilimitadas o estados ambiguos."],
   ["skill-repair", "Autorreparación segura de Skills", "AUTOMATION", "AVAILABLE", "Propone solo recuperaciones predefinidas ante fallos transitorios o incompatibilidades.", "Permite recovery útil sin otorgar al modelo ejecución arbitraria."],
-  ["autonomy-fabric", "Tejido de autonomía", "AUTOMATION", "AVAILABLE", "Conecta planificación, consentimiento, Skills, verificación y recovery.", "Da a Polaris un camino coherente de intención a ejecución controlada."]
+  ["autonomy-fabric", "Tejido de autonomía", "AUTOMATION", "AVAILABLE", "Conecta planificación, consentimiento, Skills, verificación y recovery.", "Da a Polaris un camino coherente de intención a ejecución controlada."],
+  ["device-fabric", "Device Fabric", "MULTIPLATFORM", "AVAILABLE", "Modela dispositivos físicos por familia, protocolo, capacidades y estado.", "Permite que una misma intención pueda terminar en una luz, TV, PC, móvil u otro companion compatible."],
+  ["matter-control", "Control Matter", "MULTIPLATFORM", "PARTIAL", "Define comandos para dispositivos Matter mediante un adaptador autorizado.", "Matter permite una ruta estándar sin acoplar Polaris a una marca concreta."],
+  ["home-assistant-bridge", "Puente Home Assistant", "MULTIPLATFORM", "PARTIAL", "Prepara control de entidades mediante un gateway Home Assistant.", "Convierte Home Assistant en una capa unificadora para equipos domésticos heterogéneos."],
+  ["mqtt-bridge", "Puente MQTT", "MULTIPLATFORM", "PARTIAL", "Modela acciones para gateways MQTT autorizados.", "Permite integrar sensores, luces y actuadores IoT sin dar acceso arbitrario a la red."],
+  ["cast-control", "Control Cast/TV", "MULTIPLATFORM", "PARTIAL", "Define acciones para Chromecast/Google Cast y TVs compatibles.", "Permite reproducir, pausar, volumen y apps cuando existe un adaptador compatible."],
+  ["alexa-bridge", "Puente Alexa", "MULTIPLATFORM", "PARTIAL", "Representa Alexa como gateway autorizado en vez de fingir acceso directo.", "Mantiene clara la frontera entre Polaris y servicios de terceros."],
+  ["ir-device-bridge", "Puente infrarrojo", "MULTIPLATFORM", "PARTIAL", "Expone comandos IR cuando el companion dispone de hardware compatible.", "Abre control de TVs, aire acondicionado y equipos antiguos sin asumir hardware inexistente."],
+  ["smart-appliance-control", "Electrodomésticos inteligentes", "MULTIPLATFORM", "PARTIAL", "Normaliza nevera, microondas, aire acondicionado y otros equipos según capacidades declaradas.", "Una orden solo se envía cuando el dispositivo realmente anuncia esa capacidad."],
+  ["cross-client-device-control", "Control desde Web/Android/Desktop", "MULTIPLATFORM", "AVAILABLE", "Expone el mismo contrato de comandos a los tres clientes.", "La interfaz cambia por plataforma, pero el Core conserva una política única de seguridad."]
 ].map(([id, name, category, status, description, whyItMatters]) => ({
   id,
   name,

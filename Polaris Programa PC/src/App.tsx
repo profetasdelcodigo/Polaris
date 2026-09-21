@@ -77,6 +77,7 @@ function App() {
   const [messages, setMessages] = useState<PolarisMessage[]>([]);
   const [memories, setMemories] = useState<Memory[]>([]);
   const [devices, setDevices] = useState<Device[]>([]);
+  const [desktopDeviceId, setDesktopDeviceId] = useState<string | null>(null);
   const [preferences, setPreferences] = useState<Preferences | null>(null);
   const [profile, setProfile] = useState<PolarisProfile | null>(null);
   const [composer, setComposer] = useState("");
@@ -90,6 +91,7 @@ function App() {
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const streamController = useRef<AbortController | null>(null);
+  const relayBusy = useRef(false);
 
   const selectedConversation = useMemo(
     () => conversations.find((conversation) => conversation.id === selectedConversationId) ?? null,
@@ -235,6 +237,75 @@ function App() {
       return null;
     }
   }
+
+  async function executeRelayCommand(command: import("./lib/models").RelayCommand): Promise<void> {
+    setPolarisState("EXECUTING");
+    try {
+      if (command.requires_confirmation) {
+        setNotice("Polaris recibió una orden remota que requiere confirmación local; no se ejecutará automáticamente.");
+        return;
+      }
+
+      await api.updateRelayCommand(command.id, "RUNNING");
+
+      if (command.action === "desktop.open_url") {
+        const url = command.payload.url;
+        if (typeof url !== "string") throw new Error("Falta payload.url.");
+        await desktopNative.openUrl(url);
+        await api.updateRelayCommand(command.id, "SUCCEEDED", { opened: true, url });
+      } else if (command.action === "desktop.reveal_path") {
+        const path = command.payload.path;
+        if (typeof path !== "string") throw new Error("Falta payload.path.");
+        await desktopNative.revealPath(path);
+        await api.updateRelayCommand(command.id, "SUCCEEDED", { revealed: true, path });
+      } else if (command.action === "desktop.system_info") {
+        const info = await desktopNative.systemInfo();
+        await api.updateRelayCommand(command.id, "SUCCEEDED", { system: info });
+      } else {
+        throw new Error(`Acción remota no implementada en este cliente: ${command.action}`);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "La ejecución nativa falló.";
+      await api.updateRelayCommand(command.id, "FAILED", {}, message).catch(() => undefined);
+      setError(message);
+      setPolarisState("ERROR");
+    } finally {
+      if (polarisState !== "ERROR") setPolarisState("IDLE");
+    }
+  }
+
+  useEffect(() => {
+    if (!session || !desktopDeviceId) return;
+
+    let disposed = false;
+    const poll = async () => {
+      if (disposed || relayBusy.current) return;
+      relayBusy.current = true;
+      try {
+        const commands = await api.listRelayCommands(desktopDeviceId);
+        for (const command of commands.slice(0, 3)) {
+          if (disposed || command.requires_confirmation) continue;
+          try {
+            const claimed = await api.claimRelayCommand(command.id, desktopDeviceId);
+            await executeRelayCommand(claimed);
+          } catch {
+            // Another Polaris client may have claimed the command first.
+          }
+        }
+      } catch {
+        // Relay is an enhancement; ordinary chat remains usable when it is unavailable.
+      } finally {
+        relayBusy.current = false;
+      }
+    };
+
+    void poll();
+    const timer = window.setInterval(() => void poll(), 2500);
+    return () => {
+      disposed = true;
+      window.clearInterval(timer);
+    };
+  }, [session, desktopDeviceId]);
 
   async function sendMessage(override?: string): Promise<void> {
     const content = (override ?? composer).trim();

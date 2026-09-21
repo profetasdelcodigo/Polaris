@@ -147,7 +147,7 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
     backend: "ok",
     database: hasSupabaseConfiguration(config) ? "configured" : "unconfigured",
     provider: provider.available ? "configured" : "unconfigured",
-    version: "0.1.0"
+    version: "0.2.0"
   }));
 
   app.get("/v1/capabilities", async (): Promise<Capabilities> => {
@@ -233,6 +233,77 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
       runtime: "polaris-skill-v1",
       program: composeSkillFromIntent(body.task)
     };
+  });
+
+  app.post("/v1/skills/execute", async (request, reply) => {
+    const context = await contextFor(request, config);
+    const body = request.body as {
+      task?: unknown;
+      targetDeviceId?: unknown;
+      preferredDevice?: unknown;
+      requireConfirmation?: unknown;
+    };
+
+    if (typeof body.task !== "string" || !body.task.trim()) {
+      throw new PolarisError("VALIDATION_ERROR", "task es obligatorio.", 400);
+    }
+
+    const requestedDevice = typeof body.preferredDevice === "string"
+      ? body.preferredDevice.toUpperCase()
+      : undefined;
+    if (requestedDevice && !["WEB", "ANDROID", "DESKTOP"].includes(requestedDevice)) {
+      throw new PolarisError("VALIDATION_ERROR", "preferredDevice no es válido.", 400);
+    }
+
+    const devices = await listDevices(context);
+    const target = typeof body.targetDeviceId === "string"
+      ? devices.find((device) => device.id === body.targetDeviceId)
+      : devices.find((device) =>
+          device.status === "ONLINE" &&
+          (!requestedDevice || device.type === requestedDevice)
+        );
+
+    if (!target) {
+      throw new PolarisError(
+        "NOT_FOUND",
+        "No encontré un dispositivo Polaris conectado compatible con esta Skill.",
+        404
+      );
+    }
+
+    const program = composeSkillFromIntent(body.task);
+    const fingerprint = skillFingerprint(program);
+    const action = target.type === "ANDROID"
+      ? "android.run_skill"
+      : target.type === "WEB"
+        ? "web.run_skill"
+        : "desktop.run_skill";
+
+    const command = await createRelayCommand(context, {
+      targetDeviceId: target.id,
+      capabilityId: target.type === "ANDROID" ? "automation.skill_v1" : "desktop.skill_v1",
+      action,
+      payload: {
+        program,
+        task: body.task.trim(),
+        fingerprint
+      },
+      requiresConfirmation: body.requireConfirmation !== false,
+      ttlSeconds: 120
+    });
+
+    return reply.status(201).send({
+      queued: true,
+      runtime: "polaris-skill-v1",
+      fingerprint,
+      target: {
+        id: target.id,
+        name: target.name,
+        type: target.type,
+        status: target.status
+      },
+      command
+    });
   });
 
   app.post("/v1/skills/validate", async (request) => {

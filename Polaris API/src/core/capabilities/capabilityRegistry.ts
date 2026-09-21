@@ -149,6 +149,16 @@ export const capabilityRegistry: readonly PolarisCapability[] = [
     composable: true
   },
   {
+    id: "desktop.skills",
+    name: "Skills locales",
+    description: "Generar y ejecutar microprogramas Polaris v1 compuestos únicamente por acciones locales permitidas y verificables.",
+    kinds: all("DESKTOP", "REMOTE"),
+    availability: { WEB: "NOT_IMPLEMENTED", ANDROID: "NOT_IMPLEMENTED", DESKTOP: "AVAILABLE", ROBOT: "NOT_IMPLEMENTED" },
+    requiresConfirmation: false,
+    danger: "MEDIUM",
+    composable: true
+  },
+  {
     id: "desktop.local_control",
     name: "Control local PC",
     description: "Control acotado del companion de escritorio: portapapeles, desplazamiento y foco del chat.",

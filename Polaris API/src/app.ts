@@ -15,6 +15,7 @@ import { listSkillCatalog, skillCatalogCapacity, skillCatalogCapacityByDevice } 
 import { skillFingerprint, validateSkillProgram } from "./core/skills/skillRuntime.js";
 import { composeSkillFromIntent, skillComposerCatalog } from "./core/skills/skillComposer.js";
 import { buildPersonalityProfile, extractMemoryCandidates, summarizeAdaptiveContext } from "./core/context/adaptiveContext.js";
+import { preparePolarisBrain } from "./core/orchestration/polarisBrain.js";
 import { planAgentTask } from "./core/planning/agentPlanner.js";
 import { createExecutionTrace } from "./core/execution/executionTrace.js";
 import { recoveryPolicy } from "./core/recovery/recoveryPolicy.js";
@@ -1136,75 +1137,6 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
     if (typeof body.task !== "string" || !body.task.trim()) {
       throw new PolarisError("VALIDATION_ERROR", "task es obligatorio.", 400);
     }
-    const fabricMatch = resolveFabricIntent(body.task, target.type);
-    if (fabricMatch) {
-      if (fabricMatch.function.requiresConfirmation && body.requireConfirmation !== true) {
-        throw new PolarisError(
-          "CONFIRMATION_REQUIRED",
-          `La capacidad ${fabricMatch.function.name} requiere confirmación explícita.`,
-          409
-        );
-      }
-
-      const fabricPayload = buildFabricRelayPayload(fabricMatch.function, fabricMatch.input);
-      const fabricFingerprint = crypto
-        .createHash("sha256")
-        .update(
-          JSON.stringify({
-            runtime: "polaris-fabric-v1",
-            functionId: fabricMatch.function.id,
-            input: fabricMatch.input ?? null,
-            payload: fabricPayload
-          })
-        )
-        .digest("hex")
-        .slice(0, 16);
-
-      const fabricTrace = createExecutionTrace({
-        task: body.task.trim(),
-        fingerprint: fabricFingerprint,
-        targetDeviceId: target.id,
-        actions: [{ action: fabricMatch.function.id, device: target.type as DeviceType }]
-      });
-
-      if (body.dryRun === true) {
-        return reply.status(200).send({
-          queued: false,
-          dryRun: true,
-          runtime: "polaris-fabric-v1",
-          fingerprint: fabricFingerprint,
-          trace: fabricTrace,
-          function: fabricMatch.function,
-          input: fabricMatch.input ?? null,
-          relayAction: fabricMatch.function.relayAction,
-          payload: fabricPayload
-        });
-      }
-
-      const command = await createRelayCommand(context, {
-        targetDeviceId: target.id,
-        capabilityId: `fabric.${fabricMatch.function.id}`,
-        action: fabricMatch.function.relayAction!,
-        payload: fabricPayload,
-        requiresConfirmation: fabricMatch.function.requiresConfirmation,
-        ttlSeconds: 120
-      });
-
-      return reply.status(201).send({
-        queued: true,
-        runtime: "polaris-fabric-v1",
-        fingerprint: fabricFingerprint,
-        trace: fabricTrace,
-        function: fabricMatch.function,
-        target: {
-          id: target.id,
-          name: target.name,
-          type: target.type,
-          status: target.status
-        },
-        command
-      });
-    }
 
     const program = composeSkillFromIntent(body.task);
     const fingerprint = skillFingerprint(program);
@@ -1213,6 +1145,7 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
       fingerprint,
       actions: program.steps.map((step) => ({ action: step.action }))
     });
+
     return {
       runtime: "polaris-skill-v1",
       dryRun: true,
@@ -1222,7 +1155,10 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
       recovery: program.steps.map((step) => recoveryPolicy({
         capability: "skill." + step.action,
         risk: "LOW",
-        idempotent: step.action === "open_url" || step.action === "wait" || step.action === "scroll_top" || step.action === "scroll_bottom"
+        idempotent: step.action === "open_url" ||
+          step.action === "wait" ||
+          step.action === "scroll_top" ||
+          step.action === "scroll_bottom"
       }))
     };
   });

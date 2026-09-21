@@ -92,7 +92,7 @@ La identidad visual responde a idle, listening, thinking, executing, speaking, s
 ## 13. Web
 
 Autenticación, registro, recuperación, sesión persistente, chat con streaming SSE, historial, memoria, perfil, preferencias, dispositivos y relay Web.
-Atajos: Ctrl/Cmd + K y Ctrl/Cmd + 1…7.
+Atajos: Ctrl/Cmd + K y Ctrl/Cmd + 1…8; el 6 abre el catálogo de Capacidades.
 La capa API del cliente expone Experience Brief, resolución de dispositivos, escenas, Skill Studio, visuales orbitales, Capability Fabric, preparación del Brain y Home Assistant.
 Web incluye `src/services/fabric.ts`, que convierte las capacidades Web del catálogo en funciones invocables dinámicamente mediante el API seguro.
 
@@ -154,6 +154,13 @@ El Core mantiene las rutas del Experience Core; esta tanda cambia la semántica 
 - POST /v1/skills/execute
 - POST /v1/skills/validate
 - GET /v1/skills
+- GET /v1/fabric/catalog
+- POST /v1/fabric/preview
+- POST /v1/fabric/execute
+- POST /v1/brain/prepare
+- GET /v1/home/status
+- GET /v1/home/states
+- POST /v1/home/execute
 - POST /v1/capabilities/route
 - POST /v1/devices/fabric/execute
 - POST /v1/relay/commands
@@ -217,3 +224,14 @@ Se añadieron Capability Fabric, resolución de intención, Brain unificado, ada
 ## 21. Regla práctica para seguir construyendo Polaris
 
 Cada capacidad nueva debe pasar por cuatro filtros: realidad de la integración, contrato tipado, política de seguridad y verificación posterior. La interfaz no debe anunciar una función física hasta que exista su adaptador nativo o gateway real.
+
+## 20. Distribución 0.9.0
+
+La versión 0.9.0 incorpora un pipeline reproducible de release en `.github/workflows/release.yml` para generar:
+- Web empaquetada en ZIP.
+- APK Android debug instalable y APK release unsigned.
+- Bundles nativos Desktop Linux y Windows mediante Tauri.
+
+La versión Android se construye como aplicación nativa Kotlin/Compose; no es un wrapper de Web. La versión Desktop usa Tauri nativo. Los artefactos de release solo deben considerarse descargables cuando GitHub Actions confirme la compilación y publicación.
+
+La interfaz Web y Desktop ya no muestra tarjetas de “próximamente”. En su lugar presenta únicamente capacidades implementadas o estados de integración explícitos.

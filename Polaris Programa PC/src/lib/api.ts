@@ -226,6 +226,54 @@ export const api = {
     return request("/v1/visuals/orbit", { method: "POST", body: JSON.stringify({ mode, state }) });
   },
 
+  getFabricCatalog(query?: { q?: string; platform?: "CORE" | "WEB" | "DESKTOP" | "ANDROID" }): Promise<JsonObject> {
+    const params = new URLSearchParams();
+    if (query?.q) params.set("q", query.q);
+    if (query?.platform) params.set("platform", query.platform);
+    const suffix = params.toString() ? `?${params.toString()}` : "";
+    return request(`/v1/fabric/catalog${suffix}`);
+  },
+
+  previewFabricFunction(id: string, input?: unknown): Promise<JsonObject> {
+    return request("/v1/fabric/preview", {
+      method: "POST",
+      body: JSON.stringify({ id, input })
+    });
+  },
+
+  executeFabricFunction(input: {
+    id: string;
+    input?: unknown;
+    targetDeviceId?: string;
+    confirmed?: boolean;
+  }): Promise<JsonObject> {
+    return request("/v1/fabric/execute", {
+      method: "POST",
+      body: JSON.stringify(input)
+    });
+  },
+
+  homeAssistantStatus(): Promise<JsonObject> {
+    return request("/v1/home/status");
+  },
+
+  homeAssistantStates(): Promise<JsonObject> {
+    return request("/v1/home/states");
+  },
+
+  executeHomeAssistant(input: {
+    domain: string;
+    service: string;
+    entityId: string | string[];
+    data?: JsonObject;
+    confirmed?: boolean;
+  }): Promise<JsonObject> {
+    return request("/v1/home/execute", {
+      method: "POST",
+      body: JSON.stringify(input)
+    });
+  },
+
   updateRelayCommand(
     commandId: string,
     status: RelayCommand["status"],

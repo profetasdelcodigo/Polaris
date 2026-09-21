@@ -56,7 +56,12 @@ export const polarisFeatureRegistry: readonly PolarisFeature[] = [
   ["secret-boundary", "Frontera de secretos", "SECURITY", "AVAILABLE", "Mantiene credenciales fuera de prompts, trazas y respuestas.", "Protege secretos aunque el agente falle."],
   ["audit-integrity", "Integridad de auditoría", "SECURITY", "AVAILABLE", "Permite asociar operaciones con identificadores y fingerprints.", "Hace rastreable qué programa se intentó ejecutar."],
   ["research-evidence", "Registro de evidencia", "RESEARCH", "PARTIAL", "Asocia fuentes y fechas con hallazgos de investigación.", "Permite distinguir evidencia de texto generado."],
-  ["research-synthesis", "Síntesis de investigación", "RESEARCH", "PARTIAL", "Combina hallazgos contrastados en una salida estructurada.", "Convierte búsquedas en un informe reproducible."]
+  ["research-synthesis", "Síntesis de investigación", "RESEARCH", "PARTIAL", "Combina hallazgos contrastados en una salida estructurada.", "Convierte búsquedas en un informe reproducible."],
+  ["prompt-boundary", "Frontera contra prompt injection", "SECURITY", "AVAILABLE", "Inspecciona entradas antes de que puedan convertirse en acciones privilegiadas.", "Separa texto no confiable de instrucciones de control."],
+  ["response-contract", "Contrato de respuesta", "INTELLIGENCE", "AVAILABLE", "Normaliza respuestas como respuesta, acción, investigación, confirmación o error.", "Permite que Web, Android y PC interpreten el resultado de forma consistente."],
+  ["latency-budget", "Presupuesto de latencia", "INTELLIGENCE", "AVAILABLE", "Asigna tiempo según el modo adaptativo.", "Evita que una acción urgente se comporte como una investigación profunda."],
+  ["intent-classifier", "Clasificador de intención", "INTELLIGENCE", "AVAILABLE", "Clasifica chat, acción, investigación, memoria, control de dispositivo y automatización.", "Ayuda a seleccionar el pipeline correcto antes de llamar al modelo."],
+  ["action-idempotency", "Control de idempotencia", "SECURITY", "AVAILABLE", "Identifica acciones seguras para reintento.", "Evita duplicar operaciones no reversibles durante recovery."]
 ].map(([id, name, category, status, description, whyItMatters]) => ({
   id,
   name,

@@ -82,6 +82,10 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
     private var tts: TextToSpeech? = null
     private var ttsReady = false
     private var continuousVoice = false
+    private var inputField: EditText? = null
+    private var statusView: TextView? = null
+    private var actionButton: Button? = null
+    private var mascotView: TextView? = null
 
     init {
         tts = TextToSpeech(context) { status ->
@@ -122,7 +126,9 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
             setTextColor(cyan)
             typeface = Typeface.DEFAULT_BOLD
             alpha = .78f
+            contentDescription = "Polaris"
         }
+        mascotView = mascot
         mascot.setOnClickListener {
             mascot.alpha = if (mascot.alpha < .9f) 1f else .72f
         }
@@ -140,12 +146,13 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
         sheet.addView(title, lp())
 
         val subtitle = TextView(context).apply {
-            text = "Polaris está listo. Escribe una instrucción y la enviaré al mismo Core de Web, Android y PC."
+            text = "Polaris está listo. Te escuchará automáticamente al invocarlo desde el sistema."
             textSize = 14f
             setTextColor(Color.rgb(154, 172, 196))
             gravity = Gravity.CENTER_HORIZONTAL
             setPadding(0, dp(6), 0, dp(14))
         }
+        statusView = subtitle
         sheet.addView(subtitle, lp())
 
         val input = EditText(context).apply {
@@ -162,6 +169,7 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
                 setStroke(dp(1), Color.argb(75, 93, 230, 255))
             }
         }
+        inputField = input
         sheet.addView(input, lp().apply {
             bottomMargin = dp(12)
         })
@@ -174,6 +182,7 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
         lateinit var sendButton: Button
         val listen = Button(context).apply {
             text = "Voz"
+            contentDescription = "Activar reconocimiento de voz"
             setTextColor(cyan)
             setOnClickListener {
                 startVoiceRecognition(input, subtitle, sendButton)
@@ -202,6 +211,8 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
                 cornerRadius = dp(18).toFloat()
             }
         }
+        actionButton = sendButton
+        sendButton.contentDescription = "Enviar instrucción a Polaris"
         actions.addView(sendButton, LinearLayout.LayoutParams(0, dp(48), 1f).apply {
             leftMargin = dp(8)
         })
@@ -239,7 +250,31 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
             )
         )
 
+        root.post {
+            autoStartVoiceOnAssistantInvocation()
+        }
+
         return root
+    }
+
+    /**
+     * Android can invoke this session directly from the system assistant gesture/button.
+     * Start listening immediately so the interaction feels like a native assistant instead
+     * of requiring a second tap on the "Voz" action.
+     */
+    private fun autoStartVoiceOnAssistantInvocation() {
+        val input = inputField ?: return
+        val status = statusView ?: return
+        val button = actionButton ?: return
+        if (speechRecognizer != null) return
+
+        status.text = "Te escucho…"
+        mascotView?.animate()
+            ?.alpha(1f)
+            ?.setDuration(180L)
+            ?.start()
+
+        startVoiceRecognition(input, status, button)
     }
 
     private fun startVoiceRecognition(input: EditText, status: TextView, sendButton: Button) {
@@ -268,10 +303,15 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
             override fun onReadyForSpeech(params: Bundle?) {
                 status.text = "Te escucho…"
                 sendButton.isEnabled = false
+                mascotView?.animate()?.alpha(1f)?.setDuration(120L)?.start()
             }
 
             override fun onBeginningOfSpeech() {
                 status.text = "Escuchando…"
+                mascotView?.animate()
+                    ?.alpha(.96f)
+                    ?.setDuration(180L)
+                    ?.start()
             }
 
             override fun onRmsChanged(rmsdB: Float) = Unit
@@ -279,6 +319,7 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
 
             override fun onEndOfSpeech() {
                 status.text = "Procesando voz…"
+                mascotView?.animate()?.alpha(.82f)?.setDuration(180L)?.start()
             }
 
             override fun onError(error: Int) {
@@ -426,6 +467,10 @@ class PolarisVoiceInteractionSession(context: Context) : VoiceInteractionSession
     }
 
     override fun onDestroy() {
+        inputField = null
+        statusView = null
+        actionButton = null
+        mascotView = null
         destroySpeechRecognizer()
         scope.cancel()
         http.close()

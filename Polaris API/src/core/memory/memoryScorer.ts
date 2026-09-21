@@ -14,7 +14,8 @@ export function scoreMemory(query: string, memory: MemoryLike): number {
   const overlap = tokens.filter((token) => q.has(token)).length;
   const importance = Math.max(0, Math.min(5, memory.importance ?? 3)) * 8;
   const freshness = memory.updated_at ? Math.max(0, 20 - Math.floor(Math.max(0, Date.now() - Date.parse(memory.updated_at)) / 86_400_000)) : 0;
-  return Math.min(100, overlap * 10 + importance + freshness);
+  const relevance = overlap * 30;
+  return Math.min(100, relevance + importance + freshness);
 }
 
 export function rankMemories<T extends MemoryLike>(query: string, memories: readonly T[], limit = 8): T[] {

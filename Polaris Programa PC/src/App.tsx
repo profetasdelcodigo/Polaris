@@ -262,6 +262,23 @@ function App() {
       } else if (command.action === "desktop.system_info") {
         const info = await desktopNative.systemInfo();
         await api.updateRelayCommand(command.id, "SUCCEEDED", { system: info });
+      } else if (command.action === "desktop.copy_text") {
+        const text = command.payload.text;
+        if (typeof text !== "string" || text.length > 20_000) throw new Error("El texto para copiar no es válido.");
+        if (!navigator.clipboard?.writeText) throw new Error("El portapapeles no está disponible en esta sesión.");
+        await navigator.clipboard.writeText(text);
+        await api.updateRelayCommand(command.id, "SUCCEEDED", { copied: true, length: text.length });
+      } else if (command.action === "desktop.scroll_top") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        await api.updateRelayCommand(command.id, "SUCCEEDED", { position: "top" });
+      } else if (command.action === "desktop.scroll_bottom") {
+        window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
+        await api.updateRelayCommand(command.id, "SUCCEEDED", { position: "bottom" });
+      } else if (command.action === "desktop.focus_chat") {
+        const target = document.querySelector<HTMLTextAreaElement>('textarea[aria-label="Mensaje para Polaris"]');
+        if (!target) throw new Error("No hay un campo de chat disponible en la vista actual.");
+        target.focus();
+        await api.updateRelayCommand(command.id, "SUCCEEDED", { focused: true });
       } else {
         throw new Error(`Acción remota no implementada en este cliente: ${command.action}`);
       }

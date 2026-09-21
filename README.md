@@ -61,3 +61,8 @@ Consultar `docs/STATUS.md`.
 8. Visión
 9. Automatización de PC
 10. Agentes y rutinas
+
+
+### Release 0.9.0
+
+El flujo de release genera artefactos Web, Android y Desktop y los publica cuando la compilación completa termina correctamente.

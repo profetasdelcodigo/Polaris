@@ -33,7 +33,7 @@ describe("Polaris API public contract", () => {
 
     expect(health.statusCode).toBe(200);
     expect(health.json()).toMatchObject({ backend: "ok", database: "unconfigured", provider: "unconfigured" });
-    expect(capabilities.json()).toMatchObject({ chat: false, streaming: false, memory: false, voice: false });
+    expect(capabilities.json()).toMatchObject({ chat: false, streaming: false, memory: false, voice: true });
   });
 
   it("rejects protected resources without a bearer token", async () => {

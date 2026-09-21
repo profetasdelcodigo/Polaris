@@ -1105,18 +1105,18 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
       }
 
       const fabricPayload = buildFabricRelayPayload(fabricMatch.function, fabricMatch.input);
-      const fabricFingerprint = skillFingerprint({
-        version: 1,
-        steps: [{
-          action: fabricMatch.function.relayAction === "desktop.run_skill" || fabricMatch.function.relayAction === "web.run_skill"
-            ? "wait"
-            : fabricMatch.function.relayAction === "desktop.open_url" || fabricMatch.function.relayAction === "web.open_url"
-              ? "open_url"
-              : "copy_text",
-          ...(typeof fabricPayload.url === "string" ? { url: fabricPayload.url } : {}),
-          ...(typeof fabricPayload.text === "string" ? { text: fabricPayload.text } : {})
-        }]
-      });
+      const fabricFingerprint = crypto
+        .createHash("sha256")
+        .update(
+          JSON.stringify({
+            runtime: "polaris-fabric-v1",
+            functionId: fabricMatch.function.id,
+            input: fabricMatch.input ?? null,
+            payload: fabricPayload
+          })
+        )
+        .digest("hex")
+        .slice(0, 16);
 
       const fabricTrace = createExecutionTrace({
         task: body.task.trim(),

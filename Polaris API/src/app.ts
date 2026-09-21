@@ -227,7 +227,13 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
         response_style: preferences.response_style
       },
       memories,
-      devices
+      devices: devices.map(({ id, name, type, status, platform }) => ({
+        id,
+        name,
+        type: type as DeviceType,
+        status,
+        ...(platform ? { platform } : {})
+      }))
     });
   });
 
@@ -491,7 +497,13 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
         response_style: preferences.response_style
       },
       memories,
-      devices
+      devices: devices.map(({ id, name, type, status, platform }) => ({
+        id,
+        name,
+        type: type as DeviceType,
+        status,
+        ...(platform ? { platform } : {})
+      }))
     });
     const latencyMode =
       plan.mode === "RESEARCH" ? "RESEARCH" :

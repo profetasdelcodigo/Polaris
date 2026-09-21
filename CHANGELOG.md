@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.4.0 — Polaris Autonomous Core Foundation
+
+### Intelligence and control
+- Política de consentimiento independiente del modelo.
+- Estado de tareas con progreso, checkpoints, pausa y cancelación.
+- Ranking de memoria por relevancia, importancia y frescura.
+- Bus de eventos tipado para desacoplar automatización y observabilidad.
+- Router de notificaciones multicanal.
+- Política de automatización basada en intención, permisos, reversibilidad y riesgo.
+- Evaluación de salud de companions con estado, antigüedad de heartbeat, latencia y score.
+- Contexto estructurado del navegador.
+
+### API
+- Endpoints para consentimiento, tareas, salud de dispositivos, ranking de memoria, notificaciones, política de automatización y contexto de navegador.
+- Tests para el Adaptive Core y el registro ampliado de capacidades.
+
+### Capabilities
+- El registro pasa de la primera tanda de 25 funciones a una base de 50+ capacidades clasificadas como AVAILABLE, PARTIAL o PLANNED.
+- No se marca como AVAILABLE una integración que todavía dependa de APIs nativas no implementadas.
+
 ## 0.3.0 — Polaris Adaptive Core
 
 ### Core

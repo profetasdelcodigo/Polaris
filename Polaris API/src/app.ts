@@ -50,6 +50,20 @@ import { buildVisualScene } from "./core/visuals/visualDirector.js";
 import { suggestNextActions } from "./core/agent/proactiveSuggestions.js";
 import { discoverableProtocolMatrix, deviceActions, deviceFamilies, deviceProtocols, type DeviceAction, type DeviceFamily, type DeviceProtocol, type SmartDevice } from "./core/devices/deviceFabric.js";
 import {
+  fabricCatalogSummary,
+  searchFabricFunctions,
+  getFabricFunction,
+  executeCoreFabricFunction,
+  buildFabricRelayPayload,
+  type FabricPlatform
+} from "./core/fabric/capabilityFabric.js";
+import {
+  homeAssistantStatus,
+  homeAssistantNeedsConfirmation,
+  executeHomeAssistant,
+  listHomeAssistantStates
+} from "./core/devices/homeAssistantAdapter.js";
+import {
   claimRelayCommand,
   createRelayCommand,
   listPendingRelayCommands,
@@ -177,6 +191,201 @@ export async function buildApp(dependencies: AppDependencies = {}): Promise<Fast
         ? new PolarisError("VALIDATION_ERROR", "La solicitud contiene datos inválidos.", 400, { cause: error })
         : asPolarisError(error);
     void reply.status(mapped.statusCode).send(toProblem(mapped, requestId(request)));
+  });
+
+  app.get("/v1/fabric/catalog", async (request) => {
+    const query = request.query as { q?: unknown; platform?: unknown };
+    const platform =
+      typeof query.platform === "string" &&
+      ["CORE", "WEB", "DESKTOP", "ANDROID"].includes(query.platform.toUpperCase())
+        ? query.platform.toUpperCase() as FabricPlatform
+        : undefined;
+    const functions = searchFabricFunctions(
+      typeof query.q === "string" ? query.q.slice(0, 120) : "",
+      platform
+    );
+    return {
+      ...fabricCatalogSummary(),
+      returned: functions.length,
+      functions
+    };
+  });
+
+  app.post("/v1/fabric/preview", async (request) => {
+    const body = request.body as { id?: unknown; input?: unknown };
+    if (typeof body.id !== "string") {
+      throw new PolarisError("VALIDATION_ERROR", "id es obligatorio.", 400);
+    }
+    const item = getFabricFunction(body.id);
+    if (!item) throw new PolarisError("NOT_FOUND", "La capacidad solicitada no existe.", 404);
+
+    if (item.mode === "CORE") {
+      let result: unknown;
+      try {
+        result = executeCoreFabricFunction(item, body.input);
+      } catch (error) {
+        throw new PolarisError(
+          "VALIDATION_ERROR",
+          error instanceof Error ? error.message : "La función no pudo procesarse.",
+          400
+        );
+      }
+      return {
+        version: "1.0.0",
+        mode: "CORE",
+        function: item,
+        input: body.input ?? null,
+        result
+      };
+    }
+
+    return {
+      version: "1.0.0",
+      mode: "RELAY",
+      function: item,
+      input: body.input ?? null,
+      relayAction: item.relayAction,
+      payload: buildFabricRelayPayload(item, body.input)
+    };
+  });
+
+  app.post("/v1/fabric/execute", async (request) => {
+    const context = await contextFor(request, config);
+    const body = request.body as {
+      id?: unknown;
+      input?: unknown;
+      targetDeviceId?: unknown;
+      preferredDevice?: unknown;
+      confirmed?: unknown;
+    };
+
+    if (typeof body.id !== "string") {
+      throw new PolarisError("VALIDATION_ERROR", "id es obligatorio.", 400);
+    }
+
+    const item = getFabricFunction(body.id);
+    if (!item) throw new PolarisError("NOT_FOUND", "La capacidad solicitada no existe.", 404);
+
+    if (item.mode === "CORE") {
+      let result: unknown;
+      try {
+        result = executeCoreFabricFunction(item, body.input);
+      } catch (error) {
+        throw new PolarisError(
+          "VALIDATION_ERROR",
+          error instanceof Error ? error.message : "La función no pudo procesarse.",
+          400
+        );
+      }
+      return {
+        executed: true,
+        mode: "CORE",
+        function: item,
+        result
+      };
+    }
+
+    if (item.requiresConfirmation && body.confirmed !== true) {
+      throw new PolarisError(
+        "CONFIRMATION_REQUIRED",
+        `La capacidad ${item.name} requiere confirmación explícita.`,
+        409
+      );
+    }
+
+    const requestedType =
+      item.platform === "WEB" ? "WEB" :
+      item.platform === "DESKTOP" ? "DESKTOP" :
+      "ANDROID";
+
+    const devices = await listDevices(context);
+    const requestedDeviceId = typeof body.targetDeviceId === "string" ? body.targetDeviceId : undefined;
+    const target = requestedDeviceId
+      ? devices.find((device) => device.id === requestedDeviceId)
+      : devices.find((device) =>
+          device.type === requestedType &&
+          ["ONLINE", "online"].includes(String(device.status).toUpperCase())
+        );
+
+    if (!target) {
+      throw new PolarisError(
+        "NOT_FOUND",
+        `No hay un dispositivo ${requestedType} conectado que pueda ejecutar esta capacidad.`,
+        404
+      );
+    }
+
+    if (target.type !== requestedType) {
+      throw new PolarisError(
+        "VALIDATION_ERROR",
+        `La capacidad requiere ${requestedType}, pero el dispositivo seleccionado es ${target.type}.`,
+        400
+      );
+    }
+
+    const payload = buildFabricRelayPayload(item, body.input);
+    const command = await createRelayCommand(context, {
+      targetDeviceId: target.id,
+      capabilityId: `fabric.${item.id}`,
+      action: item.relayAction!,
+      payload,
+      requiresConfirmation: false,
+      ttlSeconds: 120
+    });
+
+    return {
+      executed: false,
+      queued: true,
+      mode: "RELAY",
+      function: item,
+      target: {
+        id: target.id,
+        name: target.name,
+        type: target.type,
+        status: target.status
+      },
+      command
+    };
+  });
+
+  app.get("/v1/home/status", async () => homeAssistantStatus());
+
+  app.get("/v1/home/states", async () => listHomeAssistantStates());
+
+  app.post("/v1/home/execute", async (request) => {
+    const body = request.body as {
+      domain?: unknown;
+      service?: unknown;
+      entityId?: unknown;
+      data?: unknown;
+      confirmed?: unknown;
+    };
+    if (typeof body.domain !== "string" || typeof body.service !== "string") {
+      throw new PolarisError("VALIDATION_ERROR", "domain y service son obligatorios.", 400);
+    }
+    if (
+      typeof body.entityId !== "string" &&
+      !(Array.isArray(body.entityId) && body.entityId.every((entry) => typeof entry === "string"))
+    ) {
+      throw new PolarisError("VALIDATION_ERROR", "entityId debe ser string o arreglo de strings.", 400);
+    }
+    const needsConfirmation = homeAssistantNeedsConfirmation(body.domain, body.service);
+    if (needsConfirmation && body.confirmed !== true) {
+      throw new PolarisError(
+        "CONFIRMATION_REQUIRED",
+        `La acción Home Assistant ${body.domain}.${body.service} requiere confirmación.`,
+        409
+      );
+    }
+    return executeHomeAssistant({
+      domain: body.domain,
+      service: body.service,
+      entityId: body.entityId as string | string[],
+      ...(body.data && typeof body.data === "object" && !Array.isArray(body.data)
+        ? { data: body.data as Record<string, unknown> }
+        : {}),
+      confirmed: body.confirmed === true
+    });
   });
 
   app.get("/v1/features", async () => ({

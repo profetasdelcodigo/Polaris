@@ -193,6 +193,34 @@ class PolarisApiClient(
         }.body()
     }
 
+    suspend fun getDeviceFabricProtocols(): JsonElement {
+        return client.get(baseUrl() + "/v1/devices/fabric/protocols") {
+            configure(this)
+        }.body()
+    }
+
+    suspend fun executeDeviceCommand(
+        targetDeviceId: String,
+        device: JsonElement,
+        action: String,
+        value: JsonElement? = null,
+        confirmed: Boolean = false
+    ): JsonElement {
+        return client.post(baseUrl() + "/v1/devices/fabric/execute") {
+            configure(this)
+            contentType(ContentType.Application.Json)
+            setBody(
+                buildJsonObject {
+                    put("targetDeviceId", kotlinx.serialization.json.JsonPrimitive(targetDeviceId))
+                    put("device", device)
+                    put("action", kotlinx.serialization.json.JsonPrimitive(action))
+                    if (value != null) put("value", value)
+                    put("confirmed", kotlinx.serialization.json.JsonPrimitive(confirmed))
+                }
+            )
+        }.body()
+    }
+
     suspend fun executeSkill(
         task: String,
         preferredDevice: String? = null,

@@ -52,7 +52,7 @@ function validateStep(raw: unknown, index: number): DesktopSkillStep {
 
   switch (step.action) {
     case "open_url":
-      if (typeof step.url !== "string" || !/^https?:\\/\\//i.test(step.url) || step.url.length > 2_000) {
+      if (typeof step.url !== "string" || !/^https?:\/\//i.test(step.url) || step.url.length > 2_000) {
         throw new Error(`Paso ${index + 1}: URL HTTP/HTTPS inválida.`);
       }
       return { action: "open_url", url: step.url };

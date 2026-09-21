@@ -156,7 +156,16 @@ for (const domain of domains) {
   }
 }
 
+const catalogDevices = ["WEB", "ANDROID", "DESKTOP", "ROBOT"] as const;
+
 export const skillCatalogCapacity = generatedRecipes.length;
+
+export const skillCatalogCapacityByDevice = Object.fromEntries(
+  catalogDevices.map((device) => [
+    device,
+    generatedRecipes.filter((recipe) => recipe.devices.includes(device)).length
+  ])
+) as Record<(typeof catalogDevices)[number], number>;
 
 export function listSkillCatalog(): readonly SkillSummary[] {
   const available = new ToolEngine().list().map((tool) => ({

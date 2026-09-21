@@ -134,7 +134,7 @@ function inferredTool(message: string): { name: RegisteredToolName; input: unkno
     };
   }
 
-  const desktopPath = message.match(/^(?:muestra|abre|abrir)\s+(?:la\s+)?(?:carpeta|ruta)\s+(?:en\s+mi\s+)?(?:pc|ordenador|computadora)\s+[\"](.+)[\"]$/iu);
+  const desktopPath = message.match(/^(?:muestra|abre|abrir)\s+(?:la\s+)?(?:carpeta|ruta)\s+(?:en\s+mi\s+)?(?:pc|ordenador|computadora)\s+"(.+)"$/iu);
   if (desktopPath?.[1]) {
     return {
       name: "queue_device_command",

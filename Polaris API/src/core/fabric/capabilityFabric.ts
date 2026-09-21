@@ -391,6 +391,7 @@ function executeText(op: string, variant: number, value: string): unknown {
     case "prefix": return `Polaris ${variant}: ${text}`;
     case "suffix": return `${text} · Polaris ${variant}`;
     case "truncate": return text.length > variant * 10 ? `${text.slice(0, variant * 10)}…` : text;
+    case "translate-key": return text; // deterministic placeholder-free contract: preserves input until a translation provider is explicitly connected
     default: return text;
   }
 }

@@ -23,8 +23,10 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' http://127.0.0.1:8787 http://localhost:8787 http://127.0.0.1:1420 ws://127.0.0.1:1420 https://*.supabase.co; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self'; capabilities": ["main-window"]
-    },
+      "csp": "default-src 'self'; connect-src 'self' http://127.0.0.1:8787 http://localhost:8787 http://127.0.0.1:1420 ws://127.0.0.1:1420 https://*.supabase.co; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self';",
+      "capabilities": ["main-window"]
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",

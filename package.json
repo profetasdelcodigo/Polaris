@@ -1,6 +1,6 @@
 {
   "name": "polaris-ia",
-  "version": "0.9.1",
+  "version": "0.9.0",
   "private": true,
   "description": "Polaris IA: one secure assistant core with independent web, Android, and desktop clients.",
   "packageManager": "pnpm@11.19.0",

@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.profetasdelcodigo.polaris"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.profetasdelcodigo.polaris"

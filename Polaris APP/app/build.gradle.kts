@@ -30,7 +30,7 @@ android {
         create("ciRelease") {
             val storeFilePath = providers.gradleProperty("POLARIS_SIGNING_STORE_FILE").orNull
             if (storeFilePath != null) {
-                storeFile = file(storeFilePath)
+                storeFile = rootProject.file(storeFilePath)
                 storePassword = providers.gradleProperty("POLARIS_SIGNING_STORE_PASSWORD").orNull
                 keyAlias = providers.gradleProperty("POLARIS_SIGNING_KEY_ALIAS").orNull
                 keyPassword = providers.gradleProperty("POLARIS_SIGNING_KEY_PASSWORD").orNull

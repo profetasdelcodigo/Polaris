@@ -8,14 +8,14 @@ plugins {
 
 android {
     namespace = "com.profetasdelcodigo.polaris"
-    compileSdk = 37
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.profetasdelcodigo.polaris"
         minSdk = 26
-        targetSdk = 37
-        versionCode = 9
-        versionName = "0.9.0"
+        targetSdk = 36
+        versionCode = 10
+        versionName = "0.9.1"
 
         val supabaseUrl = providers.gradleProperty("POLARIS_SUPABASE_URL").orNull.orEmpty()
         val supabaseKey = providers.gradleProperty("POLARIS_SUPABASE_PUBLISHABLE_KEY").orNull.orEmpty()
@@ -24,6 +24,31 @@ android {
         buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
         buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\"$supabaseKey\"")
         buildConfigField("String", "POLARIS_API_URL", "\"$apiUrl\"")
+    }
+
+    signingConfigs {
+        create("ciRelease") {
+            val storeFilePath = providers.gradleProperty("POLARIS_SIGNING_STORE_FILE").orNull
+            if (storeFilePath != null) {
+                storeFile = file(storeFilePath)
+                storePassword = providers.gradleProperty("POLARIS_SIGNING_STORE_PASSWORD").orNull
+                keyAlias = providers.gradleProperty("POLARIS_SIGNING_KEY_ALIAS").orNull
+                keyPassword = providers.gradleProperty("POLARIS_SIGNING_KEY_PASSWORD").orNull
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            val ciStore = providers.gradleProperty("POLARIS_SIGNING_STORE_FILE").orNull
+            if (ciStore != null) {
+                signingConfig = signingConfigs.getByName("ciRelease")
+            }
+            isDebuggable = false
+        }
+        debug {
+            isDebuggable = true
+        }
     }
 
     buildFeatures {

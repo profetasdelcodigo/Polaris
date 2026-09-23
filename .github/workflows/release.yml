@@ -36,11 +36,11 @@ jobs:
       - name: Package Web
         run: |
           cd "Polaris WEB"
-          zip -r "../Polaris-WEB-0.9.0.zip" dist
+          zip -r "../Polaris-WEB-0.9.1.zip" dist
       - uses: actions/upload-artifact@v4
         with:
-          name: polaris-web-0.9.0
-          path: "Polaris-WEB-0.9.0.zip"
+          name: polaris-web-0.9.1
+          path: "Polaris-WEB-0.9.1.zip"
           if-no-files-found: error
 
   android:
@@ -58,18 +58,50 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: "9.6.0"
-      - name: Build APKs
-        run: gradle :app:assembleDebug :app:assembleRelease --no-daemon
+      - name: Prepare CI signing key
+        run: |
+          mkdir -p .ci
+          keytool -genkeypair -v \
+            -keystore .ci/polaris-ci.jks \
+            -storepass polaris-ci \
+            -keypass polaris-ci \
+            -alias polaris-ci \
+            -keyalg RSA \
+            -keysize 4096 \
+            -validity 10000 \
+            -dname "CN=Polaris CI, OU=Profetas del Codigo, O=Polaris, L=Piura, ST=Piura, C=PE"
+      - name: Build signed APKs
+        run: |
+          gradle :app:assembleDebug :app:assembleRelease --no-daemon \
+            -PPOLARIS_SIGNING_STORE_FILE=.ci/polaris-ci.jks \
+            -PPOLARIS_SIGNING_STORE_PASSWORD=polaris-ci \
+            -PPOLARIS_SIGNING_KEY_ALIAS=polaris-ci \
+            -PPOLARIS_SIGNING_KEY_PASSWORD=polaris-ci
+      - name: Verify APKs before upload
+        run: |
+          set -euo pipefail
+          DEBUG="app/build/outputs/apk/debug/app-debug.apk"
+          RELEASE="app/build/outputs/apk/release/app-release.apk"
+          test -s "$DEBUG"
+          test -s "$RELEASE"
+          BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -1)"
+          test -x "$BUILD_TOOLS/apksigner"
+          test -x "$BUILD_TOOLS/aapt2"
+          test -x "$BUILD_TOOLS/zipalign"
+          "$BUILD_TOOLS/apksigner" verify --verbose "$DEBUG"
+          "$BUILD_TOOLS/apksigner" verify --verbose "$RELEASE"
+          "$BUILD_TOOLS/aapt2" dump badging "$DEBUG" | grep -q "package: name='com.profetasdelcodigo.polaris'"
+          "$BUILD_TOOLS/aapt2" dump badging "$RELEASE" | grep -q "package: name='com.profetasdelcodigo.polaris'"
+          "$BUILD_TOOLS/zipalign" -c -P 16 -v 4 "$DEBUG"
+          "$BUILD_TOOLS/zipalign" -c -P 16 -v 4 "$RELEASE"
       - name: Collect APKs
         run: |
           mkdir -p ../android-release
-          cp app/build/outputs/apk/debug/app-debug.apk ../android-release/Polaris-0.9.0-debug.apk
-          cp app/build/outputs/apk/release/app-release-unsigned.apk ../android-release/Polaris-0.9.0-release-unsigned.apk
-          test -s ../android-release/Polaris-0.9.0-debug.apk
-          test -s ../android-release/Polaris-0.9.0-release-unsigned.apk
+          cp app/build/outputs/apk/debug/app-debug.apk ../android-release/Polaris-0.9.1-debug.apk
+          cp app/build/outputs/apk/release/app-release.apk ../android-release/Polaris-0.9.1-release-signed.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: polaris-android-0.9.0
+          name: polaris-android-0.9.1
           path: "android-release/*.apk"
           if-no-files-found: error
 
@@ -117,13 +149,13 @@ jobs:
         run: pnpm tauri build
       - uses: actions/upload-artifact@v4
         with:
-          name: polaris-desktop-${{ runner.os }}-0.9.0
+          name: polaris-desktop-${{ runner.os }}-0.9.1
           path: ${{ matrix.bundle_glob }}
           if-no-files-found: error
 
   release:
     name: Publish GitHub Release
-    if: github.head_ref == 'release/0.9.0' || github.ref == 'refs/heads/release/0.9.0' || startsWith(github.ref, 'refs/tags/v')
+    if: github.ref == 'refs/heads/release/0.9.0' || startsWith(github.ref, 'refs/tags/v')
     needs: [web, android, desktop]
     runs-on: ubuntu-latest
     steps:
@@ -135,7 +167,7 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'v0.9.0' }}
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'v0.9.1' }}
           generate_release_notes: true
           files: |
             release-assets/**/*.zip

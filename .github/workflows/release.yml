@@ -30,7 +30,14 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: |
+          for attempt in 1 2 3; do
+            pnpm install --frozen-lockfile && exit 0
+            echo "pnpm install failed on attempt $attempt; retrying..."
+            sleep 5
+          done
+          exit 1
       - name: Build Web
         run: pnpm --dir "Polaris WEB" build
       - name: Package Web
@@ -131,7 +138,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: |
+          for attempt in 1 2 3; do
+            pnpm install --frozen-lockfile && exit 0
+            echo "pnpm install failed on attempt $attempt; retrying..."
+            sleep 5
+          done
+          exit 1
       - name: Generate native desktop icons
         working-directory: "Polaris Programa PC"
         run: pnpm icon
